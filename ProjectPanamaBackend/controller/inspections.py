@@ -46,49 +46,6 @@ path_58  = os.getenv('DROPBOX_INTEGRATION_PATH_58')
 qr_path = 'inspections'
 PDF_THREAD_POOL = ThreadPoolExecutor(max_workers=2)
 
-async def vehicles_data(company_code: str):
-  db = session()
-  try:
-    vehicles = db.query(Vehiculos).filter(Vehiculos.EMPRESA == company_code, Vehiculos.PLACA != "", Vehiculos.NUMERO != "").all()
-    if not vehicles:
-      return JSONResponse(content={"message": "Vehicles not found"}, status_code=404)
-    
-    owners = db.query(Propietarios).filter(Propietarios.EMPRESA == company_code, Propietarios.CODIGO != "").all()
-    owners_dict = {owner.CODIGO: owner.NOMBRE for owner in owners}
-
-    states = db.query(Estados).filter(Estados.EMPRESA == company_code).all()
-    states_dict = {state.CODIGO: state.NOMBRE for state in states}
-
-    result = []
-
-    for vehicle in vehicles:
-      owner_name = owners_dict.get(vehicle.PROPI_IDEN, "")
-      state_name = states_dict.get(vehicle.ESTADO, "")
-      
-      result.append({
-        "placa_vehiculo": vehicle.PLACA,
-        "numero_unidad": vehicle.NUMERO,
-        "codigo_conductor": vehicle.CONDUCTOR,
-        "codigo_propietario": vehicle.PROPI_IDEN,
-        "nombre_propietario": owner_name,
-        "propietario": vehicle.PROPI_IDEN + " - " + owner_name if owner_name else vehicle.PROPI_IDEN,
-        "kilometraje": vehicle.KILOMETRAJ if vehicle.KILOMETRAJ else "",
-        "estado_vehiculo": state_name,
-        "marca": vehicle.NOMMARCA,
-        "linea": vehicle.LINEA,
-        "modelo": vehicle.MODELO,
-        "nro_cupo": vehicle.NRO_CUPO,
-      })
-
-    return JSONResponse(content=jsonable_encoder(result), status_code=200)
-
-  except Exception as e:
-    return JSONResponse(content={"message": str(e)}, status_code=500)
-  finally:
-    db.close()
-
-#-----------------------------------------------------------------------------------------------
-
 async def drivers_data(company_code: str):
   db = session()
   try:
