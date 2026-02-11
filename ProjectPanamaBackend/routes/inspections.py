@@ -4,10 +4,6 @@ from controller.inspections import *
 
 inspections_router = APIRouter()
 
-@inspections_router.get("/inspections/drivers_data/{company_code}/", tags=["Inspections"])
-async def get_drivers_data(company_code: str):
-  return await drivers_data(company_code)
-
 @inspections_router.post("/inspections/inspections_info/all/{company_code}/", tags=["Inspections"])
 async def post_inspections_list(data: InspectionInfo, company_code: str):
     return await inspections_info_all(data, company_code)
