@@ -75,6 +75,7 @@ async def process_login(data: userLogin):
         "tarea03": "T",
         "tarea04": "T",
         "tarea05": "T",
+        "tarea09": "T",
         "foto": "../../../../assets/img/taxi.jpg",
         "empresa": "A"
       }
@@ -110,6 +111,7 @@ async def process_login(data: userLogin):
                     PermisosUsuario.TAREA03, 
                     PermisosUsuario.TAREA04, 
                     PermisosUsuario.TAREA05, 
+                    PermisosUsuario.TAREA09, 
                     PermisosUsuario.FOTO,
                     PermisosUsuario.EMPRESA
                     ) \
@@ -152,6 +154,7 @@ async def process_login(data: userLogin):
       "tarea03": user.TAREA03,
       "tarea04": user.TAREA04,
       "tarea05": user.TAREA05,
+      "tarea09": user.TAREA09,
       "foto": user.FOTO if user.FOTO else "../../../../assets/img/taxi.jpg",
       "empresa": user.EMPRESA
     }
@@ -160,8 +163,6 @@ async def process_login(data: userLogin):
     
     return {'token_cookie': token_cookie, 'token_localStorage': token_localStorage, 'status_code':200}
   except Exception as e:
-    #TODO: Recordar eliminar el print
-    print(f"An error occurred: {e}")
     return {'error': str(e), 'status_code':500}
   finally:
     db.close()
