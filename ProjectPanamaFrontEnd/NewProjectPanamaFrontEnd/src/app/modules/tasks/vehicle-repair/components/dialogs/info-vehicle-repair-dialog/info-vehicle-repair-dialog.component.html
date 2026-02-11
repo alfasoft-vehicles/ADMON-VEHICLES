@@ -1,0 +1,209 @@
+<h2 mat-dialog-title>Detalles del Vehículo a Reparar</h2>
+
+<mat-dialog-content class="mat-typography">
+  <ng-template #loadingTemplate>
+    <div class="repair-content">
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    </div>
+  </ng-template>
+  <div class="repair-content" *ngIf="!isLoading; else loadingTemplate">
+    <!-- Información General -->
+    <mat-card class="info-section">
+      <mat-card-header>
+        <mat-card-title class="section-title">
+          <mat-icon>info</mat-icon>
+          Información General
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">ID:</span>
+            <span class="value">{{ vehicleRepairData.id }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Empresa:</span>
+            <span class="value">{{ vehicleRepairData.empresa }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Fecha y hora:</span>
+            <span class="value"
+              >{{ vehicleRepairData.fecha }} {{ vehicleRepairData.hora }}</span
+            >
+          </div>
+          <div class="info-item">
+            <span class="label">Usuario:</span>
+            <span class="value">{{ vehicleRepairData.usuario || "N/A" }}</span>
+          </div>
+          <div class="info-item full-width">
+            <span class="label">Estado:</span>
+            <mat-chip
+              class="status-chip"
+              [class.status-pending]="vehicleRepairData.estado === 'PEN'"
+              [class.status-finished]="vehicleRepairData.estado === 'FIN'"
+              [class.status-suspended]="vehicleRepairData.estado === 'SUS'"
+            >
+              {{ getStatusText(vehicleRepairData.estado) }}
+            </mat-chip>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Información del Propietario -->
+    <mat-card class="info-section">
+      <mat-card-header>
+        <mat-card-title class="section-title">
+          <mat-icon>person</mat-icon>
+          Propietario
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Código:</span>
+            <span class="value">{{
+              getOwnerCode(vehicleRepairData.propietario)
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Nombre:</span>
+            <span class="value">{{
+              vehicleRepairData.nombre_propietario
+            }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Información del Patio -->
+    <mat-card class="info-section">
+      <mat-card-header>
+        <mat-card-title class="section-title">
+          <mat-icon>local_parking</mat-icon>
+          Patio
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Código:</span>
+            <span class="value">{{
+              getPatioCode(vehicleRepairData.patio)
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Nombre:</span>
+            <span class="value">{{ vehicleRepairData.patio || "N/A" }}</span>
+          </div>
+          <div class="info-item full-width description-container">
+            <span class="label">Descripción:</span>
+            <span
+              class="value description-text"
+              [class.collapsed]="!isDescriptionExpanded"
+            >
+              {{ vehicleRepairData.descripcion || "N/A" }}
+            </span>
+            <button
+              mat-button
+              color="primary"
+              class="expand-btn"
+              (click)="toggleDescription()"
+              *ngIf="
+                vehicleRepairData.descripcion &&
+                vehicleRepairData.descripcion.length > 80
+              "
+            >
+              {{ isDescriptionExpanded ? "Ver menos" : "Ver más" }}
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Información del Vehículo -->
+    <mat-card class="info-section">
+      <mat-card-header>
+        <mat-card-title class="section-title">
+          <mat-icon>directions_car</mat-icon>
+          Vehículo
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Unidad:</span>
+            <span class="value">{{ vehicleRepairData.unidad }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Placa:</span>
+            <span class="value">{{ vehicleRepairData.placa }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Cupo:</span>
+            <span class="value">{{ vehicleRepairData.cupo || "N/A" }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Sección de Fotos -->
+    <mat-card
+      class="info-section"
+      *ngIf="vehicleRepairData.fotos && vehicleRepairData.fotos.length > 0"
+    >
+      <mat-card-header>
+        <mat-card-title class="section-title">
+          <mat-icon>photo_library</mat-icon>
+          Fotografías ({{ vehicleRepairData.fotos.length }})
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="photos-section">
+          <button
+            mat-raised-button
+            color="primary"
+            class="view-photos-btn"
+            (click)="closeDialog('viewPhotos')"
+          >
+            <mat-icon>visibility</mat-icon>
+            Ver Fotos
+          </button>
+          <p class="photos-info">
+            {{ vehicleRepairData.fotos.length }} fotografía(s) disponible(s)
+          </p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Sección de QR -->
+    <mat-card class="info-section" *ngIf="vehicleRepairData.qr">
+      <mat-card-header>
+        <mat-card-title class="section-title">
+          <mat-icon>qr_code</mat-icon>
+          Código QR
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="photos-section">
+          <button
+            mat-raised-button
+            color="primary"
+            class="view-photos-btn"
+            (click)="closeDialog('viewQR')"
+          >
+            <mat-icon>visibility</mat-icon>
+            Ver QR
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close (click)="closeDialog('')">
+    <mat-icon>close</mat-icon>
+    Cerrar
+  </button>
+</mat-dialog-actions>

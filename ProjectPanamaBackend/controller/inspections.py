@@ -46,136 +46,6 @@ path_58  = os.getenv('DROPBOX_INTEGRATION_PATH_58')
 qr_path = 'inspections'
 PDF_THREAD_POOL = ThreadPoolExecutor(max_workers=2)
 
-async def owners_data(company_code: str):
-  db = session()
-  try:
-    owners = db.query(Propietarios).filter(Propietarios.EMPRESA == company_code, Propietarios.CODIGO != "").all()
-    if not owners:
-      return JSONResponse(content={"message": "Owner not found"}, status_code=404)
-
-    result = []
-
-    for owner in owners:
-      owner_data = {
-        "codigo_propietario": owner.CODIGO,
-        "nombre_propietario": owner.NOMBRE,
-        "conductores": [],
-        "vehiculos": []
-      }
-
-      # Obtener vehículos de ese propietario
-      vehicles = db.query(Vehiculos).filter(Vehiculos.PROPI_IDEN == owner.CODIGO, Vehiculos.PLACA != "", Vehiculos.NUMERO != "").all()
-
-      for vehicle in vehicles:
-        owner_data["vehiculos"].append({
-          "placa_vehiculo": vehicle.PLACA,
-          "numero_unidad": vehicle.NUMERO,
-          "codigo_conductor": vehicle.CONDUCTOR,
-          "marca": vehicle.NOMMARCA,
-          "linea": vehicle.LINEA
-        })
-
-        # Obtener conductor relacionado al vehículo
-        drivers = db.query(Conductores).filter(Conductores.CODIGO == vehicle.CONDUCTOR, Conductores.CODIGO != "").all()
-
-        for driver in drivers:
-          if driver and driver.CODIGO not in owner_data["conductores"]:
-            owner_data["conductores"].append({
-              "codigo_conductor": driver.CODIGO,
-              "numero_unidad": driver.UND_NRO,
-              "nombre_conductor": driver.NOMBRE,
-              "cedula": driver.CEDULA
-            })
-
-      result.append(owner_data)
-
-    return JSONResponse(content=jsonable_encoder(result), status_code=200)
-
-  except Exception as e:
-    return JSONResponse(content={"message": str(e)}, status_code=500)
-  finally:
-    db.close()
-
-#-----------------------------------------------------------------------------------------------
-
-async def vehicles_data(company_code: str):
-  db = session()
-  try:
-    vehicles = db.query(Vehiculos).filter(Vehiculos.EMPRESA == company_code, Vehiculos.PLACA != "", Vehiculos.NUMERO != "").all()
-    if not vehicles:
-      return JSONResponse(content={"message": "Vehicles not found"}, status_code=404)
-    
-    owners = db.query(Propietarios).filter(Propietarios.EMPRESA == company_code, Propietarios.CODIGO != "").all()
-    owners_dict = {owner.CODIGO: owner.NOMBRE for owner in owners}
-
-    states = db.query(Estados).filter(Estados.EMPRESA == company_code).all()
-    states_dict = {state.CODIGO: state.NOMBRE for state in states}
-
-    result = []
-
-    for vehicle in vehicles:
-      owner_name = owners_dict.get(vehicle.PROPI_IDEN, "")
-      state_name = states_dict.get(vehicle.ESTADO, "")
-      
-      result.append({
-        "placa_vehiculo": vehicle.PLACA,
-        "numero_unidad": vehicle.NUMERO,
-        "codigo_conductor": vehicle.CONDUCTOR,
-        "codigo_propietario": vehicle.PROPI_IDEN,
-        "nombre_propietario": owner_name,
-        "propietario": vehicle.PROPI_IDEN + " - " + owner_name if owner_name else vehicle.PROPI_IDEN,
-        "kilometraje": vehicle.KILOMETRAJ if vehicle.KILOMETRAJ else "",
-        "estado_vehiculo": state_name,
-        "marca": vehicle.NOMMARCA,
-        "linea": vehicle.LINEA,
-        "modelo": vehicle.MODELO,
-        "nro_cupo": vehicle.NRO_CUPO,
-      })
-
-    return JSONResponse(content=jsonable_encoder(result), status_code=200)
-
-  except Exception as e:
-    return JSONResponse(content={"message": str(e)}, status_code=500)
-  finally:
-    db.close()
-
-#-----------------------------------------------------------------------------------------------
-
-async def drivers_data(company_code: str):
-  db = session()
-  try:
-    drivers = db.query(Conductores.CODIGO, Conductores.UND_NRO, Conductores.NOMBRE,
-                       Conductores.CEDULA, Vehiculos.PROPI_IDEN
-                      ).outerjoin(
-                        Vehiculos, Conductores.CODIGO == Vehiculos.CONDUCTOR
-                      ).filter(
-                        Conductores.EMPRESA == company_code, 
-                        Conductores.CODIGO != ""
-                      ).all()
-    
-    if not drivers:
-      return JSONResponse(content={"message": "Drivers not found"}, status_code=404)
-
-    result = []
-
-    for driver in drivers:
-      result.append({
-        "codigo_conductor": driver.CODIGO,
-        "numero_unidad": driver.UND_NRO,
-        "nombre_conductor": driver.NOMBRE,
-        "cedula": driver.CEDULA,
-        "codigo_propietario": driver.PROPI_IDEN or ""
-      })
-
-    return JSONResponse(content=jsonable_encoder(result), status_code=200)
-
-  except Exception as e:
-    return JSONResponse(content={"message": str(e)}, status_code=500)
-  finally:
-    db.close()
-
-#-----------------------------------------------------------------------------------------------
-
 async def inspections_info_all(data: InspectionInfo, company_code: str):
   db = session()
   try:
@@ -809,7 +679,13 @@ async def update_inspection(data: UpdateInspection):
     if inspection.USUARIO != data.user:
       return JSONResponse(content={"message": "No tienes permiso para editar esta inspección"}, status_code=403)
     
+    mechanic = db.query(Mecanicos).filter(Mecanicos.CODIGO == data.mechanic_code, Mecanicos.EMPRESA == inspection.EMPRESA).first()
+    if not mechanic:
+      return JSONResponse(content={"message": "Mecánico no encontrado"}, status_code=404)
+    
     # Actualizar los campos de la inspección
+    inspection.MECANICO = mechanic.CODIGO
+    inspection.NOM_MECANICO = mechanic.NOMBRE
     inspection.KILOMETRAJ = data.mileage
     inspection.TIPO_INSPEC = data.inspection_type
     inspection.ALFOMBRA = bool(data.alfombra)
@@ -945,6 +821,7 @@ async def inspection_details(inspection_id: int):
       "placa": inspection.PLACA,
       "cupo": vehicle.NRO_CUPO if vehicle and vehicle.NRO_CUPO else "",
       "kilometraje": inspection.KILOMETRAJ if inspection.KILOMETRAJ else "",
+      "mecanico": inspection.MECANICO + ' - ' + inspection.NOM_MECANICO if inspection.MECANICO and inspection.NOM_MECANICO else "",
       "panapass": inspection.PANAPASS if inspection.PANAPASS else "",
       "combustible": inspection.COMBUSTIBLE if inspection.COMBUSTIBLE else "",
       "observaciones": inspection.OBSERVA if inspection.OBSERVA else "",
@@ -1024,6 +901,7 @@ async def generate_inspection_pdf(data: ReportInspection, company_code: str):
       "unidad": inspection.UNIDAD,
       "placa": inspection.PLACA,
       "cupo": vehicle.NRO_CUPO if vehicle and vehicle.NRO_CUPO else "",
+      "mecanico": inspection.NOM_MECANICO if inspection.NOM_MECANICO else "",
       "kilometraje": inspection.KILOMETRAJ if inspection.KILOMETRAJ else "",
       "combustible": inspection.COMBUSTIBLE if inspection.COMBUSTIBLE else "",
       "panapass": inspection.PANAPASS if inspection.PANAPASS else "",

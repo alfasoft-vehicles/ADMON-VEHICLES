@@ -1,0 +1,264 @@
+<div class="main-container">
+  <div class="title-container">
+    <h1 class="title">Vehículos a Reparar (Patios)</h1>
+  </div>
+
+  <!-- Botones de acción principales (visible en mobile arriba) -->
+  <div class="action-buttons-top" *ngIf="!isLoadingData">
+    <button
+      mat-raised-button
+      class="button btn-nueva"
+      (click)="openAddVehicleRepairDialog()"
+    >
+      Nueva
+    </button>
+    <button mat-raised-button class="button btn-reporte">Reporte</button>
+  </div>
+
+  <form [formGroup]="vehicleRepairForm" *ngIf="!isLoadingData">
+    <div class="inputs-container">
+      <mat-form-field class="field-input">
+        <mat-label>Propietarios</mat-label>
+        <input
+          type="text"
+          placeholder="Selecciona un propietario"
+          matInput
+          formControlName="propietario"
+          [matAutocomplete]="auto1"
+        />
+        <mat-autocomplete #auto1="matAutocomplete">
+          <mat-option [value]=""> - </mat-option>
+          <mat-option *ngFor="let option of optionsOwners" [value]="option">
+            {{ option.name }} - {{ option.id }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-form-field class="field-input">
+        <mat-label>Vehículos</mat-label>
+        <input
+          type="text"
+          placeholder="Selecciona un vehículo"
+          matInput
+          formControlName="vehiculo"
+          [matAutocomplete]="auto3"
+        />
+        <mat-autocomplete #auto3="matAutocomplete">
+          <mat-option [value]=""> - </mat-option>
+          <mat-option *ngFor="let option of optionsVehicles" [value]="option">
+            {{ option.numero_unidad }} - {{ option.placa_vehiculo }} -
+            {{ option.marca }} {{ option.linea }} {{ option.modelo }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-form-field class="field-input">
+        <mat-label>Conductor</mat-label>
+        <input
+          type="text"
+          placeholder="Selecciona un conductor"
+          matInput
+          formControlName="conductor"
+          [matAutocomplete]="auto2"
+        />
+        <mat-autocomplete #auto2="matAutocomplete">
+          <mat-option [value]=""> - </mat-option>
+          <mat-option *ngFor="let option of optionsDrivers" [value]="option">
+            {{ option.nombre_conductor }} - {{ option.cedula }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+    </div>
+
+    <div class="inputs-container">
+      <mat-form-field class="field-input" (click)="datepicker.open()">
+        <input
+          matInput
+          placeholder="Selecciona una fecha inicial"
+          [matDatepicker]="datepicker"
+          [max]="maxDate"
+          readonly
+          formControlName="fechaInicial"
+        />
+        <mat-hint>DD/MM/YYYY</mat-hint>
+        <mat-datepicker-toggle
+          matIconSuffix
+          [for]="datepicker"
+        ></mat-datepicker-toggle>
+        <mat-datepicker #datepicker></mat-datepicker>
+        <mat-error
+          *ngIf="vehicleRepairForm.get('fechaInicial')?.hasError('required')"
+        >
+          Fecha inicial es requerida.
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="field-input" (click)="datepicker2.open()">
+        <input
+          matInput
+          placeholder="Selecciona una fecha final"
+          [matDatepicker]="datepicker2"
+          [max]="maxDate"
+          readonly
+          formControlName="fechaFinal"
+        />
+        <mat-hint>DD/MM/YYYY</mat-hint>
+        <mat-datepicker-toggle
+          matIconSuffix
+          [for]="datepicker2"
+        ></mat-datepicker-toggle>
+        <mat-datepicker #datepicker2></mat-datepicker>
+        <mat-error
+          *ngIf="vehicleRepairForm.get('fechaFinal')?.hasError('required')"
+        >
+          Fecha final es requerida.
+        </mat-error>
+      </mat-form-field>
+
+      <div class="field-input buttons-container">
+        <button mat-raised-button class="button btn-buscar">Buscar</button>
+        <button mat-raised-button class="button btn-reporte-desktop">
+          Reporte
+        </button>
+        <button
+          mat-raised-button
+          class="button btn-nueva-desktop"
+          (click)="openAddVehicleRepairDialog()"
+        >
+          Nueva
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <mat-progress-bar
+    mode="indeterminate"
+    *ngIf="isLoadingData"
+  ></mat-progress-bar>
+
+  <div
+    class="mat-elevation-z8"
+    *ngIf="!isLoadingData && dataSource.data.length > 0"
+  >
+    <div class="table-scroll-container">
+      <table mat-table [dataSource]="dataSource" matSort>
+        <!-- Fecha Column -->
+        <ng-container matColumnDef="Fecha">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha</th>
+          <td mat-cell *matCellDef="let row">{{ row.Fecha }}</td>
+        </ng-container>
+
+        <!-- Unidad Column -->
+        <ng-container matColumnDef="Unidad">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Unidad</th>
+          <td mat-cell *matCellDef="let row">{{ row.Unidad }}</td>
+        </ng-container>
+
+        <!-- Placa Column -->
+        <ng-container matColumnDef="Placa">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Placa</th>
+          <td mat-cell *matCellDef="let row">{{ row.Placa }}</td>
+        </ng-container>
+
+        <!-- Cupo Column -->
+        <ng-container matColumnDef="Cupo">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Cupo</th>
+          <td mat-cell *matCellDef="let row">{{ row.Cupo }}</td>
+        </ng-container>
+
+        <!-- Descripcion Column -->
+        <ng-container matColumnDef="Descripcion">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Descripción</th>
+          <td mat-cell *matCellDef="let row">{{ row.Descripcion }}</td>
+        </ng-container>
+
+        <!-- Propietario Column -->
+        <ng-container matColumnDef="Propietario">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Propietario</th>
+          <td mat-cell *matCellDef="let row">{{ row.Propietario }}</td>
+        </ng-container>
+
+        <!-- Usuario Column -->
+        <ng-container matColumnDef="Usuario">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Usuario</th>
+          <td mat-cell *matCellDef="let row">{{ row.Usuario }}</td>
+        </ng-container>
+
+        <!-- Estado Column -->
+        <ng-container matColumnDef="Estado">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+          <td mat-cell *matCellDef="let row">
+            <span [innerHTML]="getEstadoText(row.Estado)"></span>
+          </td>
+        </ng-container>
+
+        <!-- Acciones Column -->
+        <ng-container matColumnDef="Acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let row" class="actions-column">
+            <div class="actions-container">
+              <button
+                mat-icon-button
+                color="primary"
+                matTooltip="Editar registro"
+                *ngIf="row.PuedeEditar === 1"
+                (click)="openEditVehicleRepairDialog(row.id)"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                color="warn"
+                matTooltip="Ver formulario"
+                (click)="openInfoVehicleRepairDialog(row.id)"
+              >
+                <mat-icon>assignment</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                color="accent"
+                matTooltip="Ver imagen"
+                *ngIf="row.Estado == 'FIN'"
+              >
+                <mat-icon>image</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                matTooltip="Ver documento"
+                *ngIf="row.Estado == 'FIN'"
+              >
+                <mat-icon>description</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          [ngClass]="{
+            'row-suspended': row.Estado === 'SUS',
+            'row-pending': row.Estado === 'PEN',
+          }"
+        ></tr>
+
+        <!-- Row shown when there is no matching data. -->
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell" colspan="10"></td>
+        </tr>
+      </table>
+    </div>
+
+    <mat-paginator
+      #paginator
+      [pageSizeOptions]="[8, 16, 32, 100]"
+      [pageSize]="8"
+      [showFirstLastButtons]="true"
+      aria-label="Selecciona la cantidad de registros por página"
+    ></mat-paginator>
+  </div>
+</div>

@@ -42,6 +42,35 @@
     <mat-divider></mat-divider>
 
     <div class="additional-fields">
+      <mat-form-field class="full-width" (click)="vehicleForm.get('mecanico')?.setValue('')">
+        <mat-label>Mecánico</mat-label>
+        <input
+          matInput
+          formControlName="mecanico"
+          [matAutocomplete]="autoMechanic"
+          (click)="vehicleForm.get('mecanico')?.setValue('')"
+        />
+        <mat-autocomplete
+          #autoMechanic="matAutocomplete"
+          [displayWith]="displayMechanicCode"
+        >
+          <mat-option
+            *ngFor="let mechanic of optionsMechanics | async"
+            [value]="mechanic"
+          >
+            {{ mechanic.code }} - {{ mechanic.name }}
+          </mat-option>
+        </mat-autocomplete>
+        <mat-error
+          *ngIf="
+            vehicleForm.get('mecanico')?.invalid &&
+            vehicleForm.get('mecanico')?.touched
+          "
+        >
+          Este campo es obligatorio.
+        </mat-error>
+      </mat-form-field>
+
       <mat-form-field class="full-width">
         <mat-label>Combustible</mat-label>
         <input matInput formControlName="combustible" />
@@ -57,7 +86,11 @@
 
       <mat-form-field class="full-width">
         <mat-label>Kilometraje</mat-label>
-        <input matInput formControlName="kilometraje" (keypress)="onlyNumbers($event)" />
+        <input
+          matInput
+          formControlName="kilometraje"
+          (keypress)="onlyNumbers($event)"
+        />
         <mat-error
           *ngIf="
             vehicleForm.get('kilometraje')?.invalid &&

@@ -83,9 +83,9 @@ export class SidenavComponent implements OnInit {
       },
       {
         icon: 'car_rental', 
-        label: 'Vehículos a Reparar', 
-        route: '',
-        conditions: true
+        label: 'Vehículos en Reparación', 
+        route: '/vehicle-repair',
+        conditions: this.permisos.tarea09
       },
       {
         icon: 'garage', 

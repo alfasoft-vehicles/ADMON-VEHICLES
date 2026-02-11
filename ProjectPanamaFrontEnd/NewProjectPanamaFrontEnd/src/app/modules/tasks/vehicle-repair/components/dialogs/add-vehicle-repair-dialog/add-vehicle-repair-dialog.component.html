@@ -1,0 +1,238 @@
+<h2 mat-dialog-title *ngIf="!isEditMode && vehicleRepairId === ''">
+  Nuevo Vehículo a Reparar
+</h2>
+<h2 mat-dialog-title *ngIf="isEditMode">Editar Vehículo a Reparar</h2>
+<h2 mat-dialog-title *ngIf="vehicleRepairId !== '' && !isEditMode">
+  Subir Fotos del Vehículo
+</h2>
+
+<mat-dialog-content>
+  <!-- Loading bar during creation -->
+  <div
+    class="inputs-container creating-loader"
+    *ngIf="
+      !isEditMode && vehicleRepairId === '' && isLoading && selectedVehicle
+    "
+  >
+    <p class="loading-message">Creando registro...</p>
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  </div>
+
+  <!-- Loading bar during edit mode data loading -->
+  <div class="inputs-container creating-loader" *ngIf="isEditMode && isLoading">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <p class="loading-message">Cargando datos del registro...</p>
+  </div>
+
+  <!-- Form: shown in create OR edit mode (but not when uploading photos) -->
+  <form
+    [formGroup]="vehicleRepairForm"
+    *ngIf="
+      (vehicleRepairId === '' || isEditMode) &&
+      !(isLoading && selectedVehicle && !isEditMode)
+    "
+  >
+    <div class="main-content-container">
+      <div class="info-container" *ngIf="!isLoading || !isEditMode">
+        <h3 *ngIf="!isLoading">Información del vehículo</h3>
+
+        <div class="inputs-container">
+          <mat-progress-bar
+            mode="indeterminate"
+            *ngIf="isLoading && !isEditMode"
+          ></mat-progress-bar>
+        </div>
+
+        <!-- Vehicle autocomplete (only in create mode) -->
+        <div class="inputs-container" *ngIf="!isLoading && !isEditMode">
+          <mat-form-field class="field-input">
+            <mat-label>Vehículo</mat-label>
+            <input
+              type="text"
+              placeholder="Selecciona un vehículo"
+              matInput
+              formControlName="vehiculo"
+              [matAutocomplete]="auto3"
+            />
+            <mat-autocomplete
+              #auto3="matAutocomplete"
+              [displayWith]="displayVehicleData"
+              (optionSelected)="selectedOptionVehicle($event)"
+            >
+              <mat-option [value]=""> - </mat-option>
+              <mat-option
+                *ngFor="let option of optionsVehicles | async"
+                [value]="option"
+              >
+                {{ option.numero_unidad }} - {{ option.placa_vehiculo }} -
+                {{ option.nro_cupo }} - {{ option.marca }} {{ option.linea }}
+                {{ option.modelo }} - {{ option.codigo_propietario }} -
+                {{ option.nombre_propietario }}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+        </div>
+
+        <div
+          class="inputs-container"
+          *ngIf="loadingVehicleInfo && !selectedVehicle && !isEditMode"
+        >
+          <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+        </div>
+
+        <ng-container *ngIf="selectedVehicle && !isLoading">
+          <!-- Vehicle info readonly (shown in EDIT mode at the top) -->
+          <div
+            class="inputs-container"
+            *ngIf="isEditMode && selectedVehicleObject"
+          >
+            <mat-form-field class="field-input">
+              <mat-label>Vehículo</mat-label>
+              <input
+                matInput
+                readonly
+                [value]="displayVehicleData(selectedVehicleObject)"
+              />
+            </mat-form-field>
+          </div>
+
+          <!-- Read-only vehicle info (shown FIRST) -->
+          <div class="inputs-container">
+            <mat-form-field class="field-input">
+              <mat-label>Propietario</mat-label>
+              <input matInput readonly [value]="vehicleInfo.propietario" />
+            </mat-form-field>
+            <mat-form-field class="field-input">
+              <mat-label>Estado</mat-label>
+              <input matInput readonly [value]="vehicleInfo.estado_vehiculo" />
+            </mat-form-field>
+          </div>
+          <div class="inputs-container">
+            <mat-form-field class="field-input">
+              <mat-label>Cupo</mat-label>
+              <input matInput readonly [value]="vehicleInfo.cupo" />
+            </mat-form-field>
+            <mat-form-field class="field-input">
+              <mat-label>Conductor</mat-label>
+              <input
+                matInput
+                readonly
+                [value]="
+                  vehicleInfo.conductor_codigo +
+                  ' - ' +
+                  vehicleInfo.conductor_nombre
+                "
+              />
+            </mat-form-field>
+          </div>
+          <div class="inputs-container">
+            <mat-form-field class="field-input">
+              <mat-label>Teléfono</mat-label>
+              <input
+                matInput
+                readonly
+                [value]="vehicleInfo.conductor_celular"
+              />
+            </mat-form-field>
+            <mat-form-field class="field-input">
+              <mat-label>Fecha y Hora</mat-label>
+              <input
+                matInput
+                readonly
+                [value]="vehicleInfo.fecha + ' - ' + vehicleInfo.hora"
+              />
+            </mat-form-field>
+          </div>
+
+          <!-- Editable inputs (Patio and Description at the END) -->
+          <div class="inputs-container">
+            <mat-form-field class="field-input">
+              <mat-label>Patio</mat-label>
+              <mat-select
+                placeholder="Selecciona un patio"
+                formControlName="patio"
+              >
+                <mat-option [value]="null"> - </mat-option>
+                <mat-option *ngFor="let patio of patios" [value]="patio">
+                  {{ patio.codigo }} - {{ patio.nombre }}
+                </mat-option>
+              </mat-select>
+              <mat-error
+                *ngIf="vehicleRepairForm.get('patio')?.hasError('required')"
+              >
+                El patio es obligatorio.
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="inputs-container">
+            <mat-form-field class="field-input description-field">
+              <mat-label>Descripción</mat-label>
+              <textarea
+                matInput
+                formControlName="descripcion"
+                placeholder="Describe el motivo de la reparación"
+                rows="3"
+              ></textarea>
+              <mat-error
+                *ngIf="
+                  vehicleRepairForm.get('descripcion')?.hasError('required')
+                "
+              >
+                La descripción es obligatoria.
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </form>
+
+  <!-- Photos component: shown when there is a vehicleRepairId and not in edit mode -->
+  <app-take-photos-repair
+    *ngIf="vehicleRepairId !== '' && !isLoading && !isEditMode"
+    [vehicleRepairId]="vehicleRepairId"
+  ></app-take-photos-repair>
+
+  <div class="inputs-container">
+    <mat-progress-bar
+      mode="indeterminate"
+      *ngIf="vehicleRepairId !== '' && isLoading && !isEditMode"
+    ></mat-progress-bar>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <!-- Cancelar: shown always -->
+  <button mat-button cdkFocusInitial (click)="closeDialog()">Cancelar</button>
+
+  <!-- Empezar: shown only in CREATE mode (form visible, no ID yet) -->
+  <button
+    mat-button
+    [disabled]="vehicleRepairForm.invalid || loadingVehicleInfo"
+    (click)="startVehicleRepair()"
+    *ngIf="vehicleRepairId === '' && !isEditMode"
+  >
+    Empezar
+  </button>
+
+  <!-- Guardar: shown only in EDIT mode -->
+  <button
+    mat-button
+    [disabled]="loadingVehicleInfo"
+    (click)="onSaveOrNext()"
+    *ngIf="isEditMode"
+  >
+    Guardar
+  </button>
+
+  <!-- Subir Fotos: shown only in PHOTO mode (has ID, not editing) -->
+  <button
+    mat-button
+    [disabled]="loadingVehicleInfo"
+    (click)="finishAndUpload()"
+    *ngIf="vehicleRepairId !== '' && !isEditMode"
+  >
+    Subir Fotos
+  </button>
+</mat-dialog-actions>

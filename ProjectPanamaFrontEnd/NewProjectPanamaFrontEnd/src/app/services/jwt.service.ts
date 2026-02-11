@@ -30,6 +30,7 @@ interface AppJwtPayload extends JwtPayload {
     tarea03: string;
     tarea04: string;
     tarea05: string;
+    tarea09: string;
   };
 }
 

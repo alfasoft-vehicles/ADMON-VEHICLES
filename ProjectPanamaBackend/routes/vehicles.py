@@ -757,6 +757,50 @@ def update_vehicle(vehicle_id: str, vehicle: VehicleUpdate):
 
 #-------------------------------------------------------------------------------------------
 
+@vehicles_router.get("/vehicles_data/{company_code}/", tags=["Vehicles"])
+async def vehicles_data(company_code: str):
+  db = session()
+  try:
+    vehicles = db.query(Vehiculos).filter(Vehiculos.EMPRESA == company_code, Vehiculos.PLACA != "", Vehiculos.NUMERO != "").all()
+    if not vehicles:
+      return JSONResponse(content={"message": "Vehicles not found"}, status_code=404)
+    
+    owners = db.query(Propietarios).filter(Propietarios.EMPRESA == company_code, Propietarios.CODIGO != "").all()
+    owners_dict = {owner.CODIGO: owner.NOMBRE for owner in owners}
+
+    states = db.query(Estados).filter(Estados.EMPRESA == company_code).all()
+    states_dict = {state.CODIGO: state.NOMBRE for state in states}
+
+    result = []
+
+    for vehicle in vehicles:
+      owner_name = owners_dict.get(vehicle.PROPI_IDEN, "")
+      state_name = states_dict.get(vehicle.ESTADO, "")
+      
+      result.append({
+        "placa_vehiculo": vehicle.PLACA,
+        "numero_unidad": vehicle.NUMERO,
+        "codigo_conductor": vehicle.CONDUCTOR,
+        "codigo_propietario": vehicle.PROPI_IDEN,
+        "nombre_propietario": owner_name,
+        "propietario": vehicle.PROPI_IDEN + " - " + owner_name if owner_name else vehicle.PROPI_IDEN,
+        "kilometraje": vehicle.KILOMETRAJ if vehicle.KILOMETRAJ else "",
+        "estado_vehiculo": state_name,
+        "marca": vehicle.NOMMARCA,
+        "linea": vehicle.LINEA,
+        "modelo": vehicle.MODELO,
+        "nro_cupo": vehicle.NRO_CUPO,
+      })
+
+    return JSONResponse(content=jsonable_encoder(result), status_code=200)
+
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-------------------------------------------------------------------------------------------
+
 @vehicles_router.delete("/vehicle/{vehicle_id}/", tags=["Vehicles"])
 async def verify_vehicle_delete(vehicle_id: str):
     db = session()
@@ -859,16 +903,25 @@ async def get_vehicle_codes():
 async def get_vehicles_by_state(company_code: str, state_code: str):
     db = session()
     try:
-        vehicles = db.query(Vehiculos).filter(
-            Vehiculos.EMPRESA == company_code,
-            Vehiculos.ESTADO == state_code
-        ).all()
+        if state_code == '1':
+           state_list = db.query(Estados.CODIGO).filter(Estados.EMPRESA == company_code, Estados.SUMAR == 1).all()
+           state_codes = [state.CODIGO for state in state_list]
 
-        owners = db.query(Propietarios.CODIGO, Propietarios.NOMBRE).filter(Propietarios.EMPRESA == company_code).all()
-        owners_dict = {owner.CODIGO: owner.NOMBRE for owner in owners}
+           vehicles = db.query(Vehiculos).filter(
+              Vehiculos.EMPRESA == company_code,
+              Vehiculos.ESTADO.in_(state_codes)
+           ).all()
+        else:
+            vehicles = db.query(Vehiculos).filter(
+                Vehiculos.EMPRESA == company_code,
+                Vehiculos.ESTADO == state_code
+            ).all()
 
         if not vehicles:
             return JSONResponse(content={"message": "No hay vehículos disponibles para la empresa y estado dados"}, status_code=404)
+        
+        owners = db.query(Propietarios.CODIGO, Propietarios.NOMBRE).filter(Propietarios.EMPRESA == company_code).all()
+        owners_dict = {owner.CODIGO: owner.NOMBRE for owner in owners}
 
         response = [
             {

@@ -75,3 +75,7 @@ async def get_items_cxp(company_code: str):
 @operations_router.post("/operations/driver-settlement/", tags=["Operations"])
 async def post_driver_settlement(data: DriverSettlement):
   return await driver_settlement(data)
+
+@operations_router.post("/operations/save-remove-driver/", tags=["Operations"])
+async def post_save_remove_driver(data: RemoveDriver):
+  return await save_remove_driver(data)

@@ -1,0 +1,182 @@
+.main-container {
+  min-height: 92vh;
+  padding: 2vh 20px 0px;
+}
+
+.title-container {
+  display: flex;
+  justify-content: center;
+}
+
+.title-container h1 {
+  font-weight: bold;
+  font-size: 2rem;
+  text-align: center;
+}
+
+.inputs-container {
+  display: flex;
+  justify-content: space-around;
+}
+
+.field-input {
+  width: 30%;
+  height: 70px;
+}
+
+::ng-deep .field-input .mat-mdc-form-field-flex {
+  height: 100%;
+  align-items: center;
+}
+
+::ng-deep .field-input .mat-mdc-icon-button {
+  transform: scale(1);
+}
+
+.buttons-container {
+  display: flex;
+  justify-content: space-evenly;
+  gap: 10px;
+}
+
+.buttons-container button {
+  height: 46px;
+  width: 100%;
+}
+
+/* Ocultar botones superiores en desktop */
+.action-buttons-top {
+  display: none;
+}
+
+form {
+  padding-bottom: 20px;
+}
+
+.mat-elevation-z8 {
+  margin: 0px 22px 22px 22px;
+}
+
+.table-scroll-container {
+  overflow-x: auto;
+  position: relative;
+}
+
+th {
+  padding: 0;
+  text-align: center;
+}
+
+th.mat-sort-header .mat-sort-header-container {
+  text-align: center;
+  justify-content: center;
+}
+
+th.mat-header-cell {
+  text-align: center;
+  justify-content: center;
+}
+
+td.mat-cell {
+  text-align: center;
+}
+
+td {
+  padding: 0 8px;
+}
+
+th:first-child,
+td:first-child {
+  padding-left: 20px;
+}
+
+.actions-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.actions-container button {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Estilos para filas según el estado */
+.row-suspended td:not(.actions-column) {
+  background-color: #ffcdd2 !important;
+}
+
+.row-suspended:hover td:not(.actions-column) {
+  background-color: #ffaaaa !important;
+}
+
+.row-pending td:not(.actions-column) {
+  background-color: #ffe0b2 !important;
+}
+
+.row-pending:hover td:not(.actions-column) {
+  background-color: #ffcc80 !important;
+}
+
+@media (max-width: 768px) {
+  .main-container {
+    padding: 2vh 20px;
+  }
+
+  /* Mostrar botones superiores en mobile */
+  .action-buttons-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .action-buttons-top button {
+    width: 100%;
+    height: 46px;
+    margin-bottom: 10px;
+  }
+
+  /* Ocultar botones Nueva y Reporte del contenedor inferior en mobile */
+  .buttons-container .btn-nueva-desktop,
+  .buttons-container .btn-reporte-desktop {
+    display: none;
+  }
+
+  .inputs-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .field-input {
+    width: 100%;
+    height: 100%;
+  }
+
+  .buttons-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 0px;
+  }
+
+  .buttons-container button {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .mat-elevation-z8 {
+    margin: 0px 0px;
+  }
+
+  ::ng-deep .mat-elevation-z8 .mat-mdc-paginator-page-size {
+    margin-bottom: 8px;
+  }
+
+  ::ng-deep .mat-elevation-z8 .mat-mdc-table thead {
+    padding: 8px;
+  }
+}

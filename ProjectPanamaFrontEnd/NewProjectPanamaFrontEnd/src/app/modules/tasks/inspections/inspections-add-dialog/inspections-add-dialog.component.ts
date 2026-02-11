@@ -73,7 +73,7 @@ export class InspectionsAddDialogComponent implements OnInit {
       setTimeout(() => {
         this.mainInspectionForm.addControl(
           'vehicleState',
-          component.vehicleForm
+          component.vehicleForm,
         );
       }, 0);
     }
@@ -123,7 +123,11 @@ export class InspectionsAddDialogComponent implements OnInit {
     private snackBar: MatSnackBar,
     private dialogRef: MatDialogRef<InspectionsAddDialogComponent>,
     @Inject(MAT_DIALOG_DATA)
-    public data: { idInspection: string; idTypeInspection: string; vehicleNumber: string }
+    public data: {
+      idInspection: string;
+      idTypeInspection: string;
+      vehicleNumber: string;
+    },
   ) {}
 
   ngOnInit(): void {
@@ -135,7 +139,7 @@ export class InspectionsAddDialogComponent implements OnInit {
         this.isLoading = false;
         return;
       }
-      
+
       // Si no hay idTypeInspection, es modo edición (nuevo flujo)
       this.isEditMode = true;
       this.inspectionCreateID = this.data.idInspection;
@@ -160,14 +164,19 @@ export class InspectionsAddDialogComponent implements OnInit {
     this.isLoading = true;
     this.resetVehicleInfo();
     this.initForms();
-    
+
     const company = this.getCompany();
-    
+
     // Cargar datos en paralelo usando forkJoin
     forkJoin({
       vehicles: this.apiService.getData('inspections/vehicles_data/' + company),
-      inspectionTypes: this.apiService.getData('inspections/inspection_types/' + company),
-      inspectionData: this.apiService.getData('inspections/inspection_details/' + inspectionId)
+      inspectionTypes: this.apiService.getData(
+        'inspections/inspection_types/' + company,
+      ),
+      inspectionData: this.apiService.getData(
+        'inspections/inspection_details/' + inspectionId,
+      ),
+      mechanics: this.apiService.getData('mechanics/' + company),
     }).subscribe(
       (results: any) => {
         // Guardar vehículos
@@ -176,18 +185,21 @@ export class InspectionsAddDialogComponent implements OnInit {
           .get('vehiculo')!
           .valueChanges.pipe(
             startWith(''),
-            map((value) => this._filterVehicles(value || ''))
+            map((value) => this._filterVehicles(value || '')),
           );
-        
+
         // Guardar tipos de inspección
         this.inspectionTypes = [...results.inspectionTypes];
-        
+
         // Guardar datos de inspección
         this.inspectionData = results.inspectionData;
-        
+
         // Ahora sí, poblar el formulario con los datos
-        this.populateFormWithInspectionData(results.inspectionData);
-        
+        this.populateFormWithInspectionData(
+          results.inspectionData,
+          results.mechanics,
+        );
+
         this.isLoading = false;
       },
       (error) => {
@@ -195,11 +207,14 @@ export class InspectionsAddDialogComponent implements OnInit {
         this.openSnackbar('Error al cargar los datos de la inspección.');
         this.isLoading = false;
         this.closeDialog();
-      }
+      },
     );
   }
 
-  populateFormWithInspectionData(data: any) {
+  populateFormWithInspectionData(
+    data: any,
+    mechanics: { code: string; name: string }[] = [],
+  ) {
     // Precargar información del vehículo
     this.vehicleInfo = {
       numero: data.unidad,
@@ -220,7 +235,7 @@ export class InspectionsAddDialogComponent implements OnInit {
 
     // Buscar el vehículo en la lista de vehículos para preseleccionarlo
     const vehicleMatch = this.vehicles.find(
-      (v) => v.numero_unidad === data.unidad
+      (v) => v.numero_unidad === data.unidad,
     );
 
     if (vehicleMatch) {
@@ -232,7 +247,7 @@ export class InspectionsAddDialogComponent implements OnInit {
 
     // Buscar el tipo de inspección para preseleccionarlo
     const inspectionTypeMatch = this.inspectionTypes.find(
-      (t) => t.nombre === data.tipo_inspeccion
+      (t) => t.nombre === data.tipo_inspeccion,
     );
 
     if (inspectionTypeMatch) {
@@ -240,6 +255,15 @@ export class InspectionsAddDialogComponent implements OnInit {
         tipo_inspeccion: inspectionTypeMatch,
       });
       this.inspectionType = inspectionTypeMatch.tipo;
+    }
+
+    let mechanicMatch: { code: string; name: string } | undefined;
+    if (data.mecanico && mechanics.length > 0) {
+      const mechanicParts = data.mecanico.split(' - ');
+      if (mechanicParts.length >= 2) {
+        const mechanicCode = mechanicParts[0].trim();
+        mechanicMatch = mechanics.find((m) => m.code === mechanicCode);
+      }
     }
 
     // Activar vista compacta
@@ -258,6 +282,13 @@ export class InspectionsAddDialogComponent implements OnInit {
           descripcion: data.descripcion,
           nota: data.observaciones,
         });
+
+        // Precargar el mecánico si se encontró
+        if (mechanicMatch) {
+          vehicleStateForm?.patchValue({
+            mecanico: mechanicMatch,
+          });
+        }
 
         // Precargar checklist items
         const checklistArray = vehicleStateForm?.get('checklistItems') as any;
@@ -375,20 +406,20 @@ export class InspectionsAddDialogComponent implements OnInit {
           .get('vehiculo')!
           .valueChanges.pipe(
             startWith(''),
-            map((value) => this._filterVehicles(value || ''))
+            map((value) => this._filterVehicles(value || '')),
           );
-        
+
         // Si hay un vehículo preseleccionado, buscarlo y cargarlo automáticamente
         if (this.preselectedVehicleNumber) {
           const foundVehicle = this.vehicles.find(
-            (v) => v.numero_unidad === this.preselectedVehicleNumber
+            (v) => v.numero_unidad === this.preselectedVehicleNumber,
           );
           if (foundVehicle) {
             this.inspectionInfoForm.patchValue({ vehiculo: foundVehicle });
             this.getVehicleInfo(foundVehicle.numero_unidad);
           }
         }
-        
+
         this.isLoading = false;
       });
   }
@@ -403,7 +434,7 @@ export class InspectionsAddDialogComponent implements OnInit {
         option.placa_vehiculo.toLowerCase().includes(filterValue) ||
         option.numero_unidad.toLowerCase().includes(filterValue) ||
         option.nro_cupo.toLowerCase().includes(filterValue) ||
-        option.nombre_propietario.toLowerCase().includes(filterValue)
+        option.nombre_propietario.toLowerCase().includes(filterValue),
     );
   }
 
@@ -423,7 +454,7 @@ export class InspectionsAddDialogComponent implements OnInit {
         },
         (error) => {
           console.error('Error fetching inspection types:', error);
-        }
+        },
       );
   }
 
@@ -470,7 +501,7 @@ export class InspectionsAddDialogComponent implements OnInit {
       this.inspectionInfoForm.get('vehiculo')?.reset('');
       this.inspectionType = '';
       this.openSnackbar(
-        'No se ha encontrado información del vehículo seleccionado. Prueba con otro.'
+        'No se ha encontrado información del vehículo seleccionado. Prueba con otro.',
       );
     }
   }
@@ -489,11 +520,11 @@ export class InspectionsAddDialogComponent implements OnInit {
         (error) => {
           console.error('Error fetching vehicle info:', error);
           this.openSnackbar(
-            'error al obtener la información del vehículo seleccionado. Vuelve a intentarlo más tarde.'
+            'error al obtener la información del vehículo seleccionado. Vuelve a intentarlo más tarde.',
           );
           this.loadingVehicleInfo = false;
           this.selectedVehicle = false;
-        }
+        },
       );
   }
 
@@ -530,6 +561,7 @@ export class InspectionsAddDialogComponent implements OnInit {
         mileage: this.mainInspectionForm.value.vehicleState.kilometraje || 0,
         inspection_type:
           this.mainInspectionForm.value.inspectionInfo.tipo_inspeccion.id,
+        mechanic_code: this.mainInspectionForm.value.vehicleState.mecanico.code,
         alfombra: checklistItems.find((item) => item.id === 'alfombra')?.value
           ? 1
           : 0,
@@ -556,22 +588,22 @@ export class InspectionsAddDialogComponent implements OnInit {
           ? 1
           : 0,
         llanta_repuesto: checklistItems.find(
-          (item) => item.id === 'llanta_repuesto'
+          (item) => item.id === 'llanta_repuesto',
         )?.value
           ? 1
           : 0,
         placa_municipal: checklistItems.find(
-          (item) => item.id === 'placa_municipal'
+          (item) => item.id === 'placa_municipal',
         )?.value
           ? 1
           : 0,
         caratula_radio: checklistItems.find(
-          (item) => item.id === 'caratula_radio'
+          (item) => item.id === 'caratula_radio',
         )?.value
           ? 1
           : 0,
         registro_vehiculo: checklistItems.find(
-          (item) => item.id === 'registro_vehiculo'
+          (item) => item.id === 'registro_vehiculo',
         )?.value
           ? 1
           : 0,
@@ -579,27 +611,27 @@ export class InspectionsAddDialogComponent implements OnInit {
           ? 1
           : 0,
         pago_municipio: checklistItems.find(
-          (item) => item.id === 'pago_municipio'
+          (item) => item.id === 'pago_municipio',
         )?.value
           ? 1
           : 0,
         formato_colisiones_menores: checklistItems.find(
-          (item) => item.id === 'formato_colisiones_menores'
+          (item) => item.id === 'formato_colisiones_menores',
         )?.value
           ? 1
           : 0,
         poliza_seguros: checklistItems.find(
-          (item) => item.id === 'poliza_seguro'
+          (item) => item.id === 'poliza_seguro',
         )?.value
           ? 1
           : 0,
         luces_delanteras: checklistItems.find(
-          (item) => item.id === 'luces_delanteras'
+          (item) => item.id === 'luces_delanteras',
         )?.value
           ? 1
           : 0,
         luces_traseras: checklistItems.find(
-          (item) => item.id === 'luces_traseras'
+          (item) => item.id === 'luces_traseras',
         )?.value
           ? 1
           : 0,
@@ -629,7 +661,9 @@ export class InspectionsAddDialogComponent implements OnInit {
         .subscribe(
           (response: any) => {
             this.isLoading = false;
-            this.openSnackbar('Inspección actualizada con éxito. Ahora puedes subir las fotos.');
+            this.openSnackbar(
+              'Inspección actualizada con éxito. Ahora puedes subir las fotos.',
+            );
             // Cambiar a modo de subir fotos
             this.isEditMode = false;
             this.wasEdited = true;
@@ -639,10 +673,10 @@ export class InspectionsAddDialogComponent implements OnInit {
             console.error('Error al actualizar la inspección:', error);
             this.openSnackbar(
               error.error?.message ||
-                'Error al actualizar la inspección. Vuelve a intentarlo más tarde.'
+                'Error al actualizar la inspección. Vuelve a intentarlo más tarde.',
             );
             this.isLoading = false;
-          }
+          },
         );
     } else {
       // Modo creación
@@ -650,6 +684,7 @@ export class InspectionsAddDialogComponent implements OnInit {
         user: this.jwtService.getUserData()?.id,
         company_code: this.getCompany(),
         vehicle_number: this.vehicleInfo.numero,
+        mechanic_code: this.mainInspectionForm.value.vehicleState.mecanico.code || '',
         mileage: this.mainInspectionForm.value.vehicleState.kilometraje || 0,
         inspection_type:
           this.mainInspectionForm.value.inspectionInfo.tipo_inspeccion.id,
@@ -681,22 +716,22 @@ export class InspectionsAddDialogComponent implements OnInit {
           ? 1
           : 0,
         llanta_repuesto: checklistItems.find(
-          (item) => item.id === 'llanta_repuesto'
+          (item) => item.id === 'llanta_repuesto',
         )?.value
           ? 1
           : 0,
         placa_municipal: checklistItems.find(
-          (item) => item.id === 'placa_municipal'
+          (item) => item.id === 'placa_municipal',
         )?.value
           ? 1
           : 0,
         caratula_radio: checklistItems.find(
-          (item) => item.id === 'caratula_radio'
+          (item) => item.id === 'caratula_radio',
         )?.value
           ? 1
           : 0,
         registro_vehiculo: checklistItems.find(
-          (item) => item.id === 'registro_vehiculo'
+          (item) => item.id === 'registro_vehiculo',
         )?.value
           ? 1
           : 0,
@@ -704,27 +739,27 @@ export class InspectionsAddDialogComponent implements OnInit {
           ? 1
           : 0,
         pago_municipio: checklistItems.find(
-          (item) => item.id === 'pago_municipio'
+          (item) => item.id === 'pago_municipio',
         )?.value
           ? 1
           : 0,
         formato_colisiones_menores: checklistItems.find(
-          (item) => item.id === 'formato_colisiones_menores'
+          (item) => item.id === 'formato_colisiones_menores',
         )?.value
           ? 1
           : 0,
         poliza_seguros: checklistItems.find(
-          (item) => item.id === 'poliza_seguro'
+          (item) => item.id === 'poliza_seguro',
         )?.value
           ? 1
           : 0,
         luces_delanteras: checklistItems.find(
-          (item) => item.id === 'luces_delanteras'
+          (item) => item.id === 'luces_delanteras',
         )?.value
           ? 1
           : 0,
         luces_traseras: checklistItems.find(
-          (item) => item.id === 'luces_traseras'
+          (item) => item.id === 'luces_traseras',
         )?.value
           ? 1
           : 0,
@@ -760,10 +795,10 @@ export class InspectionsAddDialogComponent implements OnInit {
           (error) => {
             console.error('Error al crear la inspección:', error);
             this.openSnackbar(
-              'Error al crear la inspección. Vuelve a intentarlo más tarde.'
+              'Error al crear la inspección. Vuelve a intentarlo más tarde.',
             );
             this.closeDialog();
-          }
+          },
         );
     }
   }
@@ -787,37 +822,44 @@ export class InspectionsAddDialogComponent implements OnInit {
 
   onSignatureSaved(signatureBase64: string) {
     this.signatureBase64 = signatureBase64;
-    
+
     // Convertir base64 a Blob
     const base64Data = signatureBase64.split(',')[1];
     const byteCharacters = atob(base64Data);
     const byteNumbers = new Array(byteCharacters.length);
-    
+
     for (let i = 0; i < byteCharacters.length; i++) {
       byteNumbers[i] = byteCharacters.charCodeAt(i);
     }
-    
+
     const byteArray = new Uint8Array(byteNumbers);
     const blob = new Blob([byteArray], { type: 'image/png' });
-    
+
     // Crear FormData y agregar la firma
     const formData = new FormData();
     formData.append('signature', blob, `firma_${this.inspectionCreateID}.png`);
-    
+
     // Enviar la firma al backend
     this.isLoading = true;
-    this.apiService.postData(`inspections/upload_signature/${this.inspectionCreateID}`, formData).subscribe({
-      next: (response: any) => {
-        this.isLoading = false;
-        this.openSnackbar('Firma guardada correctamente.');
-        this.closeDialog('refresh');
-      },
-      error: (error) => {
-        this.isLoading = false;
-        console.error('Error al guardar la firma:', error);
-        this.openSnackbar('Error al guardar la firma. Vuelve a intentarlo más tarde.');
-      }
-    });
+    this.apiService
+      .postData(
+        `inspections/upload_signature/${this.inspectionCreateID}`,
+        formData,
+      )
+      .subscribe({
+        next: (response: any) => {
+          this.isLoading = false;
+          this.openSnackbar('Firma guardada correctamente.');
+          this.closeDialog('refresh');
+        },
+        error: (error) => {
+          this.isLoading = false;
+          console.error('Error al guardar la firma:', error);
+          this.openSnackbar(
+            'Error al guardar la firma. Vuelve a intentarlo más tarde.',
+          );
+        },
+      });
   }
 
   saveInspectionSignature() {
@@ -835,7 +877,7 @@ export class InspectionsAddDialogComponent implements OnInit {
     if (this.inspectionCreateID || this.wasEdited) {
       result = 'refresh';
     }
-    
-    this.dialogRef.close(result); 
+
+    this.dialogRef.close(result);
   }
 }

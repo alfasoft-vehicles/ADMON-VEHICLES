@@ -99,7 +99,7 @@ const routes: Routes = [
         path: 'cobros',
         loadChildren: () =>
           import('../options/users/cobros/cobros.module').then(
-            (m) => m.CobrosModule
+            (m) => m.CobrosModule,
           ),
       },
       {
@@ -116,21 +116,26 @@ const routes: Routes = [
         path: 'vehicles',
         loadChildren: () =>
           import('../tasks/vehicles/vehicles.module').then(
-            (m) => m.VehiclesModule
+            (m) => m.VehiclesModule,
           ),
       },
       {
         path: 'drivers',
         loadChildren: () =>
           import('../tasks/drivers/drivers.module').then(
-            (m) => m.DriversModule
+            (m) => m.DriversModule,
           ),
       },
       {
         path: 'owners',
         loadChildren: () =>
-          import('../tasks/owners/owners.module').then(
-            (m) => m.OwnersModule
+          import('../tasks/owners/owners.module').then((m) => m.OwnersModule),
+      },
+      {
+        path: 'vehicle-repair',
+        loadChildren: () =>
+          import('../tasks/vehicle-repair/vehicle-repair.module').then(
+            (m) => m.VehicleRepairModule,
           ),
       },
     ],

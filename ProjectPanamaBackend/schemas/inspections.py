@@ -56,6 +56,7 @@ class ReportInspection(BaseModel):
 class UpdateInspection(BaseModel):
   inspection_id: int
   user: str
+  mechanic_code: str
   mileage: int
   inspection_type: str
   alfombra: int

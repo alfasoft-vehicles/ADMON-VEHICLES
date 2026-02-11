@@ -1,0 +1,12 @@
+mat-dialog-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px !important;
+}
+
+img {
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 4px;
+}

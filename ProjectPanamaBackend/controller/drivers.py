@@ -101,6 +101,41 @@ async def drivers_all(company_code: str):
 
 #-----------------------------------------------------------------------------------------------
 
+async def drivers_data(company_code: str):
+  db = session()
+  try:
+    drivers = db.query(Conductores.CODIGO, Conductores.UND_NRO, Conductores.NOMBRE,
+                       Conductores.CEDULA, Vehiculos.PROPI_IDEN
+                      ).outerjoin(
+                        Vehiculos, Conductores.CODIGO == Vehiculos.CONDUCTOR
+                      ).filter(
+                        Conductores.EMPRESA == company_code, 
+                        Conductores.CODIGO != ""
+                      ).all()
+    
+    if not drivers:
+      return JSONResponse(content={"message": "Drivers not found"}, status_code=404)
+
+    result = []
+
+    for driver in drivers:
+      result.append({
+        "codigo_conductor": driver.CODIGO,
+        "numero_unidad": driver.UND_NRO,
+        "nombre_conductor": driver.NOMBRE,
+        "cedula": driver.CEDULA,
+        "codigo_propietario": driver.PROPI_IDEN or ""
+      })
+
+    return JSONResponse(content=jsonable_encoder(result), status_code=200)
+
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
 async def conductores_detalles(company_code: str, user_code: str):
   db = session()
   try:

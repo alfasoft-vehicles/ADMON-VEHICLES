@@ -11,6 +11,7 @@ from models.cartera import Cartera
 from models.patios import Patios
 from models.itemscxp import ItemsCXP
 from models.permisosusuario import PermisosUsuario
+from models.cajarecaudos import CajaRecaudos
 from schemas.operations import *
 from fastapi.encoders import jsonable_encoder
 from utils.reports import *
@@ -1346,6 +1347,116 @@ async def driver_settlement(data: DriverSettlement):
     )
 
     return response
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
+async def save_remove_driver(data: RemoveDriver):
+  db = session()
+  try:
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    date = now_in_panama.strftime("%Y-%m-%d")
+    current_time = now_in_panama.strftime("%H:%M:%S")
+    complete_date = now_in_panama.strftime("%Y-%m-%d %H:%M:%S")
+    text_date = now_in_panama.strftime("%Y%m%d")
+
+    vehicle = db.query(Vehiculos).filter(Vehiculos.EMPRESA == data.company_code, Vehiculos.NUMERO == data.vehicle_number).first()
+    if not vehicle:
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
+    
+    driver = db.query(Conductores).filter(Conductores.EMPRESA == data.company_code, Conductores.CODIGO == data.driver_number).first()
+    if not driver:
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
+    
+    user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
+    user = user.CODIGO if user else ""
+    
+    wallet_records = db.query(Cartera).filter(
+                        Cartera.EMPRESA == data.company_code,
+                        Cartera.UNIDAD == data.vehicle_number,
+                        Cartera.CLIENTE == data.driver_number,
+                        Cartera.TIPO.in_(['01', '10', '11', '12'])
+                      ).all()
+    
+    vehicle.ESTADO = '06'
+    vehicle.CONDUCTOR = ''
+    driver.ESTADO = '3'
+    driver.UND_NRO = ''
+    driver.FEC_RETIRO = date
+    driver.FEC_ESTADO = date
+
+    last_record = db.query(CajaRecaudos).filter(CajaRecaudos.EMPRESA == data.company_code).order_by(CajaRecaudos.RECIBO.desc()).first()
+    new_record = str(int(last_record.RECIBO) + 1 if last_record else 1).zfill(8)
+    
+    for record in wallet_records:
+      record.N_CRE = record.N_CRE + record.SALDO
+      record.CAN_NCRE = record.CAN_NCRE + 1
+      record.FEC_NCRE = date
+
+      new_saldo = record.VALOR - record.ABONOS + record.N_DEB - record.N_CRE
+
+      new_caja_record = CajaRecaudos(
+        EMPRESA=data.company_code,
+        RECIBO=new_record,
+        FEC_RECIBO=date,
+        HOR_RECIBO=current_time,
+        NUMERO=data.vehicle_number,
+        CONDUCTOR=driver.CODIGO,
+        NIT=driver.NIT,
+        PROPI_IDEN=vehicle.PROPI_IDEN,
+        FORMAPAGO='8',
+        TOTAL=record.SALDO,
+        VLR_RC=record.SALDO,
+        SDO_RC=record.SALDO,
+        TIPO=record.TIPO,
+        FACTURA=record.FACTURA,
+        DETALLE=f"Cancelación de Saldos por Baja de Unidad: {data.vehicle_number} / {data.details}",
+        FEC_IMPRES=date,
+        TRASLADA='B',
+        FEC_TRASLA=complete_date,
+        USUARIO=user,
+        FEC_DOCUM=text_date,
+        FEC_CREADO=complete_date
+      )
+      db.add(new_caja_record)
+
+      if new_saldo == 0:
+        record.SALDO = 0
+      else:
+        return JSONResponse(content={"message": "Hay un descuadre en la cartera"}, status_code=400)
+      
+    if data.owed_by_driver > 0:
+      new_wallet_record = Cartera(
+        EMPRESA=data.company_code,
+        FACTURA=new_record,
+        TIPO='11',
+        # NOMTIPO='',
+        CLIENTE=driver.CODIGO,
+        CEDULA=driver.CEDULA,
+        PLACA=vehicle.PLACA,
+        UNIDAD=vehicle.NUMERO,
+        PROPI_IDEN=vehicle.PROPI_IDEN,
+        FEC_ENTREG=date,
+        VALOR=data.owed_by_driver,
+        FECHA=date,
+        FEC_FACTU=date,
+        DOC_FACTU=new_record,
+        DETALLE=f"Creación de Siniestros por Baja de Unidad: {data.vehicle_number} / {data.details}",
+        SALDO=data.owed_by_driver,
+        FEC_DOCUM=text_date,
+        FEC_CREADO=date,
+        USU_CREADO=user
+      )
+      db.add(new_wallet_record)
+    
+    db.commit()
+
+    return JSONResponse(content={"message": "Conductor removido correctamente"}, status_code=200)
   except Exception as e:
     db.rollback()
     return JSONResponse(content={"message": str(e)}, status_code=500)

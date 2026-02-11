@@ -88,6 +88,7 @@ export class OperacionesBajarConductorVehiculoComponent implements OnInit {
 
   savedLiquidationData: LiquidationData | null = null;
   savedOtherExpensesItems: OtherExpensesItem[] = [];
+  hasAcceptedLiquidation: boolean = false;
 
   vehicleData: vehicleInfo = {
     numero: '',
@@ -140,7 +141,7 @@ export class OperacionesBajarConductorVehiculoComponent implements OnInit {
 
   getVehicles() {
     const company = this.getCompany();
-    this.apiService.getData('vehicles-by-state/' + company + '/01').subscribe(
+    this.apiService.getData('vehicles-by-state/' + company + '/1').subscribe(
       (response: vehicle[]) => {
         this.options = response;
         this.filteredOptions = this.vehicles.valueChanges.pipe(
@@ -255,6 +256,7 @@ export class OperacionesBajarConductorVehiculoComponent implements OnInit {
     this.drivers.setValue('');
     this.savedLiquidationData = null;
     this.savedOtherExpensesItems = [];
+    this.hasAcceptedLiquidation = false;
   }
 
   resetAutocomplete() {
@@ -298,6 +300,7 @@ export class OperacionesBajarConductorVehiculoComponent implements OnInit {
       if (result) {
         this.savedLiquidationData = result.data;
         this.savedOtherExpensesItems = result.otherExpensesItems;
+        this.hasAcceptedLiquidation = true;
 
         const detailText = this.formatOtherExpensesDescription(
           result.otherExpensesItems,
@@ -327,9 +330,54 @@ export class OperacionesBajarConductorVehiculoComponent implements OnInit {
       .join(' // ');
   }
 
-  createDailyAccount() {
-    const company = this.getCompany();
-    const user = this.getUser();
+  confirm() {
+    if (!this.hasAcceptedLiquidation) {
+      this.openSnackbar(
+        'Para continuar, primero debes aceptar la liquidación de cuenta.',
+      );
+      return;
+    }
+
+    const body = {
+      company_code: this.getCompany(),
+      vehicle_number: this.vehicleData.numero,
+      driver_number: this.vehicleData.conductor,
+    };
+
+    const dialogRef = this.dialog.open(ConfirmActionDialogComponent, {
+      width: '400px',
+      data: {
+        documentName: 'Confirmar Baja de Conductor',
+        message:
+          '¿Estás seguro de que deseas guardar la liquidación del vehículo y bajar el conductor ' +
+          this.driverData.nombre +
+          ' del vehículo ' +
+          this.vehicleData.numero +
+          ' (culminación de contrato)?',
+      },
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((result: dialogResult) => {
+      if (result) {
+        this.isLoadingCreate = true;
+
+        this.apiService
+          .postData('operations/save-remove-driver', body)
+          .subscribe({
+            next: (response: any) => {
+              this.openSnackbar('Conductor bajado exitosamente.');
+              this.closeDialog();
+            },
+            error: (error: HttpErrorResponse) => {
+              this.isLoadingCreate = false;
+              this.openSnackbar(
+                'Error al bajar el conductor. Inténtalo de nuevo más tarde.',
+              );
+            },
+          });
+      }
+    });
   }
 
   closeDialog() {
