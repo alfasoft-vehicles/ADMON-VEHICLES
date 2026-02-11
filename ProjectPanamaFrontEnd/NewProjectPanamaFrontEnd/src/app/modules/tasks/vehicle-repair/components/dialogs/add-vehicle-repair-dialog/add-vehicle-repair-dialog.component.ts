@@ -17,6 +17,7 @@ interface Vehicles {
   nro_cupo: string;
   codigo_propietario: string;
   nombre_propietario: string;
+  propietario: string;
 }
 
 interface Patio {
@@ -115,7 +116,7 @@ export class AddVehicleRepairDialogComponent implements OnInit {
 
     // Load data in parallel using forkJoin
     forkJoin({
-      vehicles: this.apiService.getData('inspections/vehicles_data/' + company),
+      vehicles: this.apiService.getData('vehicles_data/' + company),
       patios: this.getMockPatios(),
       vehicleRepairData: this.getMockVehicleRepairDetails(vehicleRepairId),
     }).subscribe(
@@ -257,7 +258,7 @@ export class AddVehicleRepairDialogComponent implements OnInit {
   getDataVehicles() {
     const company = this.getCompany();
     this.apiService
-      .getData('inspections/vehicles_data/' + company)
+      .getData('vehicles_data/' + company)
       .subscribe((data: Vehicles[]) => {
         this.vehicles = [...data];
         this.optionsVehicles = this.vehicleRepairForm
