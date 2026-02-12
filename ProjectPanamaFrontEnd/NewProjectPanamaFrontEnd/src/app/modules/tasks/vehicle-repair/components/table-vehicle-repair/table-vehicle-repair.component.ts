@@ -7,6 +7,31 @@ import { MatDialog } from '@angular/material/dialog';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { InfoVehicleRepairDialogComponent } from '../dialogs/info-vehicle-repair-dialog/info-vehicle-repair-dialog.component';
 import { AddVehicleRepairDialogComponent } from '../dialogs/add-vehicle-repair-dialog/add-vehicle-repair-dialog.component';
+import { map, Observable, startWith } from 'rxjs';
+import { ApiService } from 'src/app/services/api.service';
+import { JwtService } from 'src/app/services/jwt.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
+
+interface owners {
+  id: string;
+  name: string;
+}
+
+interface vehicles {
+  placa_vehiculo: string;
+  numero_unidad: string;
+  codigo_conductor: string;
+  codigo_propietario: string;
+  marca: string;
+  linea: string;
+  modelo: string;
+}
+
+interface yards {
+  id: string;
+  name: string;
+}
 
 export interface VehicleRepairData {
   id: number;
@@ -121,43 +146,6 @@ const MOCK_DATA: VehicleRepairData[] = [
   },
 ];
 
-// Opciones mockup para los autocompletes
-const MOCK_OWNERS = [
-  { id: '001', name: 'TOTAL TAXI PANAMA S.A.' },
-  { id: '002', name: 'TOTAL TAXI 2' },
-  { id: '003', name: 'TAXI EXPRESS S.A.' },
-];
-
-const MOCK_VEHICLES = [
-  {
-    numero_unidad: 'TT232',
-    placa_vehiculo: 'EE9910',
-    marca: 'TOYOTA',
-    linea: 'COROLLA',
-    modelo: '2022',
-  },
-  {
-    numero_unidad: '0340',
-    placa_vehiculo: 'EQ8196',
-    marca: 'HYUNDAI',
-    linea: 'ACCENT',
-    modelo: '2021',
-  },
-  {
-    numero_unidad: 'TT100',
-    placa_vehiculo: 'AB1234',
-    marca: 'KIA',
-    linea: 'RIO',
-    modelo: '2023',
-  },
-];
-
-const MOCK_DRIVERS = [
-  { nombre_conductor: 'HECTOR F. VANECAS G.', cedula: '8-123-456' },
-  { nombre_conductor: 'JUAN PEREZ', cedula: '8-789-012' },
-  { nombre_conductor: 'MARIA GONZALEZ', cedula: '8-345-678' },
-];
-
 @Component({
   selector: 'app-table-vehicle-repair',
   templateUrl: './table-vehicle-repair.component.html',
@@ -180,11 +168,18 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
   maxDate = new Date();
 
   // Opciones para los autocompletes
-  optionsOwners = MOCK_OWNERS;
-  optionsVehicles = MOCK_VEHICLES;
-  optionsDrivers = MOCK_DRIVERS;
+  owners: owners[] = [];
+  vehicles: vehicles[] = [];
+  yards: yards[] = [];
+
+  allVehicles: vehicles[] = [];
+
+  optionsOwners!: Observable<owners[]>;
+  optionsVehicles!: Observable<vehicles[]>;
+  optionsYards!: Observable<yards[]>;
 
   vehicleRepairForm: FormGroup;
+  idVehicleNumber!: string;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -193,27 +188,310 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
     private fb: FormBuilder,
     private dialog: MatDialog,
     private breakpointObserver: BreakpointObserver,
+    private apiService: ApiService,
+    private jwtService: JwtService,
+    private snackBar: MatSnackBar,
+    private router: Router,
   ) {
     this.vehicleRepairForm = this.fb.group({
       propietario: [''],
       vehiculo: [''],
-      conductor: [''],
+      patio: [''],
       fechaInicial: [''],
       fechaFinal: [''],
     });
   }
 
   ngOnInit(): void {
-    // Simular carga de datos
+    // TODO: Cambiar a true
     this.isLoadingData = true;
-    setTimeout(() => {
-      this.isLoadingData = false;
-    }, 500);
+    this.getAutocompletesData();
+    this.setupListeners();
   }
 
   ngAfterViewInit(): void {
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
+  }
+
+  getAutocompletesData() {
+    this.getDataOwners();
+    this.getDataVehicles();
+    this.getDataYards();
+  }
+
+  setupListeners() {
+    this.setupOwnerListener();
+  }
+
+  private getCompany() {
+    const userData = this.jwtService.getUserData();
+    return userData ? userData.empresa : '';
+  }
+
+  private getUserId() {
+    const userData = this.jwtService.getUserData();
+    return userData ? userData.id : '';
+  }
+
+  getDataOwners() {
+    const company = this.getCompany();
+    this.apiService.getData('owners/' + company).subscribe((data: owners[]) => {
+      // Filtrar elementos con id vacío antes de almacenarlos
+      this.owners = data.filter((owner) => owner.id);
+      this.optionsOwners = this.vehicleRepairForm
+        .get('propietario')!
+        .valueChanges.pipe(
+          startWith(''),
+          map((value) => this._filterOwners(value || '')),
+        );
+    });
+  }
+
+  private _filterOwners(value: string | owners): owners[] {
+    const filterValue =
+      typeof value === 'string'
+        ? value.toLowerCase()
+        : value.name.toLowerCase();
+    return this.owners.filter(
+      (option) =>
+        option.name.toLowerCase().includes(filterValue) ||
+        option.id.toLowerCase().includes(filterValue),
+    );
+  }
+
+  setupOwnerListener() {
+    this.vehicleRepairForm
+      .get('propietario')
+      ?.valueChanges.subscribe((selectedOwner) => {
+        // Limpiar selecciones de conductor y vehículo cuando cambie el propietario
+        this.vehicleRepairForm.patchValue({
+          vehiculo: '',
+        });
+
+        if (selectedOwner && selectedOwner.id) {
+          // Filtrar conductores y vehículos por propietario seleccionado
+          this.filterVehiclesByOwner(selectedOwner.id);
+        } else {
+          // Si no hay propietario seleccionado, mostrar todos
+          this.resetFilters();
+        }
+      });
+  }
+
+  displayOwnerName(owner: owners): string {
+    return owner ? `${owner.name} - ${owner.id}` : '';
+  }
+
+  getDataVehicles() {
+    const company = this.getCompany();
+    this.apiService
+      .getData('vehicles_data/' + company)
+      .subscribe((data: vehicles[]) => {
+        this.allVehicles = data; // Guardar todos los vehículos
+        this.vehicles = [...data]; // Inicializar con todos los datos
+        this.optionsVehicles = this.vehicleRepairForm
+          .get('vehiculo')!
+          .valueChanges.pipe(
+            startWith(''),
+            map((value) => this._filterVehicles(value || '')),
+          );
+
+        if (this.idVehicleNumber) {
+          const foundVehicle = this.allVehicles.find(
+            (v) => v.numero_unidad === this.idVehicleNumber,
+          );
+
+          if (foundVehicle) {
+            this.vehicleRepairForm.patchValue({ vehiculo: foundVehicle });
+            this.getTableData();
+          } else {
+            this.openSnackbar(
+              'El vehículo seleccionado no existe o no está asignado a su empresa.',
+            );
+            this.router.navigate(['/vehicle-repair']);
+          }
+        }
+      });
+  }
+
+  private _filterVehicles(value: string | vehicles): vehicles[] {
+    const filterValue =
+      typeof value === 'string'
+        ? value.toLowerCase()
+        : value.placa_vehiculo.toLowerCase();
+    return this.vehicles.filter(
+      (option) =>
+        option.placa_vehiculo.toLowerCase().includes(filterValue) ||
+        option.numero_unidad.toLowerCase().includes(filterValue),
+    );
+  }
+
+  displayVehiclePlate(vehicle: vehicles): string {
+    return vehicle
+      ? `${vehicle.numero_unidad} ${vehicle.placa_vehiculo} - ${vehicle.marca} ${vehicle.linea} ${vehicle.modelo}`
+      : '';
+  }
+
+  filterVehiclesByOwner(ownerId: string) {
+    this.vehicles = this.allVehicles.filter(
+      (vehicle) => vehicle.codigo_propietario === ownerId,
+    );
+    this.optionsVehicles = this.vehicleRepairForm
+      .get('vehiculo')!
+      .valueChanges.pipe(
+        startWith(''),
+        map((value) => this._filterVehicles(value || '')),
+      );
+  }
+
+  getDataYards() {
+    const company = this.getCompany();
+    this.apiService.getData('yards/' + company).subscribe((data: yards[]) => {
+      // Filtrar elementos con id vacío antes de almacenarlos
+      this.yards = data.filter((yard) => yard.id);
+      this.isLoadingData = false;
+      this.optionsYards = this.vehicleRepairForm
+        .get('patio')!
+        .valueChanges.pipe(
+          startWith(''),
+          map((value) => this._filterYards(value || '')),
+        );
+    });
+  }
+
+  private _filterYards(value: string | yards): yards[] {
+    const filterValue =
+      typeof value === 'string'
+        ? value.toLowerCase()
+        : value.name.toLowerCase();
+    return this.yards.filter(
+      (option) =>
+        option.name.toLowerCase().includes(filterValue) ||
+        option.id.toLowerCase().includes(filterValue),
+    );
+  }
+
+  displayYardName(yard: yards): string {
+    return yard ? `${yard.name} - ${yard.id}` : '';
+  }
+
+  resetFilters() {
+    this.vehicles = [...this.allVehicles];
+
+    this.optionsVehicles = this.vehicleRepairForm
+      .get('vehiculo')!
+      .valueChanges.pipe(
+        startWith(''),
+        map((value) => this._filterVehicles(value || '')),
+      );
+  }
+
+  private initializePaginator() {
+    setTimeout(() => {
+      if (this.paginator && this.sort) {
+        this.dataSource.paginator = this.paginator;
+        this.dataSource.sort = this.sort;
+      }
+    }, 0);
+  }
+
+  clearTableData() {
+    if (this.dataSource.data.length > 0) {
+      this.dataSource.data = [];
+      // Reinicializar el paginator y sort
+      this.initializePaginator();
+    }
+  }
+
+  getTableData() {
+    if (this.vehicleRepairForm.invalid) {
+      this.vehicleRepairForm.markAllAsTouched();
+      return;
+    }
+
+    // Limpiar datos existentes de la tabla
+    this.clearTableData();
+
+    this.isLoadingData = true;
+
+    const formValues = this.vehicleRepairForm.value;
+    const user = this.getUserId();
+
+    // Formatear las fechas para enviar solo YYYY-MM-DD
+    const formattedValues = {
+      usuario: user,
+      conductor:
+        formValues.conductor && formValues.conductor.codigo_conductor
+          ? formValues.conductor.codigo_conductor
+          : '',
+      propietario:
+        formValues.propietario && formValues.propietario.id
+          ? formValues.propietario.id
+          : '',
+      vehiculo:
+        formValues.vehiculo && formValues.vehiculo.numero_unidad
+          ? formValues.vehiculo.numero_unidad
+          : '',
+      fechaInicial: formValues.fechaInicial
+        ? new Date(formValues.fechaInicial).toISOString().split('T')[0]
+        : '',
+      fechaFinal: formValues.fechaFinal
+        ? new Date(formValues.fechaFinal).toISOString().split('T')[0]
+        : '',
+    };
+
+    const company = this.getCompany();
+
+    // this.apiService
+    //   .postData('inspections/inspections_info/' + company, formattedValues)
+    //   .subscribe({
+    //     next: (data: apiResponse[]) => {
+    //       this.dataSource.data = data.map((item) => ({
+    //         id: item.id,
+    //         Fecha: item.fecha_hora,
+    //         Tipo: item.tipo_inspeccion,
+    //         Id_Tipo: item.id_tipo_inspeccion,
+    //         Descripcion: item.descripcion,
+    //         Unidad: item.unidad,
+    //         Placa: item.placa,
+    //         Cupo: item.cupo,
+    //         Usuario: item.nombre_usuario,
+    //         Propietario: item.propietario,
+    //         Estado: item.estado_inspeccion,
+    //         PuedeEditar: item.puede_editar,
+    //         Fotos: item.fotos || [],
+    //         Firma: item.firma || [],
+    //       }));
+
+    //       // Reinicializar paginator y sort después de cargar los datos
+    //       this.initializePaginator();
+
+    //       if (data.length === 0) {
+    //         this.openSnackbar(
+    //           'No se encontraron inspecciones para los criterios seleccionados.',
+    //         );
+    //       } else {
+    //         this.openSnackbar('Inspecciones cargadas correctamente.');
+    //       }
+
+    //       this.isLoadingData = false;
+    //     },
+    //     error: (error) => {
+    //       console.error('Error fetching inspections:', error);
+
+    //       if (error.status === 404) {
+    //         this.openSnackbar(
+    //           'No se encontraron inspecciones para los criterios seleccionados.',
+    //         );
+    //       } else {
+    //         this.openSnackbar(
+    //           'Error al cargar las inspecciones. Por favor, inténtelo de nuevo más tarde.',
+    //         );
+    //       }
+    //       this.isLoadingData = false;
+    //     },
+    //   });
   }
 
   getEstadoText(estado: string): string {
@@ -281,6 +559,14 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
         // TODO: Refresh table data
         console.log('Refreshing table data...');
       }
+    });
+  }
+
+  private openSnackbar(message: string) {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 3000,
+      horizontalPosition: 'center',
+      verticalPosition: 'top',
     });
   }
 }

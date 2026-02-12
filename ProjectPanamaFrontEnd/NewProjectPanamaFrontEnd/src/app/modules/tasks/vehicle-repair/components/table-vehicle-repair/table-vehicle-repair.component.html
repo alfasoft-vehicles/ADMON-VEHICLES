@@ -26,9 +26,15 @@
           formControlName="propietario"
           [matAutocomplete]="auto1"
         />
-        <mat-autocomplete #auto1="matAutocomplete">
+        <mat-autocomplete
+          #auto1="matAutocomplete"
+          [displayWith]="displayOwnerName"
+        >
           <mat-option [value]=""> - </mat-option>
-          <mat-option *ngFor="let option of optionsOwners" [value]="option">
+          <mat-option
+            *ngFor="let option of optionsOwners | async"
+            [value]="option"
+          >
             {{ option.name }} - {{ option.id }}
           </mat-option>
         </mat-autocomplete>
@@ -43,9 +49,15 @@
           formControlName="vehiculo"
           [matAutocomplete]="auto3"
         />
-        <mat-autocomplete #auto3="matAutocomplete">
+        <mat-autocomplete
+          #auto3="matAutocomplete"
+          [displayWith]="displayVehiclePlate"
+        >
           <mat-option [value]=""> - </mat-option>
-          <mat-option *ngFor="let option of optionsVehicles" [value]="option">
+          <mat-option
+            *ngFor="let option of optionsVehicles | async"
+            [value]="option"
+          >
             {{ option.numero_unidad }} - {{ option.placa_vehiculo }} -
             {{ option.marca }} {{ option.linea }} {{ option.modelo }}
           </mat-option>
@@ -53,18 +65,24 @@
       </mat-form-field>
 
       <mat-form-field class="field-input">
-        <mat-label>Conductor</mat-label>
+        <mat-label>Patios</mat-label>
         <input
           type="text"
-          placeholder="Selecciona un conductor"
+          placeholder="Selecciona un patio"
           matInput
-          formControlName="conductor"
+          formControlName="patio"
           [matAutocomplete]="auto2"
         />
-        <mat-autocomplete #auto2="matAutocomplete">
+        <mat-autocomplete
+          #auto2="matAutocomplete"
+          [displayWith]="displayYardName"
+        >
           <mat-option [value]=""> - </mat-option>
-          <mat-option *ngFor="let option of optionsDrivers" [value]="option">
-            {{ option.nombre_conductor }} - {{ option.cedula }}
+          <mat-option
+            *ngFor="let option of optionsYards | async"
+            [value]="option"
+          >
+            {{ option.name }} - {{ option.id }}
           </mat-option>
         </mat-autocomplete>
       </mat-form-field>
