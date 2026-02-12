@@ -83,9 +83,9 @@ export class SidenavComponent implements OnInit {
       },
       {
         icon: 'car_rental', 
-        label: 'Vehículos a Reparar', 
+        label: 'Vehículos en Reparación', 
         route: '/vehicle-repair',
-        conditions: true
+        conditions: this.permisos.tarea09
       },
       {
         icon: 'garage', 
@@ -115,7 +115,7 @@ export class SidenavComponent implements OnInit {
         icon: 'photo_camera',
         label: 'Firma / Foto',
         action: () => this.openDialogTakeSignaturePhoto(),
-        conditions: true
+        conditions: this.permisos.tarea10
       }
     ];
   }

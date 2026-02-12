@@ -26,6 +26,7 @@ interface Vehicles {
   nro_cupo: string;
   codigo_propietario: string;
   nombre_propietario: string;
+  propietario: string;
 }
 
 interface InspectionTypes {
@@ -169,7 +170,7 @@ export class InspectionsAddDialogComponent implements OnInit {
 
     // Cargar datos en paralelo usando forkJoin
     forkJoin({
-      vehicles: this.apiService.getData('inspections/vehicles_data/' + company),
+      vehicles: this.apiService.getData('vehicles_data/' + company),
       inspectionTypes: this.apiService.getData(
         'inspections/inspection_types/' + company,
       ),
@@ -399,7 +400,7 @@ export class InspectionsAddDialogComponent implements OnInit {
   getDataVehicles() {
     const company = this.getCompany();
     this.apiService
-      .getData('inspections/vehicles_data/' + company)
+      .getData('vehicles_data/' + company)
       .subscribe((data: Vehicles[]) => {
         this.vehicles = [...data];
         this.optionsVehicles = this.inspectionInfoForm
@@ -684,7 +685,8 @@ export class InspectionsAddDialogComponent implements OnInit {
         user: this.jwtService.getUserData()?.id,
         company_code: this.getCompany(),
         vehicle_number: this.vehicleInfo.numero,
-        mechanic_code: this.mainInspectionForm.value.vehicleState.mecanico.code || '',
+        mechanic_code:
+          this.mainInspectionForm.value.vehicleState.mecanico.code || '',
         mileage: this.mainInspectionForm.value.vehicleState.kilometraje || 0,
         inspection_type:
           this.mainInspectionForm.value.inspectionInfo.tipo_inspeccion.id,

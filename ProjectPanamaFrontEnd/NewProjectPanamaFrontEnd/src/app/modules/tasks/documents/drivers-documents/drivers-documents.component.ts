@@ -51,7 +51,7 @@ export class DriversDocumentsComponent implements OnInit {
     private formBuilder: FormBuilder,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
-    private breakpointObserver: BreakpointObserver
+    private breakpointObserver: BreakpointObserver,
   ) {}
 
   ngOnInit(): void {
@@ -73,14 +73,14 @@ export class DriversDocumentsComponent implements OnInit {
   getDataDrivers() {
     const company = this.getCompany();
     this.apiService
-      .getData('inspections/drivers_data/' + company)
+      .getData('drivers_data/' + company)
       .subscribe((data: drivers[]) => {
         this.drivers = [...data]; // Inicializar con todos los datos
         this.optionsDrivers = this.driversForm
           .get('conductor')!
           .valueChanges.pipe(
             startWith(''),
-            map((value) => this._filterDrivers(value || ''))
+            map((value) => this._filterDrivers(value || '')),
           );
         this.isLoading = false;
       });
@@ -94,12 +94,14 @@ export class DriversDocumentsComponent implements OnInit {
     return this.drivers.filter(
       (option) =>
         option.nombre_conductor.toLowerCase().includes(filterValue) ||
-        option.cedula.toLowerCase().includes(filterValue)
+        option.cedula.toLowerCase().includes(filterValue),
     );
   }
 
   displayDriverName(driver: drivers): string {
-    return driver ? `${driver.nombre_conductor} - ${driver.cedula} - ${driver.codigo_conductor}` : '';
+    return driver
+      ? `${driver.nombre_conductor} - ${driver.cedula} - ${driver.codigo_conductor}`
+      : '';
   }
 
   getDocumentsInfoDriver(driver_number: string) {
@@ -173,14 +175,14 @@ export class DriversDocumentsComponent implements OnInit {
 
   validateDocumentDriver(
     document: existDocumentsDrivers,
-    nombreHtml: string
+    nombreHtml: string,
   ): void {
     if (!document) return;
 
     if (!document.folios) {
       this.getDocumentDriver(
         this.driversForm.get('conductor')?.value.codigo_conductor,
-        document.nombre_archivo
+        document.nombre_archivo,
       );
       return;
     }
@@ -201,7 +203,7 @@ export class DriversDocumentsComponent implements OnInit {
       if (result === true) {
         this.getDocumentDriver(
           this.driversForm.get('conductor')?.value.codigo_conductor,
-          document.nombre_archivo
+          document.nombre_archivo,
         );
       }
     });
@@ -217,8 +219,8 @@ export class DriversDocumentsComponent implements OnInit {
 
     const data = {
       driverCode: driverCode,
-      vehicleNumber: ''
-    }
+      vehicleNumber: '',
+    };
 
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
     const dialogWidth = isSmallScreen ? '90vw' : '40%';

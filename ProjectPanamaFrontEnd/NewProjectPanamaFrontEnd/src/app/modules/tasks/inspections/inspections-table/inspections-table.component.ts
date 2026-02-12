@@ -122,7 +122,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
     private dialog: MatDialog,
     private breakpointObserver: BreakpointObserver,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
   ) {
     this.dataSource = new MatTableDataSource<InspectionsInfoData>([]);
   }
@@ -231,7 +231,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
             this.openSnackbar('No se encontraron inspecciones.');
           } else {
             this.openSnackbar(
-              'Error al cargar las inspecciones. Por favor, inténtelo de nuevo más tarde.'
+              'Error al cargar las inspecciones. Por favor, inténtelo de nuevo más tarde.',
             );
           }
           this.isLoadingData = false;
@@ -252,12 +252,12 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
         this.maxDate = new Date(
           parseInt(dateParts[0]),
           parseInt(dateParts[1]) - 1,
-          parseInt(dateParts[2])
+          parseInt(dateParts[2]),
         );
       },
       (error) => {
         this.maxDate = new Date();
-      }
+      },
     );
   }
 
@@ -285,7 +285,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
         .get('propietario')!
         .valueChanges.pipe(
           startWith(''),
-          map((value) => this._filterOwners(value || ''))
+          map((value) => this._filterOwners(value || '')),
         );
     });
   }
@@ -338,37 +338,37 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
 
   filterDriversByOwner(ownerId: string) {
     this.drivers = this.allDrivers.filter(
-      (driver) => driver.codigo_propietario === ownerId
+      (driver) => driver.codigo_propietario === ownerId,
     );
     this.optionsDrivers = this.inspectionForm
       .get('conductor')!
       .valueChanges.pipe(
         startWith(''),
-        map((value) => this._filterDrivers(value || ''))
+        map((value) => this._filterDrivers(value || '')),
       );
   }
 
   filterVehiclesByOwner(ownerId: string) {
     this.vehicles = this.allVehicles.filter(
-      (vehicle) => vehicle.codigo_propietario === ownerId
+      (vehicle) => vehicle.codigo_propietario === ownerId,
     );
     this.optionsVehicles = this.inspectionForm
       .get('vehiculo')!
       .valueChanges.pipe(
         startWith(''),
-        map((value) => this._filterVehicles(value || ''))
+        map((value) => this._filterVehicles(value || '')),
       );
   }
 
   filterDriversByVehicle(numeroUnidad: string) {
     // Encontrar el vehículo seleccionado para obtener su código de conductor
     const selectedVehicle = this.allVehicles.find(
-      (vehicle) => vehicle.numero_unidad === numeroUnidad
+      (vehicle) => vehicle.numero_unidad === numeroUnidad,
     );
     if (selectedVehicle) {
       // Filtrar conductores que puedan manejar este vehículo (mismo numero_unidad)
       this.drivers = this.allDrivers.filter(
-        (driver) => driver.numero_unidad === numeroUnidad
+        (driver) => driver.numero_unidad === numeroUnidad,
       );
     } else {
       this.drivers = [];
@@ -377,7 +377,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
       .get('conductor')!
       .valueChanges.pipe(
         startWith(''),
-        map((value) => this._filterDrivers(value || ''))
+        map((value) => this._filterDrivers(value || '')),
       );
   }
 
@@ -387,7 +387,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
       .get('conductor')!
       .valueChanges.pipe(
         startWith(''),
-        map((value) => this._filterDrivers(value || ''))
+        map((value) => this._filterDrivers(value || '')),
       );
   }
 
@@ -397,7 +397,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
       .get('vehiculo')!
       .valueChanges.pipe(
         startWith(''),
-        map((value) => this._filterVehicles(value || ''))
+        map((value) => this._filterVehicles(value || '')),
       );
   }
 
@@ -409,21 +409,21 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
       .get('conductor')!
       .valueChanges.pipe(
         startWith(''),
-        map((value) => this._filterDrivers(value || ''))
+        map((value) => this._filterDrivers(value || '')),
       );
 
     this.optionsVehicles = this.inspectionForm
       .get('vehiculo')!
       .valueChanges.pipe(
         startWith(''),
-        map((value) => this._filterVehicles(value || ''))
+        map((value) => this._filterVehicles(value || '')),
       );
   }
 
   getDataDrivers() {
     const company = this.getCompany();
     this.apiService
-      .getData('inspections/drivers_data/' + company)
+      .getData('drivers_data/' + company)
       .subscribe((data: drivers[]) => {
         this.allDrivers = data; // Guardar todos los conductores
         this.drivers = [...data]; // Inicializar con todos los datos
@@ -431,7 +431,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
           .get('conductor')!
           .valueChanges.pipe(
             startWith(''),
-            map((value) => this._filterDrivers(value || ''))
+            map((value) => this._filterDrivers(value || '')),
           );
       });
   }
@@ -439,7 +439,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
   getDataVehicles() {
     const company = this.getCompany();
     this.apiService
-      .getData('inspections/vehicles_data/' + company)
+      .getData('vehicles_data/' + company)
       .subscribe((data: vehicles[]) => {
         this.allVehicles = data; // Guardar todos los vehículos
         this.vehicles = [...data]; // Inicializar con todos los datos
@@ -447,12 +447,12 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
           .get('vehiculo')!
           .valueChanges.pipe(
             startWith(''),
-            map((value) => this._filterVehicles(value || ''))
+            map((value) => this._filterVehicles(value || '')),
           );
 
         if (this.idVehicleNumber) {
           const foundVehicle = this.allVehicles.find(
-            (v) => v.numero_unidad === this.idVehicleNumber
+            (v) => v.numero_unidad === this.idVehicleNumber,
           );
 
           if (foundVehicle) {
@@ -460,7 +460,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
             this.getTableData();
           } else {
             this.openSnackbar(
-              'El vehículo seleccionado no existe o no está asignado a su empresa.'
+              'El vehículo seleccionado no existe o no está asignado a su empresa.',
             );
             this.router.navigate(['/inspections']);
           }
@@ -476,7 +476,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
     return this.owners.filter(
       (option) =>
         option.name.toLowerCase().includes(filterValue) ||
-        option.id.toLowerCase().includes(filterValue)
+        option.id.toLowerCase().includes(filterValue),
     );
   }
 
@@ -488,7 +488,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
     return this.drivers.filter(
       (option) =>
         option.nombre_conductor.toLowerCase().includes(filterValue) ||
-        option.cedula.toLowerCase().includes(filterValue)
+        option.cedula.toLowerCase().includes(filterValue),
     );
   }
 
@@ -500,7 +500,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
     return this.vehicles.filter(
       (option) =>
         option.placa_vehiculo.toLowerCase().includes(filterValue) ||
-        option.numero_unidad.toLowerCase().includes(filterValue)
+        option.numero_unidad.toLowerCase().includes(filterValue),
     );
   }
 
@@ -600,7 +600,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
 
           if (data.length === 0) {
             this.openSnackbar(
-              'No se encontraron inspecciones para los criterios seleccionados.'
+              'No se encontraron inspecciones para los criterios seleccionados.',
             );
           } else {
             this.openSnackbar('Inspecciones cargadas correctamente.');
@@ -613,11 +613,11 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
 
           if (error.status === 404) {
             this.openSnackbar(
-              'No se encontraron inspecciones para los criterios seleccionados.'
+              'No se encontraron inspecciones para los criterios seleccionados.',
             );
           } else {
             this.openSnackbar(
-              'Error al cargar las inspecciones. Por favor, inténtelo de nuevo más tarde.'
+              'Error al cargar las inspecciones. Por favor, inténtelo de nuevo más tarde.',
             );
           }
           this.isLoadingData = false;
@@ -748,7 +748,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
   openUploadImagesDialog(inspection: InspectionsInfoData) {
     if (inspection.PuedeEditar !== 1) {
       this.openSnackbar(
-        'Solo puedes editar inspecciones PENDIENTES creadas por ti.'
+        'Solo puedes editar inspecciones PENDIENTES creadas por ti.',
       );
       return;
     }
@@ -797,7 +797,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
       if (result === 'viewPhotos' || result === 'viewSignature') {
         this.openImgDialog(
           this.dataSource.data.find((item) => item.id === inspectionId)!,
-          result
+          result,
         );
       }
     });
@@ -841,7 +841,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
     const data = {
       driverCode: '',
       vehicleNumber: this.idVehicleNumber,
-    }
+    };
 
     const dialogRef = this.dialog.open(InspectionsVehicleInfoComponent, {
       width: dialogWidth,

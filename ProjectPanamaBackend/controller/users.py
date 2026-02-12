@@ -75,6 +75,8 @@ async def process_login(data: userLogin):
         "tarea03": "T",
         "tarea04": "T",
         "tarea05": "T",
+        "tarea09": "T",
+        "tarea10": "T",
         "foto": "../../../../assets/img/taxi.jpg",
         "empresa": "A"
       }
@@ -110,6 +112,8 @@ async def process_login(data: userLogin):
                     PermisosUsuario.TAREA03, 
                     PermisosUsuario.TAREA04, 
                     PermisosUsuario.TAREA05, 
+                    PermisosUsuario.TAREA09, 
+                    PermisosUsuario.TAREA10,
                     PermisosUsuario.FOTO,
                     PermisosUsuario.EMPRESA
                     ) \
@@ -152,6 +156,8 @@ async def process_login(data: userLogin):
       "tarea03": user.TAREA03,
       "tarea04": user.TAREA04,
       "tarea05": user.TAREA05,
+      "tarea09": user.TAREA09,
+      "tarea10": user.TAREA10,
       "foto": user.FOTO if user.FOTO else "../../../../assets/img/taxi.jpg",
       "empresa": user.EMPRESA
     }
