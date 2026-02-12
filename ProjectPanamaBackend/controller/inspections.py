@@ -510,8 +510,6 @@ async def new_inspection_data(company_code: str, vehicle_number: str):
     fecha = now_in_panama.strftime("%d/%m/%Y")
     hora_actual = now_in_panama.strftime("%H:%M:%S")
 
-    print(hora_actual)
-
     # Obtener el archivo de texto para la empresa
     txt_file_path = get_txt_file(vehicle.EMPRESA)
     if txt_file_path:

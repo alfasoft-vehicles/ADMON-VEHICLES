@@ -160,8 +160,6 @@ async def process_login(data: userLogin):
     
     return {'token_cookie': token_cookie, 'token_localStorage': token_localStorage, 'status_code':200}
   except Exception as e:
-    #TODO: Recordar eliminar el print
-    print(f"An error occurred: {e}")
     return {'error': str(e), 'status_code':500}
   finally:
     db.close()
