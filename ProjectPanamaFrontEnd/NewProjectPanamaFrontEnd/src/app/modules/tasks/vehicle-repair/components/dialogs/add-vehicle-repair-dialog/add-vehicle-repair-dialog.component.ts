@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { map, Observable, startWith, forkJoin } from 'rxjs';
+import { map, Observable, startWith, forkJoin, tap } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { JwtService } from 'src/app/services/jwt.service';
 import { TakePhotosRepairComponent } from '../take-photos-repair/take-photos-repair.component';
@@ -19,11 +19,9 @@ interface Vehicles {
   nombre_propietario: string;
   propietario: string;
 }
-
-interface Patio {
+interface yards {
   id: string;
-  codigo: string;
-  nombre: string;
+  name: string;
 }
 
 interface VehicleRepairData {
@@ -39,6 +37,21 @@ interface VehicleRepairData {
   conductor_celular: string;
   fecha: string;
   hora: string;
+}
+
+interface VehicleInfoData {
+  vehicle_number: string;
+  brand: string;
+  model: string;
+  plate: string;
+  vehicle_state: string;
+  owner: string;
+  quota: string;
+  driver_name: string;
+  driver_code: string;
+  driver_phone: string;
+  inspection_date: string;
+  inspection_time: string;
 }
 
 interface VehicleRepairCreateResponse {
@@ -61,7 +74,7 @@ export class AddVehicleRepairDialogComponent implements OnInit {
   vehicles: Vehicles[] = [];
   optionsVehicles!: Observable<Vehicles[]>;
 
-  patios: Patio[] = [];
+  yards: yards[] = [];
 
   loadingVehicleInfo: boolean = false;
   selectedVehicle: boolean = false;
@@ -104,7 +117,7 @@ export class AddVehicleRepairDialogComponent implements OnInit {
 
   getInputsData() {
     this.getDataVehicles();
-    this.getPatios();
+    this.getYards().subscribe();
   }
 
   loadVehicleRepairData(vehicleRepairId: string) {
@@ -117,7 +130,7 @@ export class AddVehicleRepairDialogComponent implements OnInit {
     // Load data in parallel using forkJoin
     forkJoin({
       vehicles: this.apiService.getData('vehicles_data/' + company),
-      patios: this.getMockPatios(),
+      yards: this.getYards(),
       vehicleRepairData: this.getMockVehicleRepairDetails(vehicleRepairId),
     }).subscribe(
       (results: any) => {
@@ -131,7 +144,7 @@ export class AddVehicleRepairDialogComponent implements OnInit {
           );
 
         // Save patios
-        this.patios = [...results.patios];
+        this.yards = [...results.yards];
 
         // Save vehicle repair data
         this.vehicleRepairDataEdit = results.vehicleRepairData;
@@ -152,21 +165,6 @@ export class AddVehicleRepairDialogComponent implements OnInit {
         this.closeDialog();
       },
     );
-  }
-
-  // Mock patios data - TODO: Replace with API call
-  getMockPatios(): Observable<Patio[]> {
-    return new Observable((observer) => {
-      setTimeout(() => {
-        observer.next([
-          { id: '1', codigo: 'PAT001', nombre: 'PATIO PRINCIPAL' },
-          { id: '2', codigo: 'PAT002', nombre: 'PATIO SECUNDARIO' },
-          { id: '3', codigo: 'PAT003', nombre: 'PATIO NORTE' },
-          { id: '4', codigo: 'PAT004', nombre: 'PATIO SUR' },
-        ]);
-        observer.complete();
-      }, 100);
-    });
   }
 
   // Mock vehicle repair details - TODO: Replace with API call
@@ -225,7 +223,7 @@ export class AddVehicleRepairDialogComponent implements OnInit {
 
     // Preselect patio
     if (data.patio) {
-      const patioMatch = this.patios.find((p) => p.id === data.patio.id);
+      const patioMatch = this.yards.find((p) => p.id === data.patio.id);
       if (patioMatch) {
         this.vehicleRepairForm.patchValue({
           patio: patioMatch,
@@ -272,11 +270,13 @@ export class AddVehicleRepairDialogComponent implements OnInit {
       });
   }
 
-  getPatios() {
-    // TODO: Replace with API call when endpoint is available
-    this.getMockPatios().subscribe((data: Patio[]) => {
-      this.patios = [...data];
-    });
+  getYards(): Observable<yards[]> {
+    const company = this.getCompany();
+    return this.apiService.getData('yards/' + company).pipe(
+      tap((data: yards[]) => {
+        this.yards = data.filter((yard) => yard.id);
+      }),
+    );
   }
 
   private _filterVehicles(value: string | Vehicles): Vehicles[] {
@@ -345,22 +345,22 @@ export class AddVehicleRepairDialogComponent implements OnInit {
     const company = this.getCompany();
 
     this.apiService
-      .getData('inspections/new_inspection_data/' + company + '/' + vehicle)
+      .getData('yards/new_vehicle_entry_data/' + company + '/' + vehicle)
       .subscribe(
-        (data: any) => {
+        (data: VehicleInfoData) => {
           this.vehicleInfo = {
-            numero: data.numero,
-            marca: '',
-            modelo: '',
-            placa: data.placa,
-            propietario: data.propietario,
-            estado_vehiculo: data.estado_vehiculo,
-            cupo: data.cupo,
-            conductor_nombre: data.conductor_nombre,
-            conductor_codigo: data.conductor_codigo,
-            conductor_celular: data.conductor_celular,
-            fecha: data.fecha_inspeccion,
-            hora: data.hora_inspeccion,
+            numero: data.vehicle_number,
+            marca: data.brand,
+            modelo: data.model,
+            placa: data.plate,
+            propietario: data.owner,
+            estado_vehiculo: data.vehicle_state,
+            cupo: data.quota,
+            conductor_nombre: data.driver_name,
+            conductor_codigo: data.driver_code,
+            conductor_celular: data.driver_phone,
+            fecha: data.inspection_date,
+            hora: data.inspection_time,
           };
           this.loadingVehicleInfo = false;
           this.selectedVehicle = true;
