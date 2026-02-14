@@ -152,8 +152,8 @@
                 formControlName="patio"
               >
                 <mat-option [value]="null"> - </mat-option>
-                <mat-option *ngFor="let patio of patios" [value]="patio">
-                  {{ patio.codigo }} - {{ patio.nombre }}
+                <mat-option *ngFor="let yard of yards" [value]="yard">
+                  {{ yard.id }} - {{ yard.name }}
                 </mat-option>
               </mat-select>
               <mat-error

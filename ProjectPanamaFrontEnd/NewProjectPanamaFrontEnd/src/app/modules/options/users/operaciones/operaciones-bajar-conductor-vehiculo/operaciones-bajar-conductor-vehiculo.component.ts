@@ -136,7 +136,7 @@ export class OperacionesBajarConductorVehiculoComponent implements OnInit {
 
   getUser() {
     const userData = this.jwtService.getUserData();
-    return userData ? userData.nombre : '';
+    return userData ? userData.id : '';
   }
 
   getVehicles() {
@@ -342,6 +342,9 @@ export class OperacionesBajarConductorVehiculoComponent implements OnInit {
       company_code: this.getCompany(),
       vehicle_number: this.vehicleData.numero,
       driver_number: this.vehicleData.conductor,
+      details: this.reason.value,
+      owed_by_driver: this.savedLiquidationData?.owed_by_driver,
+      user: this.getUser(),
     };
 
     const dialogRef = this.dialog.open(ConfirmActionDialogComponent, {
