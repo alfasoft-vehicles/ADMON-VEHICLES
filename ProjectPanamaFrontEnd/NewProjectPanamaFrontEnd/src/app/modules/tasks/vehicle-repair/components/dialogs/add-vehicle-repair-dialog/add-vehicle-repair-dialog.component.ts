@@ -345,7 +345,7 @@ export class AddVehicleRepairDialogComponent implements OnInit {
     const company = this.getCompany();
 
     this.apiService
-      .getData('yards/new_vehicle_entry_data/' + company + '/' + vehicle)
+      .getData('vehicles_to_repair/new_vehicle_entry_data/' + company + '/' + vehicle)
       .subscribe(
         (data: VehicleInfoData) => {
           this.vehicleInfo = {
