@@ -85,6 +85,8 @@ async def create_vehicle_entry(data: NewVehicleEntry):
     panama_timezone = pytz.timezone('America/Panama')
     now_in_panama = datetime.now(panama_timezone)
 
+    fecha_obj = datetime.strptime(data.date, "%d/%m/%Y").date()
+
     new_entry = VehiculosReparacion(
       EMPRESA=data.company_code,
       UNIDAD=data.vehicle_number,
@@ -98,7 +100,7 @@ async def create_vehicle_entry(data: NewVehicleEntry):
       PATIO=data.yard,
       NOMPATIO=yard.NOMBRE,
       JUSTIFICACION=data.justify,
-      FECHA=data.date,
+      FECHA=fecha_obj,
       HORA=data.time,
       ESTADO="PEN",
       USUARIO=data.user if data.user else "",
