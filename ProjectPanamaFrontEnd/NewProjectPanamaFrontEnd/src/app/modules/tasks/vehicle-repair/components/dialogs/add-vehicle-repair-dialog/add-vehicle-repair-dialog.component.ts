@@ -50,8 +50,8 @@ interface VehicleInfoData {
   driver_name: string;
   driver_code: string;
   driver_phone: string;
-  inspection_date: string;
-  inspection_time: string;
+  date: string;
+  time: string;
 }
 
 interface VehicleRepairCreateResponse {
@@ -359,9 +359,10 @@ export class AddVehicleRepairDialogComponent implements OnInit {
             conductor_nombre: data.driver_name,
             conductor_codigo: data.driver_code,
             conductor_celular: data.driver_phone,
-            fecha: data.inspection_date,
-            hora: data.inspection_time,
+            fecha: data.date,
+            hora: data.time,
           };
+          console.log(this.vehicleInfo);
           this.loadingVehicleInfo = false;
           this.selectedVehicle = true;
         },
@@ -394,14 +395,14 @@ export class AddVehicleRepairDialogComponent implements OnInit {
       return;
     }
 
-    const selectedPatio = this.vehicleRepairForm.get('patio')!.value;
+    const selectedYard = this.vehicleRepairForm.get('patio')!.value;
 
     if (this.isEditMode) {
       // Edit mode - update existing record
       const updateData = {
         vehicle_repair_id: parseInt(this.vehicleRepairId),
         user: this.jwtService.getUserData()?.id,
-        patio_id: selectedPatio.id,
+        patio_id: selectedYard.id,
         description: this.vehicleRepairForm.value.descripcion || '',
       };
 
@@ -423,25 +424,30 @@ export class AddVehicleRepairDialogComponent implements OnInit {
         user: this.jwtService.getUserData()?.id,
         company_code: this.getCompany(),
         vehicle_number: this.vehicleInfo.numero,
-        patio_id: selectedPatio.id,
-        patio_name: selectedPatio.nombre,
-        description: this.vehicleRepairForm.value.descripcion || '',
-        repair_date: this.vehicleInfo.fecha,
-        repair_time: this.vehicleInfo.hora,
+        yard: selectedYard.id,
+        justify: this.vehicleRepairForm.value.descripcion,
+        date: this.vehicleInfo.fecha,
+        time: this.vehicleInfo.hora,
       };
+
+      console.log(newVehicleRepairData);
 
       this.isLoading = true;
 
-      // TODO: Replace with actual API call
-      // Simulating API call with timeout
-      setTimeout(() => {
-        // Simulate response with ID
-        this.vehicleRepairId = Math.floor(Math.random() * 1000).toString();
-        this.isLoading = false;
-        this.openSnackbar(
-          'Registro creado con éxito. Ahora puedes subir las fotos.',
-        );
-      }, 500);
+      this.apiService.postData('vehicles_to_repair/create_vehicle_entry', newVehicleRepairData).subscribe({
+        next: (response: VehicleRepairCreateResponse) => {
+          this.isLoading = false;
+          this.vehicleRepairId = response.id;
+          this.openSnackbar(
+            'Registro creado con éxito. Ahora puedes subir las fotos.',
+          );
+          this.isEditMode = false;
+          this.wasEdited = true;
+        },
+        error: (err) => {
+          this.isLoading = false;
+        },
+      });
     }
   }
 
