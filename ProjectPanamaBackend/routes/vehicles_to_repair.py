@@ -11,3 +11,7 @@ async def get_new_vehicle_entry_data(company_code: str, vehicle_number: str):
 @vehicles_to_repair_router.post("/vehicles_to_repair/create_vehicle_entry/", tags=["Vehicles to Repair"])
 async def post_create_vehicle_entry(data: NewVehicleEntry):
   return await create_vehicle_entry(data)
+
+@vehicles_to_repair_router.post("/vehicles_to_repair/upload_images/{entry_id}/", tags=["Vehicles to Repair"])
+async def post_upload_images(entry_id: int, images: List[UploadFile] = File(...)):
+    return await upload_images(entry_id, images)

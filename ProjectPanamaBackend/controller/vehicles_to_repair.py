@@ -1,4 +1,5 @@
 from fastapi.responses import JSONResponse
+from fastapi import UploadFile, File, BackgroundTasks, HTTPException
 from config.dbconnection import session
 from models.patios import Patios
 from models.vehiculos import Vehiculos
@@ -11,6 +12,14 @@ from schemas.vehicles_to_repair import NewVehicleEntry
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime
 import pytz
+from dotenv import load_dotenv
+from typing import List
+import os
+import shutil
+
+load_dotenv()
+
+upload_directory = os.getenv('DIRECTORY_IMG')
 
 async def new_vehicle_entry_data(company_code: str, vehicle_number: str):
   db = session()
@@ -113,6 +122,66 @@ async def create_vehicle_entry(data: NewVehicleEntry):
 
     return JSONResponse(content={"id": new_entry.ID}, status_code=201)
   except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
+async def upload_images(entry_id: int, images: List[UploadFile] = File(...)):
+  db = session()
+  try:
+
+    entry = db.query(VehiculosReparacion).filter(VehiculosReparacion.ID == entry_id).first()
+    if not entry:
+      raise HTTPException(status_code=404, detail=f"Entrada de vehículo a patio con ID {entry_id} no encontrada.")
+
+    vehicle_number = entry.UNIDAD
+    company_code = entry.EMPRESA
+
+    available_slots = []
+    for i in range(1, 7):
+        column_name = f"FOTO{i:02d}"
+        if not getattr(entry, column_name):
+            available_slots.append(column_name)
+
+    if not available_slots:
+        return JSONResponse(
+            content={"message": "No hay espacios disponibles para guardar más fotos."},
+            status_code=400
+        )
+        
+    full_entry_path = os.path.join(upload_directory, "vehiculos" ,company_code, vehicle_number, "patio", str(entry_id))
+    os.makedirs(full_entry_path, exist_ok=True)
+
+    saved_count = 0
+    for slot_name, image in zip(available_slots, images):
+        
+        _, ext = os.path.splitext(image.filename)
+        new_filename = f"{slot_name.lower()}{ext}"
+        
+        full_file_path = os.path.join(full_entry_path, new_filename)
+        with open(full_file_path, "wb") as buffer:
+            shutil.copyfileobj(image.file, buffer)
+        
+        relative_db_path = os.path.join(company_code, vehicle_number, "patio", str(entry_id), new_filename)
+        normalized_path = relative_db_path.replace("\\", "/") 
+        setattr(entry, slot_name, normalized_path) 
+        saved_count += 1
+
+    entry.ESTADO = "FIN"
+    entry.NRO_FOTOS = saved_count
+
+    db.commit()
+
+    message = f"{saved_count} de {len(images)} imágenes fueron guardadas."
+    if len(images) > saved_count:
+        message += f" {len(images) - saved_count} fueron descartadas por falta de espacio."
+
+    return JSONResponse(content={"message": message}, status_code=201)
+
+  except Exception as e:
+    db.rollback()
     return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()
