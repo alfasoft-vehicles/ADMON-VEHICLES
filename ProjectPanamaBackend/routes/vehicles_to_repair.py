@@ -15,3 +15,7 @@ async def post_create_vehicle_entry(data: NewVehicleEntry):
 @vehicles_to_repair_router.post("/vehicles_to_repair/upload_images/{entry_id}/", tags=["Vehicles to Repair"])
 async def post_upload_images(entry_id: int, images: List[UploadFile] = File(...)):
     return await upload_images(entry_id, images)
+
+@vehicles_to_repair_router.get("/vehicles_to_repair/generate_qr/{entry_id}/", tags=["Vehicles to Repair"])
+async def get_generate_qr(entry_id: int):
+  return await generate_qr(entry_id)

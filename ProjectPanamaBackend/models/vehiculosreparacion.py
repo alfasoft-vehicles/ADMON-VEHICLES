@@ -25,6 +25,7 @@ class VehiculosReparacion(Base):
     FOTO05 = Column(VARCHAR(200), default="")
     FOTO06 = Column(VARCHAR(200), default="")
     NRO_FOTOS = Column(Integer, default=0)
+    DOCQR = Column(VARCHAR(200), default="")
     USUARIO = Column(CHAR(10), nullable=False)
     NOMUSUARIO = Column(CHAR(40), nullable=False)
     ESTADO = Column(VARCHAR(10), nullable=False, default="PEN")
