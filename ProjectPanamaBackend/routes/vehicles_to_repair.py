@@ -27,3 +27,15 @@ async def post_vehicles_info(data: VehicleToRepairInfo, company_code: str):
 @vehicles_to_repair_router.get("/vehicles_to_repair/get_pdf_url/{entry_id}/", tags=["Vehicles to Repair"])
 async def get_pdf_url_route(entry_id: int):
   return await get_pdf_url(entry_id)
+
+@vehicles_to_repair_router.get("/vehicles_to_repair/repair_details/{entry_id}/", tags=["Vehicles to Repair"])
+async def get_repair_details(entry_id: int):
+  return await repair_details(entry_id)
+
+@vehicles_to_repair_router.get("/vehicles_to_repair/get_repair_edit_data/{entry_id}/", tags=["Vehicles to Repair"])
+async def get_repair_edit_data_route(entry_id: int):
+  return await get_repair_edit_data(entry_id)
+
+@vehicles_to_repair_router.put("/vehicles_to_repair/update_repair_entry/{entry_id}/", tags=["Vehicles to Repair"])
+async def put_update_repair_entry(entry_id: int, data: UpdateVehicleRepair):
+  return await update_repair_entry(entry_id, data)

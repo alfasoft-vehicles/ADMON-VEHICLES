@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>Imágenes de la inspección del vehículo {{ data.vehicleNumber }}</h2>
+<h2 mat-dialog-title>Imágenes de la reparación del vehículo {{ data.vehicleNumber }}</h2>
 
 <mat-dialog-content class="mat-typography">
   <div class="image-container" *ngIf="data.images && data.images.length > 0">
@@ -15,8 +15,8 @@
          (mouseleave)="onMouseLeave()">
       <img 
         [src]="getCurrentImage()" 
-        alt="Imagen de inspección" 
-        class="inspection-image"
+        alt="Imagen de reparación" 
+        class="repair-image"
         [style.transform]="getImageTransform()"
         [class.panning]="isPanning"
         (load)="onImageLoad($event)"
@@ -59,7 +59,6 @@
       <!-- Botón de descarga -->
       <button 
         mat-icon-button 
-        
         matTooltip="Descargar imagen"
         class="download-button"
         (click)="downloadCurrentImage()">
@@ -71,7 +70,7 @@
   <!-- Mensaje cuando no hay imágenes -->
   <div class="no-images" *ngIf="!data.images || data.images.length === 0">
     <mat-icon class="no-images-icon">image_not_supported</mat-icon>
-    <p>No hay imágenes disponibles para esta inspección</p>
+    <p>No hay imágenes disponibles para este registro</p>
   </div>
 </mat-dialog-content>
 

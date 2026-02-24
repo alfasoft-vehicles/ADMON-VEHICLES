@@ -131,7 +131,9 @@ export class AddVehicleRepairDialogComponent implements OnInit {
     forkJoin({
       vehicles: this.apiService.getData('vehicles_data/' + company),
       yards: this.getYards(),
-      vehicleRepairData: this.getMockVehicleRepairDetails(vehicleRepairId),
+      vehicleRepairData: this.apiService.getData(
+        `vehicles_to_repair/get_repair_edit_data/${vehicleRepairId}`,
+      ),
     }).subscribe(
       (results: any) => {
         // Save vehicles
@@ -167,30 +169,6 @@ export class AddVehicleRepairDialogComponent implements OnInit {
     );
   }
 
-  // Mock vehicle repair details - TODO: Replace with API call
-  getMockVehicleRepairDetails(id: string): Observable<any> {
-    return new Observable((observer) => {
-      setTimeout(() => {
-        observer.next({
-          id: parseInt(id),
-          unidad: 'TT232',
-          placa: 'EE9910',
-          propietario: 'TOTAL TAXI PANAMA S.A.',
-          estado_vehiculo: 'EN REPARACIÓN',
-          cupo: '8RIO487',
-          conductor_nombre: 'PEDRO GÓMEZ',
-          conductor_codigo: '100',
-          conductor_celular: '6000-0000',
-          fecha: '26-01-2026',
-          hora: '18:05',
-          patio: { id: '1', codigo: 'PAT001', nombre: 'PATIO PRINCIPAL' },
-          descripcion: 'Reparación de frenos y suspensión',
-        });
-        observer.complete();
-      }, 100);
-    });
-  }
-
   populateFormWithVehicleRepairData(data: any) {
     // Preload vehicle info
     this.vehicleInfo = {
@@ -222,7 +200,7 @@ export class AddVehicleRepairDialogComponent implements OnInit {
     }
 
     // Preselect patio
-    if (data.patio) {
+    if (data.patio && data.patio.id) {
       const patioMatch = this.yards.find((p) => p.id === data.patio.id);
       if (patioMatch) {
         this.vehicleRepairForm.patchValue({
@@ -273,8 +251,9 @@ export class AddVehicleRepairDialogComponent implements OnInit {
   getYards(): Observable<yards[]> {
     const company = this.getCompany();
     return this.apiService.getData('yards/' + company).pipe(
-      tap((data: yards[]) => {
-        this.yards = data.filter((yard) => yard.id);
+      map((data: yards[]) => data.filter((yard) => yard.id && yard.id.trim() !== '')),
+      tap((filteredData: yards[]) => {
+        this.yards = filteredData;
       }),
     );
   }
@@ -402,7 +381,6 @@ export class AddVehicleRepairDialogComponent implements OnInit {
     if (this.isEditMode) {
       // Edit mode - update existing record
       const updateData = {
-        vehicle_repair_id: parseInt(this.vehicleRepairId),
         user: this.jwtService.getUserData()?.id,
         patio_id: selectedYard.id,
         description: this.vehicleRepairForm.value.descripcion || '',
@@ -410,16 +388,25 @@ export class AddVehicleRepairDialogComponent implements OnInit {
 
       this.isLoading = true;
 
-      // TODO: Replace with actual API call
-      // Simulating API call with timeout
-      setTimeout(() => {
-        this.isLoading = false;
-        this.openSnackbar(
-          'Registro actualizado con éxito. Ahora puedes subir las fotos.',
-        );
-        this.isEditMode = false;
-        this.wasEdited = true;
-      }, 500);
+      this.apiService
+        .updateData(
+          `vehicles_to_repair/update_repair_entry/${this.vehicleRepairId}`,
+          updateData,
+        )
+        .subscribe({
+          next: () => {
+            this.isLoading = false;
+            this.openSnackbar(
+              'Registro actualizado con éxito. Ahora puedes subir las fotos.',
+            );
+            this.isEditMode = false;
+            this.wasEdited = true;
+          },
+          error: (err) => {
+            this.isLoading = false;
+            this.openSnackbar('Error al actualizar el registro.');
+          },
+        });
     } else {
       // Create mode - create new record
       const newVehicleRepairData = {

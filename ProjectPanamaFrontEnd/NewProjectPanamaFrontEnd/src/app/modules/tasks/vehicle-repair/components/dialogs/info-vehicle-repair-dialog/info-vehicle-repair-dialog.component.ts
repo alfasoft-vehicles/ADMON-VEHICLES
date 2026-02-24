@@ -49,43 +49,35 @@ export class InfoVehicleRepairDialogComponent implements OnInit {
   }
 
   getVehicleRepairDetails(vehicleRepairId: number): void {
-    // TODO: Replace with actual API endpoint when available
-    // For now, using mock data for development
-    setTimeout(() => {
-      this.vehicleRepairData = {
-        id: vehicleRepairId,
-        empresa: 'TOTAL TAXI PANAMA S.A.',
-        fecha: '26-01-2026',
-        hora: '18:05',
-        propietario: '001 - TOTAL TAXI PANAMA S.A.',
-        nombre_propietario: 'TOTAL TAXI PANAMA S.A.',
-        unidad: 'TT232',
-        placa: 'EE9910',
-        cupo: '8RIO487',
-        descripcion: 'Reparación de frenos y suspensión',
-        patio: 'PATIO PRINCIPAL',
-        usuario: 'HECTOR F. VANECAS G.',
-        estado: 'PEN',
-        fotos: ['foto1.jpg', 'foto2.jpg'],
-        qr: 1,
-      };
-      this.isLoading = false;
-    }, 300);
+    this.apiService
+      .getData(`vehicles_to_repair/repair_details/${vehicleRepairId}`)
+      .subscribe({
+        next: (data: VehicleRepairDetails) => {
+          this.vehicleRepairData = data;
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error fetching vehicle repair details:', error);
+          this.openSnackbar('Error al obtener los detalles del vehículo a reparar.');
+          this.closeDialog('');
+        },
+      });
+  }
 
-    // Uncomment when API is ready:
-    // this.apiService
-    //   .getData(`vehicle-repair/details/${vehicleRepairId}`)
-    //   .subscribe({
-    //     next: (data: VehicleRepairDetails) => {
-    //       this.vehicleRepairData = data;
-    //       this.isLoading = false;
-    //     },
-    //     error: (error) => {
-    //       console.error('Error fetching vehicle repair details:', error);
-    //       this.openSnackbar('Error al obtener los detalles del vehículo a reparar.');
-    //       this.closeDialog('');
-    //     },
-    //   });
+  openDocumentPDF(entryId: number) {
+    this.apiService.getData(`vehicles_to_repair/get_pdf_url/${entryId}`).subscribe({
+      next: (response: any) => {
+        if (response.url) {
+          window.open(response.url, '_blank');
+        } else {
+          this.openSnackbar('No se encontró la URL del documento.');
+        }
+      },
+      error: (error) => {
+        console.error('Error fetching PDF URL:', error);
+        this.openSnackbar('Error al obtener el documento.');
+      }
+    });
   }
 
   getStatusText(status: string): string {
