@@ -27,3 +27,7 @@ async def post_vehicles_info(data: VehicleToRepairInfo, company_code: str):
 @vehicles_to_repair_router.get("/vehicles_to_repair/get_pdf_url/{entry_id}/", tags=["Vehicles to Repair"])
 async def get_pdf_url_route(entry_id: int):
   return await get_pdf_url(entry_id)
+
+@vehicles_to_repair_router.get("/vehicles_to_repair/repair_details/{entry_id}/", tags=["Vehicles to Repair"])
+async def get_repair_details(entry_id: int):
+  return await repair_details(entry_id)

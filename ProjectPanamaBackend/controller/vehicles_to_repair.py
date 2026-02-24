@@ -310,9 +310,56 @@ async def get_pdf_url(entry_id: int):
     return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()
-  
-  #-----------------------------------------------------------------------------------------------
-  
+
+#-----------------------------------------------------------------------------------------------
+
+async def repair_details(entry_id: int):
+  db = session()
+  try:
+    entry = db.query(VehiculosReparacion).filter(VehiculosReparacion.ID == entry_id).first()
+    if not entry:
+      return JSONResponse(content={"message": "Record not found"}, status_code=404)
+
+    await update_expired_entries(db, entries_list=[entry])
+
+    company_info = db.query(InfoEmpresas).filter(InfoEmpresas.ID == entry.EMPRESA).first()
+    vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == entry.UNIDAD, Vehiculos.EMPRESA == entry.EMPRESA).first()
+    owner = db.query(Propietarios).filter(Propietarios.CODIGO == entry.PROPI_IDEN, Propietarios.EMPRESA == entry.EMPRESA).first()
+    user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == entry.USUARIO).first()
+
+    fotos = []
+    for i in range(1, 7): 
+      foto_field = f"FOTO{i:02d}"
+      foto_value = getattr(entry, foto_field, "")
+      if foto_value and foto_value.strip(): 
+        foto_url = f"{route_api}uploads/vehiculos/{foto_value}"
+        fotos.append(foto_url)
+
+    repair_data = {
+      "id": entry.ID,
+      "empresa": company_info.NOMBRE if company_info else "",
+      "fecha": entry.FECHA.strftime('%d-%m-%Y') if entry.FECHA else None,
+      "hora": entry.HORA.strftime('%H:%M') if entry.HORA else None,
+      "propietario": (owner.CODIGO + ' - ' + owner.NOMBRE) if owner else entry.PROPI_IDEN,
+      "nombre_propietario": entry.NOMPROPI,
+      "unidad": entry.UNIDAD,
+      "placa": entry.PLACA,
+      "cupo": vehicle.NRO_CUPO if vehicle else entry.NRO_CUPO,
+      "descripcion": entry.JUSTIFICACION,
+      "patio": entry.NOMPATIO,
+      "usuario": user.NOMBRE if user else entry.NOMUSUARIO,
+      "estado": entry.ESTADO,
+      "fotos": fotos,
+      "qr": 1 if entry.DOCQR and entry.DOCQR.strip() else 0
+    }
+
+    return JSONResponse(content=jsonable_encoder(repair_data), status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------  
 async def vehicles_info(data: VehicleToRepairInfo, company_code: str):
   db = session()
   try:
