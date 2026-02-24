@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class NewVehicleEntry(BaseModel):
   user: str
@@ -8,3 +9,11 @@ class NewVehicleEntry(BaseModel):
   justify: str
   date: str
   time: str
+
+class VehicleToRepairInfo(BaseModel):
+    usuario: str
+    propietario: Optional[str] = None
+    patio: Optional[str] = None
+    vehiculo: Optional[str] = None
+    fechaInicial: Optional[str] = None
+    fechaFinal: Optional[str] = None

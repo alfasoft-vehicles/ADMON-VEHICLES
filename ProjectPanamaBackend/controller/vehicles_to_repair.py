@@ -9,7 +9,8 @@ from models.estados import Estados
 from models.permisosusuario import PermisosUsuario
 from models.vehiculosreparacion import VehiculosReparacion
 from models.infoempresas import InfoEmpresas
-from schemas.vehicles_to_repair import NewVehicleEntry
+from schemas.vehicles_to_repair import NewVehicleEntry, VehicleToRepairInfo
+from utils.vehicles_to_repair import update_expired_entries
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime
 import pytz
@@ -26,6 +27,7 @@ PDF_THREAD_POOL = ThreadPoolExecutor(max_workers=4)
 load_dotenv()
 
 upload_directory = os.getenv('DIRECTORY_IMG')
+route_api = os.getenv('ROUTE_API')
 route_app = os.getenv('ROUTE_APP')
 qr_path = 'vehicles_to_repair'
 
@@ -283,6 +285,111 @@ async def generate_qr(entry_id: int):
         headers=headers
       )
 
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+  
+  #-----------------------------------------------------------------------------------------------
+  
+async def get_pdf_url(entry_id: int):
+  db = session()
+  try:
+    entry = db.query(VehiculosReparacion).filter(VehiculosReparacion.ID == entry_id).first()
+    if not entry:
+      return JSONResponse(content={"message": "Record not found"}, status_code=404)
+    
+    if not entry.DOCQR:
+      return JSONResponse(content={"message": "Document not found"}, status_code=404)
+    
+    pdf_url = f"{route_api}uploads/vehiculos/{entry.DOCQR}"
+    
+    return JSONResponse(content={"url": pdf_url}, status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+  
+  #-----------------------------------------------------------------------------------------------
+  
+async def vehicles_info(data: VehicleToRepairInfo, company_code: str):
+  db = session()
+  try:
+    filters = [
+      VehiculosReparacion.EMPRESA == company_code
+    ]
+
+    if data.fechaInicial and data.fechaInicial.strip() and data.fechaFinal and data.fechaFinal.strip():
+        filters.append(VehiculosReparacion.FECHA >= data.fechaInicial)
+        filters.append(VehiculosReparacion.FECHA <= data.fechaFinal)
+    
+    if data.propietario and data.propietario.strip():
+        filters.append(VehiculosReparacion.PROPI_IDEN == data.propietario)
+    
+    if data.patio and data.patio.strip():
+        filters.append(VehiculosReparacion.PATIO == data.patio)
+    
+    if data.vehiculo and data.vehiculo.strip():
+        filters.append(VehiculosReparacion.UNIDAD == data.vehiculo)
+
+    entries = db.query(VehiculosReparacion).filter(*filters).order_by(VehiculosReparacion.FECHA.desc(), VehiculosReparacion.HORA.desc()).all()
+
+    if not entries:
+      return JSONResponse(content={"message": "No records found"}, status_code=404)
+
+    await update_expired_entries(db, entries_list=entries)
+
+    # Obtener todos los vehículos para obtener el campo cupo
+    vehicles = db.query(Vehiculos).filter(Vehiculos.EMPRESA == company_code).all()
+    vehicles_dict = {vehicle.NUMERO: vehicle.NRO_CUPO for vehicle in vehicles}
+
+    entries_data = []
+
+    for entry in entries:
+      fotos = []
+      for i in range(1, 7): 
+        foto_field = f"FOTO{i:02d}"
+        foto_value = getattr(entry, foto_field, "")
+        if foto_value and foto_value.strip(): 
+          foto_url = f"{route_api}uploads/vehiculos/{foto_value}"
+          fotos.append(foto_url)
+
+      puede_editar = 1 if (entry.ESTADO == "PEN" and data.usuario and entry.USUARIO == data.usuario) else 0
+
+      fecha_formateada = None
+      if entry.FECHA:
+        if isinstance(entry.FECHA, str):
+          try:
+            fecha_formateada = datetime.strptime(entry.FECHA, "%Y-%m-%d").strftime('%d-%m-%Y')
+          except:
+            fecha_formateada = entry.FECHA
+        else:
+          fecha_formateada = entry.FECHA.strftime('%d-%m-%Y')
+
+      hora_formateada = None
+      if entry.HORA:
+        if isinstance(entry.HORA, str):
+          hora_formateada = entry.HORA[:5] # Asumiendo HH:MM:SS
+        else:
+          hora_formateada = entry.HORA.strftime('%H:%M')
+
+      entries_data.append({
+        "id": entry.ID,
+        "fecha_hora": f"{fecha_formateada} {hora_formateada}" if fecha_formateada and hora_formateada else None,
+        "unidad": entry.UNIDAD,
+        "placa": entry.PLACA,
+        "cupo": vehicles_dict.get(entry.UNIDAD, ""),
+        "patio": entry.NOMPATIO,
+        "justificacion": entry.JUSTIFICACION,
+        "propietario": entry.NOMPROPI,
+        "usuario": entry.NOMUSUARIO,
+        "estado": entry.ESTADO,
+        "puede_editar": puede_editar,
+        "fotos": fotos
+      })
+
+    return JSONResponse(content=jsonable_encoder(entries_data), status_code=200)
   except Exception as e:
     db.rollback()
     return JSONResponse(content={"message": str(e)}, status_code=500)

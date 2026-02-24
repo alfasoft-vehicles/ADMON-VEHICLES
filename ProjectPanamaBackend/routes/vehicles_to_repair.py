@@ -19,3 +19,11 @@ async def post_upload_images(entry_id: int, images: List[UploadFile] = File(...)
 @vehicles_to_repair_router.get("/vehicles_to_repair/generate_qr/{entry_id}/", tags=["Vehicles to Repair"])
 async def get_generate_qr(entry_id: int):
   return await generate_qr(entry_id)
+
+@vehicles_to_repair_router.post("/vehicles_to_repair/vehicles_info/{company_code}/", tags=["Vehicles to Repair"])
+async def post_vehicles_info(data: VehicleToRepairInfo, company_code: str):
+  return await vehicles_info(data, company_code)
+
+@vehicles_to_repair_router.get("/vehicles_to_repair/get_pdf_url/{entry_id}/", tags=["Vehicles to Repair"])
+async def get_pdf_url_route(entry_id: int):
+  return await get_pdf_url(entry_id)
