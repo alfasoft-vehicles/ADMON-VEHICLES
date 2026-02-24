@@ -17,3 +17,8 @@ class VehicleToRepairInfo(BaseModel):
     vehiculo: Optional[str] = None
     fechaInicial: Optional[str] = None
     fechaFinal: Optional[str] = None
+
+class UpdateVehicleRepair(BaseModel):
+    user: str
+    patio_id: str
+    description: str
