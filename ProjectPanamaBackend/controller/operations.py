@@ -52,7 +52,7 @@ path_10  = os.getenv('DROPBOX_INTEGRATION_PATH_10')
 path_58  = os.getenv('DROPBOX_INTEGRATION_PATH_58')
 PDF_THREAD_POOL = ThreadPoolExecutor(max_workers=2)
 
-async def get_vehicle_operation(vehicle_number: str):
+async def get_vehicle_operation(company_code: str, vehicle_number: str):
   db = session()
   try:
     vehicle_operations = db.query(
@@ -68,6 +68,7 @@ async def get_vehicle_operation(vehicle_number: str):
     ).join(
       Propietarios, Vehiculos.PROPI_IDEN == Propietarios.CODIGO
     ).filter(
+      Vehiculos.EMPRESA == company_code,
       Vehiculos.NUMERO == vehicle_number
     ).first()
 
@@ -108,7 +109,7 @@ async def get_vehicle_operation(vehicle_number: str):
 
 #-----------------------------------------------------------------------------------------------
 
-async def get_driver_operation(driver_number: str):
+async def get_driver_operation(company_code: str, driver_number: str):
   db = session()
   try:
     driver_operations = db.query(
@@ -116,6 +117,7 @@ async def get_driver_operation(driver_number: str):
       Conductores.CELULAR, Conductores.DIRECCION, Conductores.LICEN_NRO, 
       Conductores.LICEN_VCE, Conductores.UND_NRO, Conductores.UND_PRE, Conductores.ESTADO
     ).filter(
+      Conductores.EMPRESA == company_code,
       Conductores.CODIGO == driver_number
     ).first()
 
@@ -145,14 +147,14 @@ async def get_driver_operation(driver_number: str):
 
 #-----------------------------------------------------------------------------------------------
 
-async def delivery_vehicle_driver(data: DeliveryVehicleDriver):
+async def delivery_vehicle_driver(company_code: str, data: DeliveryVehicleDriver):
   db = session()
   try:
-    vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == data.vehicle_number).first()
+    vehicle = db.query(Vehiculos).filter(Vehiculos.EMPRESA == company_code, Vehiculos.NUMERO == data.vehicle_number).first()
     if not vehicle:
       return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
     
-    driver = db.query(Conductores).filter(Conductores.CODIGO == data.driver_number).first()
+    driver = db.query(Conductores).filter(Conductores.EMPRESA == company_code, Conductores.CODIGO == data.driver_number).first()
     if not driver:
       return JSONResponse(content={"message": "Driver not found"}, status_code=404)
     
