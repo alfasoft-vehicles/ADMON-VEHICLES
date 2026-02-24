@@ -1,0 +1,111 @@
+<h2 mat-dialog-title>Imágenes de la reparación del vehículo {{ data.vehicleNumber }}</h2>
+
+<mat-dialog-content class="mat-typography">
+  <div class="image-container" *ngIf="data.images && data.images.length > 0">
+    <!-- Contenedor de la imagen con zoom -->
+    <div class="image-wrapper" 
+         [class.can-pan]="zoomLevel > 1"
+         (wheel)="onWheel($event)"
+         (touchstart)="onTouchStart($event)"
+         (touchmove)="onTouchMove($event)"
+         (touchend)="onTouchEnd($event)"
+         (mousedown)="onMouseDown($event)"
+         (mousemove)="onMouseMove($event)"
+         (mouseup)="onMouseUp()"
+         (mouseleave)="onMouseLeave()">
+      <img 
+        [src]="getCurrentImage()" 
+        alt="Imagen de reparación" 
+        class="repair-image"
+        [style.transform]="getImageTransform()"
+        [class.panning]="isPanning"
+        (load)="onImageLoad($event)"
+        draggable="false">
+    </div>
+    
+    <!-- Controles de zoom -->
+    <div class="zoom-controls">
+      <button 
+        mat-icon-button 
+        (click)="zoomOut()" 
+        [disabled]="!canZoomOut()"
+        matTooltip="Alejar"
+        class="zoom-button">
+        <mat-icon>zoom_out</mat-icon>
+      </button>
+      
+      <span class="zoom-percentage">{{ getZoomPercentage() }}</span>
+      
+      <button 
+        mat-icon-button 
+        (click)="resetZoom()" 
+        matTooltip="Restablecer zoom"
+        class="zoom-button">
+        <mat-icon>zoom_out_map</mat-icon>
+      </button>
+      
+      <button 
+        mat-icon-button 
+        (click)="zoomIn()" 
+        [disabled]="!canZoomIn()"
+        matTooltip="Acercar"
+        class="zoom-button">
+        <mat-icon>zoom_in</mat-icon>
+      </button>
+
+      <!-- Separador visual -->
+      <div class="zoom-separator"></div>
+
+      <!-- Botón de descarga -->
+      <button 
+        mat-icon-button 
+        matTooltip="Descargar imagen"
+        class="download-button"
+        (click)="downloadCurrentImage()">
+        <mat-icon>download</mat-icon>
+      </button>
+    </div>
+  </div>
+  
+  <!-- Mensaje cuando no hay imágenes -->
+  <div class="no-images" *ngIf="!data.images || data.images.length === 0">
+    <mat-icon class="no-images-icon">image_not_supported</mat-icon>
+    <p>No hay imágenes disponibles para este registro</p>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="center">
+  <div class="dialog-actions-container">
+    <!-- Navegación de imágenes -->
+    <div class="navigation-controls">
+      <button 
+        mat-icon-button 
+        (click)="previousImage()" 
+        [disabled]="isFirstImage()"
+        class="nav-button"
+        matTooltip="Imagen anterior">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      
+      <!-- Contador -->
+      <div class="image-counter">
+        {{ getCounterText() }}
+      </div>
+      
+      <button 
+        mat-icon-button 
+        (click)="nextImage()" 
+        [disabled]="isLastImage()"
+        class="nav-button"
+        matTooltip="Imagen siguiente">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+    
+    <!-- Botón cerrar -->
+    <button mat-button mat-dialog-close class="close-button" (click)="closeDialog()">
+      <mat-icon>close</mat-icon>
+      Cerrar
+    </button>
+  </div>
+</mat-dialog-actions>

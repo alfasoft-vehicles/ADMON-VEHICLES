@@ -12,7 +12,7 @@ import { ApiService } from 'src/app/services/api.service';
 import { JwtService } from 'src/app/services/jwt.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
-import { InspectionFinishImagesDialogComponent } from '../../../inspections/inspection-finish-images-dialog/inspection-finish-images-dialog.component';
+import { FinishImagesRepairDialogComponent } from '../dialogs/finish-images-repair-dialog/finish-images-repair-dialog.component';
 
 interface owners {
   id: string;
@@ -426,7 +426,7 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
         const row = this.dataSource.data.find(
           (item) => item.id === vehicleRepairId,
         );
-        if (row) this.openImgDialog(row);
+        if (row) this.openImgDialog(row, 'viewPhotos');
       }
     });
   }
@@ -466,20 +466,26 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
     });
   }
 
-  openImgDialog(row: VehicleRepairData) {
+  openImgDialog(row: VehicleRepairData, action?: string) {
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
     const dialogWidth = isSmallScreen ? '90vw' : '60%';
 
     const data = {
       vehicleNumber: row.Unidad,
       images: row.Fotos,
-      action: 'viewPhotos',
+      action: action || '',
     };
 
-    this.dialog.open(InspectionFinishImagesDialogComponent, {
+    const dialogRef = this.dialog.open(FinishImagesRepairDialogComponent, {
       width: dialogWidth,
       data: data,
       disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result === 'viewPhotos') {
+        this.openInfoVehicleRepairDialog(row.id);
+      }
     });
   }
 
