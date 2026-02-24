@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
@@ -12,6 +12,7 @@ import { ApiService } from 'src/app/services/api.service';
 import { JwtService } from 'src/app/services/jwt.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { InspectionFinishImagesDialogComponent } from '../../../inspections/inspection-finish-images-dialog/inspection-finish-images-dialog.component';
 
 interface owners {
   id: string;
@@ -36,115 +37,32 @@ interface yards {
 export interface VehicleRepairData {
   id: number;
   Fecha: string;
-  Descripcion: string;
   Unidad: string;
   Placa: string;
   Cupo: string;
-  Usuario: string;
+  Patio: string;
+  Justificacion: string;
   Propietario: string;
+  Usuario: string;
   Estado: string;
   PuedeEditar: number;
+  Fotos: string[];
 }
 
-// Datos mockup para la tabla
-const MOCK_DATA: VehicleRepairData[] = [
-  {
-    id: 1,
-    Fecha: '26-01-2026 18:05',
-    Descripcion: 'a',
-    Unidad: 'TT232',
-    Placa: 'EE9910',
-    Cupo: '8RIO487',
-    Usuario: 'HECTOR F. VANECAS G.',
-    Propietario: 'TOTAL TAXI PANAMA S.A.',
-    Estado: 'SUS',
-    PuedeEditar: 0,
-  },
-  {
-    id: 2,
-    Fecha: '21-01-2026 16:43',
-    Descripcion: 'A',
-    Unidad: 'TT232',
-    Placa: 'EE9910',
-    Cupo: '8RIO487',
-    Usuario: 'HECTOR F. VANECAS G.',
-    Propietario: 'TOTAL TAXI PANAMA S.A.',
-    Estado: 'PEN',
-    PuedeEditar: 1,
-  },
-  {
-    id: 3,
-    Fecha: '20-01-2026 15:44',
-    Descripcion: 'a',
-    Unidad: 'TT232',
-    Placa: 'EE9910',
-    Cupo: '8RIO487',
-    Usuario: 'HECTOR F. VANECAS G.',
-    Propietario: 'TOTAL TAXI PANAMA S.A.',
-    Estado: 'SUS',
-    PuedeEditar: 0,
-  },
-  {
-    id: 4,
-    Fecha: '19-01-2026 19:47',
-    Descripcion: 'A',
-    Unidad: 'TT232',
-    Placa: 'EE9910',
-    Cupo: '8RIO487',
-    Usuario: 'HECTOR F. VANECAS G.',
-    Propietario: 'TOTAL TAXI PANAMA S.A.',
-    Estado: 'SUS',
-    PuedeEditar: 0,
-  },
-  {
-    id: 5,
-    Fecha: '19-01-2026 18:32',
-    Descripcion: 'PRUEBA',
-    Unidad: 'TT232',
-    Placa: 'EE9910',
-    Cupo: '8RIO487',
-    Usuario: 'HECTOR F. VANECAS G.',
-    Propietario: 'TOTAL TAXI PANAMA S.A.',
-    Estado: 'SUS',
-    PuedeEditar: 0,
-  },
-  {
-    id: 6,
-    Fecha: '26-11-2025 21:26',
-    Descripcion: 'PRUEBA',
-    Unidad: '0340',
-    Placa: 'EQ8196',
-    Cupo: '13TI716',
-    Usuario: 'HECTOR F. VANECAS G.',
-    Propietario: 'TOTAL TAXI 2',
-    Estado: 'FIN',
-    PuedeEditar: 0,
-  },
-  {
-    id: 7,
-    Fecha: '26-11-2025 21:25',
-    Descripcion: 'PRUEBA',
-    Unidad: 'TT232',
-    Placa: 'EE9910',
-    Cupo: '8RIO487',
-    Usuario: 'HECTOR F. VANECAS G.',
-    Propietario: 'TOTAL TAXI PANAMA S.A.',
-    Estado: 'FIN',
-    PuedeEditar: 0,
-  },
-  {
-    id: 8,
-    Fecha: '08-11-2025 11:37',
-    Descripcion: 'prueba desarrollo',
-    Unidad: 'TT232',
-    Placa: 'EE9910',
-    Cupo: '8RIO487',
-    Usuario: 'HECTOR F. VANECAS G.',
-    Propietario: 'TOTAL TAXI PANAMA S.A.',
-    Estado: 'FIN',
-    PuedeEditar: 0,
-  },
-];
+export interface apiResponse {
+  id: number;
+  fecha_hora: string;
+  unidad: string;
+  placa: string;
+  cupo: string;
+  patio: string;
+  justificacion: string;
+  propietario: string;
+  usuario: string;
+  estado: string;
+  puede_editar: number;
+  fotos: string[];
+}
 
 @Component({
   selector: 'app-table-vehicle-repair',
@@ -157,13 +75,14 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
     'Unidad',
     'Placa',
     'Cupo',
-    'Descripcion',
+    'Patio',
+    'Justificacion',
     'Propietario',
     'Usuario',
     'Estado',
     'Acciones',
   ];
-  dataSource = new MatTableDataSource<VehicleRepairData>(MOCK_DATA);
+  dataSource: MatTableDataSource<VehicleRepairData>;
   isLoadingData = false;
   maxDate = new Date();
 
@@ -193,6 +112,7 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
     private snackBar: MatSnackBar,
     private router: Router,
   ) {
+    this.dataSource = new MatTableDataSource<VehicleRepairData>([]);
     this.vehicleRepairForm = this.fb.group({
       propietario: [''],
       vehiculo: [''],
@@ -203,15 +123,30 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    // TODO: Cambiar a true
-    this.isLoadingData = true;
+    this.getTableData();
     this.getAutocompletesData();
     this.setupListeners();
   }
 
   ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
+    if (this.paginator && this.sort) {
+      this.dataSource.paginator = this.paginator;
+      this.dataSource.sort = this.sort;
+
+      this.dataSource.sortingDataAccessor = (item, property) => {
+        if (property === 'Fecha') {
+          const [datePart, timePart] = item.Fecha.split(' ');
+          const [day, month, year] = datePart.split('-');
+          const dateTimeString = `${year}-${month}-${day}T${timePart}:00`;
+          return new Date(dateTimeString).getTime();
+        }
+        return (item as any)[property];
+      };
+
+      this.sort.active = 'Fecha';
+      this.sort.direction = 'desc';
+      this.dataSource.sort = this.sort;
+    }
   }
 
   getAutocompletesData() {
@@ -237,7 +172,6 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
   getDataOwners() {
     const company = this.getCompany();
     this.apiService.getData('owners/' + company).subscribe((data: owners[]) => {
-      // Filtrar elementos con id vacío antes de almacenarlos
       this.owners = data.filter((owner) => owner.id);
       this.optionsOwners = this.vehicleRepairForm
         .get('propietario')!
@@ -264,16 +198,13 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
     this.vehicleRepairForm
       .get('propietario')
       ?.valueChanges.subscribe((selectedOwner) => {
-        // Limpiar selecciones de conductor y vehículo cuando cambie el propietario
         this.vehicleRepairForm.patchValue({
           vehiculo: '',
         });
 
         if (selectedOwner && selectedOwner.id) {
-          // Filtrar conductores y vehículos por propietario seleccionado
           this.filterVehiclesByOwner(selectedOwner.id);
         } else {
-          // Si no hay propietario seleccionado, mostrar todos
           this.resetFilters();
         }
       });
@@ -288,8 +219,8 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
     this.apiService
       .getData('vehicles_data/' + company)
       .subscribe((data: vehicles[]) => {
-        this.allVehicles = data; // Guardar todos los vehículos
-        this.vehicles = [...data]; // Inicializar con todos los datos
+        this.allVehicles = data;
+        this.vehicles = [...data];
         this.optionsVehicles = this.vehicleRepairForm
           .get('vehiculo')!
           .valueChanges.pipe(
@@ -348,9 +279,7 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
   getDataYards() {
     const company = this.getCompany();
     this.apiService.getData('yards/' + company).subscribe((data: yards[]) => {
-      // Filtrar elementos con id vacío antes de almacenarlos
       this.yards = data.filter((yard) => yard.id);
-      this.isLoadingData = false;
       this.optionsYards = this.vehicleRepairForm
         .get('patio')!
         .valueChanges.pipe(
@@ -399,7 +328,6 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
   clearTableData() {
     if (this.dataSource.data.length > 0) {
       this.dataSource.data = [];
-      // Reinicializar el paginator y sort
       this.initializePaginator();
     }
   }
@@ -410,29 +338,18 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    // Limpiar datos existentes de la tabla
     this.clearTableData();
-
     this.isLoadingData = true;
 
     const formValues = this.vehicleRepairForm.value;
     const user = this.getUserId();
+    const company = this.getCompany();
 
-    // Formatear las fechas para enviar solo YYYY-MM-DD
     const formattedValues = {
       usuario: user,
-      conductor:
-        formValues.conductor && formValues.conductor.codigo_conductor
-          ? formValues.conductor.codigo_conductor
-          : '',
-      propietario:
-        formValues.propietario && formValues.propietario.id
-          ? formValues.propietario.id
-          : '',
-      vehiculo:
-        formValues.vehiculo && formValues.vehiculo.numero_unidad
-          ? formValues.vehiculo.numero_unidad
-          : '',
+      propietario: formValues.propietario?.id || '',
+      vehiculo: formValues.vehiculo?.numero_unidad || '',
+      patio: formValues.patio?.id || '',
       fechaInicial: formValues.fechaInicial
         ? new Date(formValues.fechaInicial).toISOString().split('T')[0]
         : '',
@@ -441,57 +358,44 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
         : '',
     };
 
-    const company = this.getCompany();
+    this.apiService
+      .postData('vehicles_to_repair/vehicles_info/' + company, formattedValues)
+      .subscribe({
+        next: (data: apiResponse[]) => {
+          this.dataSource.data = data.map((item) => ({
+            id: item.id,
+            Fecha: item.fecha_hora,
+            Unidad: item.unidad,
+            Placa: item.placa,
+            Cupo: item.cupo,
+            Patio: item.patio,
+            Justificacion: item.justificacion,
+            Propietario: item.propietario,
+            Usuario: item.usuario,
+            Estado: item.estado,
+            PuedeEditar: item.puede_editar,
+            Fotos: item.fotos || [],
+          }));
 
-    // this.apiService
-    //   .postData('inspections/inspections_info/' + company, formattedValues)
-    //   .subscribe({
-    //     next: (data: apiResponse[]) => {
-    //       this.dataSource.data = data.map((item) => ({
-    //         id: item.id,
-    //         Fecha: item.fecha_hora,
-    //         Tipo: item.tipo_inspeccion,
-    //         Id_Tipo: item.id_tipo_inspeccion,
-    //         Descripcion: item.descripcion,
-    //         Unidad: item.unidad,
-    //         Placa: item.placa,
-    //         Cupo: item.cupo,
-    //         Usuario: item.nombre_usuario,
-    //         Propietario: item.propietario,
-    //         Estado: item.estado_inspeccion,
-    //         PuedeEditar: item.puede_editar,
-    //         Fotos: item.fotos || [],
-    //         Firma: item.firma || [],
-    //       }));
+          this.initializePaginator();
 
-    //       // Reinicializar paginator y sort después de cargar los datos
-    //       this.initializePaginator();
-
-    //       if (data.length === 0) {
-    //         this.openSnackbar(
-    //           'No se encontraron inspecciones para los criterios seleccionados.',
-    //         );
-    //       } else {
-    //         this.openSnackbar('Inspecciones cargadas correctamente.');
-    //       }
-
-    //       this.isLoadingData = false;
-    //     },
-    //     error: (error) => {
-    //       console.error('Error fetching inspections:', error);
-
-    //       if (error.status === 404) {
-    //         this.openSnackbar(
-    //           'No se encontraron inspecciones para los criterios seleccionados.',
-    //         );
-    //       } else {
-    //         this.openSnackbar(
-    //           'Error al cargar las inspecciones. Por favor, inténtelo de nuevo más tarde.',
-    //         );
-    //       }
-    //       this.isLoadingData = false;
-    //     },
-    //   });
+          if (data.length === 0) {
+            this.openSnackbar('No se encontraron registros.');
+          } else {
+            this.openSnackbar('Registros cargados correctamente.');
+          }
+          this.isLoadingData = false;
+        },
+        error: (error) => {
+          console.error('Error fetching vehicles to repair:', error);
+          if (error.status === 404) {
+            this.openSnackbar('No se encontraron registros.');
+          } else {
+            this.openSnackbar('Error al cargar los registros.');
+          }
+          this.isLoadingData = false;
+        },
+      });
   }
 
   getEstadoText(estado: string): string {
@@ -518,9 +422,11 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      if (result === 'viewPhotos' || result === 'viewQR') {
-        // TODO: Handle photo/QR viewing in future implementation
-        console.log('Action requested:', result);
+      if (result === 'viewPhotos') {
+        const row = this.dataSource.data.find(
+          (item) => item.id === vehicleRepairId,
+        );
+        if (row) this.openImgDialog(row);
       }
     });
   }
@@ -537,8 +443,7 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result === 'refresh') {
-        // TODO: Refresh table data
-        console.log('Refreshing table data...');
+        this.getTableData();
       }
     });
   }
@@ -556,8 +461,40 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result === 'refresh') {
-        // TODO: Refresh table data
-        console.log('Refreshing table data...');
+        this.getTableData();
+      }
+    });
+  }
+
+  openImgDialog(row: VehicleRepairData) {
+    const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
+    const dialogWidth = isSmallScreen ? '90vw' : '60%';
+
+    const data = {
+      vehicleNumber: row.Unidad,
+      images: row.Fotos,
+      action: 'viewPhotos',
+    };
+
+    this.dialog.open(InspectionFinishImagesDialogComponent, {
+      width: dialogWidth,
+      data: data,
+      disableClose: true,
+    });
+  }
+
+  openDocumentPDF(entryId: number) {
+    this.apiService.getData(`vehicles_to_repair/get_pdf_url/${entryId}`).subscribe({
+      next: (response: any) => {
+        if (response.url) {
+          window.open(response.url, '_blank');
+        } else {
+          this.openSnackbar('No se encontró la URL del documento.');
+        }
+      },
+      error: (error) => {
+        console.error('Error fetching PDF URL:', error);
+        this.openSnackbar('Error al obtener el documento.');
       }
     });
   }
