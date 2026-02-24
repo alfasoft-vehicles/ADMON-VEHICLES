@@ -345,7 +345,9 @@ export class AddVehicleRepairDialogComponent implements OnInit {
     const company = this.getCompany();
 
     this.apiService
-      .getData('vehicles_to_repair/new_vehicle_entry_data/' + company + '/' + vehicle)
+      .getData(
+        'vehicles_to_repair/new_vehicle_entry_data/' + company + '/' + vehicle,
+      )
       .subscribe(
         (data: VehicleInfoData) => {
           this.vehicleInfo = {
@@ -434,48 +436,59 @@ export class AddVehicleRepairDialogComponent implements OnInit {
 
       this.isLoading = true;
 
-      this.apiService.postData('vehicles_to_repair/create_vehicle_entry', newVehicleRepairData).subscribe({
-        next: (response: VehicleRepairCreateResponse) => {
-          this.isLoading = false;
-          this.vehicleRepairId = response.id;
-          this.openSnackbar(
-            'Registro creado con éxito. Ahora puedes subir las fotos.',
-          );
-          this.isEditMode = false;
-          this.wasEdited = true;
-        },
-        error: (err) => {
-          this.isLoading = false;
-        },
-      });
+      this.apiService
+        .postData(
+          'vehicles_to_repair/create_vehicle_entry',
+          newVehicleRepairData,
+        )
+        .subscribe({
+          next: (response: VehicleRepairCreateResponse) => {
+            this.isLoading = false;
+            this.vehicleRepairId = response.id;
+            this.openSnackbar(
+              'Registro creado con éxito. Ahora puedes subir las fotos.',
+            );
+            this.isEditMode = false;
+            this.wasEdited = true;
+          },
+          error: (err) => {
+            this.isLoading = false;
+          },
+        });
     }
   }
 
   uploadImages() {
     if (this.takePhotosRepairComponent) {
+      if (this.takePhotosRepairComponent.photos.length === 0) {
+        this.openSnackbar(
+          'Realiza la captura de las fotos para guardar el registro',
+        );
+        return;
+      }
       this.isLoading = true;
       this.takePhotosRepairComponent.sendAllPhotos().subscribe({
         next: (response) => {
-          this.isLoading = false;
           this.openSnackbar('Todas las fotos se han subido con éxito.');
+          this.openQRPdf();
         },
         error: (err) => {
+          this.openSnackbar('Error al subir las fotos.');
           this.isLoading = false;
         },
       });
     }
   }
 
-  // Called when user clicks "Subir Fotos" - for now just closes without calling endpoint
-  finishAndUpload() {
-    // TODO: When API is ready, call uploadImages() here first
-    // For now, just close the dialog and refresh
-    this.openSnackbar('Registro guardado correctamente.');
-    this.closeDialog('refresh');
+  openQRPdf() {
+    const QRPdfEndpoint = 'vehicles_to_repair/generate_qr/' + this.vehicleRepairId;
+    localStorage.setItem('pdfEndpoint', QRPdfEndpoint);
+    window.open(`/pdf`, '_blank')
+    this.closeDialog();
   }
 
-  finishVehicleRepair() {
-    this.closeDialog('refresh');
+  finishAndUpload() {
+    this.uploadImages();
   }
 
   closeDialog(result?: string) {

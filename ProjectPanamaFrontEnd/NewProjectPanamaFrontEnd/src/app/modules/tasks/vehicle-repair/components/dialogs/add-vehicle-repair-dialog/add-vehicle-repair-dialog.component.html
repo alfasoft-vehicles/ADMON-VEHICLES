@@ -208,7 +208,7 @@
   <!-- Empezar: shown only in CREATE mode (form visible, no ID yet) -->
   <button
     mat-button
-    [disabled]="vehicleRepairForm.invalid || loadingVehicleInfo"
+    [disabled]="vehicleRepairForm.invalid || loadingVehicleInfo || isLoading"
     (click)="startVehicleRepair()"
     *ngIf="vehicleRepairId === '' && !isEditMode"
   >
@@ -218,7 +218,7 @@
   <!-- Guardar: shown only in EDIT mode -->
   <button
     mat-button
-    [disabled]="loadingVehicleInfo"
+    [disabled]="loadingVehicleInfo || isLoading"
     (click)="onSaveOrNext()"
     *ngIf="isEditMode"
   >
@@ -228,7 +228,7 @@
   <!-- Subir Fotos: shown only in PHOTO mode (has ID, not editing) -->
   <button
     mat-button
-    [disabled]="loadingVehicleInfo"
+    [disabled]="loadingVehicleInfo || isLoading"
     (click)="finishAndUpload()"
     *ngIf="vehicleRepairId !== '' && !isEditMode"
   >
