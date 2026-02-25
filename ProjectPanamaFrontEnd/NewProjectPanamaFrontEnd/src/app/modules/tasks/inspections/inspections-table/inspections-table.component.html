@@ -10,7 +10,7 @@
   <div class="action-buttons-top" *ngIf="!isLoadingData">
     <!-- Botones cuando hay idVehicleNumber -->
     <ng-container *ngIf="idVehicleNumber">
-      <button mat-raised-button class="button btn-regresar" routerLink="/inspections">
+      <button mat-raised-button class="button btn-regresar" (click)="goBack()">
         Regresar
       </button>
       <button
@@ -191,7 +191,7 @@
         >
           Buscar
         </button>
-        <button mat-raised-button class="button btn-regresar" routerLink="/inspections" *ngIf="idVehicleNumber">
+        <button mat-raised-button class="button btn-regresar" (click)="goBack()" *ngIf="idVehicleNumber">
           Regresar
         </button>
         <button mat-raised-button class="button btn-info" (click)="openInfoVehicle()" *ngIf="idVehicleNumber">

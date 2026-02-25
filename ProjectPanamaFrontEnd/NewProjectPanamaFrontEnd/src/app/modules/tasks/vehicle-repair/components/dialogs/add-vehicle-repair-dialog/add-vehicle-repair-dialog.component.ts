@@ -112,6 +112,11 @@ export class AddVehicleRepairDialogComponent implements OnInit {
       this.getInputsData();
       this.resetVehicleInfo();
       this.initForms();
+
+      if (this.data && this.data.vehicleNumber) {
+        this.loadingVehicleInfo = true;
+        this.getVehicleInfo(this.data.vehicleNumber);
+      }
     }
   }
 

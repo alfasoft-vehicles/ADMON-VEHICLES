@@ -82,6 +82,7 @@ export interface apiResponse {
 export class InspectionsTableComponent implements OnInit, AfterViewInit {
   inspectionForm!: FormGroup;
   idVehicleNumber!: string;
+  fromSource!: string | null;
   owners: owners[] = [];
   drivers: drivers[] = [];
   vehicles: vehicles[] = [];
@@ -134,6 +135,10 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
       vehiculo: [''],
       fechaInicial: ['', Validators.required],
       fechaFinal: ['', Validators.required],
+    });
+
+    this.route.queryParamMap.subscribe((params) => {
+      this.fromSource = params.get('from');
     });
 
     this.route.paramMap.subscribe((params) => {
@@ -847,5 +852,13 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
       width: dialogWidth,
       data: data,
     });
+  }
+
+  goBack() {
+    if (this.fromSource === 'vehicle-repair' && this.idVehicleNumber) {
+      this.router.navigate(['/vehicle-repair', this.idVehicleNumber]);
+    } else {
+      this.router.navigate(['/inspections']);
+    }
   }
 }

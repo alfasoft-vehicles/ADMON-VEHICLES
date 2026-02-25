@@ -32,7 +32,7 @@ load_dotenv()
 upload_directory = os.getenv('DIRECTORY_IMG')
 route_api = os.getenv('ROUTE_API')
 route_app = os.getenv('ROUTE_APP')
-qr_path = 'vehicles_to_repair'
+qr_path = 'vehicle-repair'
 
 async def get_repair_edit_data(entry_id: int):
   db = session()

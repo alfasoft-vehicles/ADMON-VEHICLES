@@ -44,7 +44,7 @@
         </div>
 
         <!-- Vehicle autocomplete (only in create mode) -->
-        <div class="inputs-container" *ngIf="!isLoading && !isEditMode">
+        <div class="inputs-container" *ngIf="!isLoading && !isEditMode && !(data && data.vehicleNumber)">
           <mat-form-field class="field-input">
             <mat-label>Vehículo</mat-label>
             <input
@@ -80,17 +80,17 @@
         </div>
 
         <ng-container *ngIf="selectedVehicle && !isLoading">
-          <!-- Vehicle info readonly (shown in EDIT mode at the top) -->
+          <!-- Vehicle info readonly (shown in EDIT mode OR specialized flow at the top) -->
           <div
             class="inputs-container"
-            *ngIf="isEditMode && selectedVehicleObject"
+            *ngIf="(isEditMode && selectedVehicleObject) || (data && data.vehicleNumber)"
           >
             <mat-form-field class="field-input">
               <mat-label>Vehículo</mat-label>
               <input
                 matInput
                 readonly
-                [value]="displayVehicleData(selectedVehicleObject)"
+                [value]="isEditMode && selectedVehicleObject ? displayVehicleData(selectedVehicleObject) : vehicleInfo.numero + ' - ' + vehicleInfo.placa + ' - ' + vehicleInfo.marca + ' ' + vehicleInfo.modelo"
               />
             </mat-form-field>
           </div>

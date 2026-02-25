@@ -1,10 +1,23 @@
 <div class="main-container">
   <div class="title-container">
-    <h1 class="title">Vehículos en Reparación (Patios)</h1>
+    <h1 class="title" *ngIf="!idVehicleNumber">
+      Vehículos en Reparación (Patios)
+    </h1>
+    <h1 class="title" *ngIf="idVehicleNumber">
+      Vehículo en Reparación (Patios) de {{ idVehicleNumber }}
+    </h1>
   </div>
 
   <!-- Botones de acción principales (visible en mobile arriba) -->
   <div class="action-buttons-top" *ngIf="!isLoadingData">
+    <button
+      mat-raised-button
+      class="button btn-regresar"
+      routerLink="/vehicle-repair"
+      *ngIf="idVehicleNumber"
+    >
+      Regresar
+    </button>
     <button
       mat-raised-button
       class="button btn-nueva"
@@ -12,11 +25,27 @@
     >
       Nueva
     </button>
-    <button mat-raised-button class="button btn-reporte" (click)="getPdfData()">Reporte</button>
+    <button
+      mat-raised-button
+      class="button btn-info"
+      [routerLink]="['/inspections', idVehicleNumber]"
+      [queryParams]="{ from: 'vehicle-repair' }"
+      *ngIf="idVehicleNumber"
+    >
+      Inspecciones
+    </button>
+    <button
+      mat-raised-button
+      class="button btn-reporte"
+      (click)="getPdfData()"
+      *ngIf="!idVehicleNumber"
+    >
+      Reporte
+    </button>
   </div>
 
-  <form [formGroup]="vehicleRepairForm" *ngIf="!isLoadingData">
-    <div class="inputs-container">
+  <form [formGroup]="vehicleRepairForm" *ngIf="!isLoadingData" [class.unit-mode-form]="idVehicleNumber">
+    <div class="inputs-container" *ngIf="!idVehicleNumber">
       <mat-form-field class="field-input">
         <mat-label>Propietarios</mat-label>
         <input
@@ -89,7 +118,7 @@
     </div>
 
     <div class="inputs-container">
-      <mat-form-field class="field-input" (click)="datepicker.open()">
+      <mat-form-field class="field-input" (click)="datepicker.open()" *ngIf="!idVehicleNumber">
         <input
           matInput
           placeholder="Selecciona una fecha inicial"
@@ -111,7 +140,7 @@
         </mat-error>
       </mat-form-field>
 
-      <mat-form-field class="field-input" (click)="datepicker2.open()">
+      <mat-form-field class="field-input" (click)="datepicker2.open()" *ngIf="!idVehicleNumber">
         <input
           matInput
           placeholder="Selecciona una fecha final"
@@ -133,9 +162,38 @@
         </mat-error>
       </mat-form-field>
 
-      <div class="field-input buttons-container">
-        <button mat-raised-button class="button btn-buscar" (click)="getTableData()">Buscar</button>
-        <button mat-raised-button class="button btn-reporte-desktop" (click)="getPdfData()">
+      <div class="field-input buttons-container" [class.vehicle-mode]="idVehicleNumber">
+        <button
+          mat-raised-button
+          class="button btn-buscar"
+          (click)="getTableData()"
+          *ngIf="!idVehicleNumber"
+        >
+          Buscar
+        </button>
+        <button
+          mat-raised-button
+          class="button btn-regresar"
+          routerLink="/vehicle-repair"
+          *ngIf="idVehicleNumber"
+        >
+          Regresar
+        </button>
+        <button
+          mat-raised-button
+          class="button btn-info"
+          [routerLink]="['/inspections', idVehicleNumber]"
+          [queryParams]="{ from: 'vehicle-repair' }"
+          *ngIf="idVehicleNumber"
+        >
+          Inspecciones
+        </button>
+        <button
+          mat-raised-button
+          class="button btn-reporte-desktop"
+          (click)="getPdfData()"
+          *ngIf="!idVehicleNumber"
+        >
           Reporte
         </button>
         <button

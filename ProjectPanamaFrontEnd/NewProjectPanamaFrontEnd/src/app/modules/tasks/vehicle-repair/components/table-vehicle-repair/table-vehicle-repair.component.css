@@ -44,6 +44,20 @@
   width: 100%;
 }
 
+/* Estilos para el botón Regresar */
+.btn-regresar {
+  background-color: #fde1e1 !important;
+}
+
+.btn-regresar:hover {
+  background-color: #ffcdcd !important;
+}
+
+/* Cuando hay idVehicleNumber, aumentar el ancho del contenedor de botones */
+.buttons-container.vehicle-mode {
+  width: 50%;
+}
+
 /* Ocultar botones superiores en desktop */
 .action-buttons-top {
   display: none;
@@ -181,6 +195,13 @@ td:first-child {
   /* Ocultar botones Nueva y Reporte del contenedor inferior en mobile */
   .buttons-container .btn-nueva-desktop,
   .buttons-container .btn-reporte-desktop {
+    display: none;
+  }
+
+  /* Ocultar botones del modo vehicle en el contenedor inferior en mobile */
+  .buttons-container.vehicle-mode .btn-regresar,
+  .buttons-container.vehicle-mode .btn-info,
+  .buttons-container.vehicle-mode .btn-nueva-desktop {
     display: none;
   }
 

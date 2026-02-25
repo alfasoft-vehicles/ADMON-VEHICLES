@@ -3,10 +3,8 @@ import { RouterModule, Routes } from '@angular/router';
 import { TableVehicleRepairComponent } from './components/table-vehicle-repair/table-vehicle-repair.component';
 
 const routes: Routes = [
-  {
-    path: '',
-    component: TableVehicleRepairComponent
-  }
+  { path: '', component: TableVehicleRepairComponent },
+  { path: ':id', component: TableVehicleRepairComponent },
 ];
 
 @NgModule({

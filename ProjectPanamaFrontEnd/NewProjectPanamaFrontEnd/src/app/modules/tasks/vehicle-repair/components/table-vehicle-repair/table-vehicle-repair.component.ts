@@ -11,7 +11,7 @@ import { map, Observable, startWith } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { JwtService } from 'src/app/services/jwt.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { FinishImagesRepairDialogComponent } from '../dialogs/finish-images-repair-dialog/finish-images-repair-dialog.component';
 
 interface owners {
@@ -112,6 +112,7 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
     private jwtService: JwtService,
     private snackBar: MatSnackBar,
     private router: Router,
+    private route: ActivatedRoute,
   ) {
     this.dataSource = new MatTableDataSource<VehicleRepairData>([]);
     this.vehicleRepairForm = this.fb.group({
@@ -124,9 +125,27 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.getTableInitialData();
-    this.getAutocompletesData();
-    this.setupListeners();
+    this.route.paramMap.subscribe((params) => {
+      const id = params.get('id');
+      this.isLoadingData = true;
+
+      if (id) {
+        this.idVehicleNumber = id;
+
+        // Eliminar validadores de fecha solo para este caso
+        this.vehicleRepairForm.get('fechaInicial')?.clearValidators();
+        this.vehicleRepairForm.get('fechaInicial')?.updateValueAndValidity();
+        this.vehicleRepairForm.get('fechaFinal')?.clearValidators();
+        this.vehicleRepairForm.get('fechaFinal')?.updateValueAndValidity();
+
+        this.setupOwnerListener();
+      } else {
+        this.getTableInitialData();
+        this.setupOwnerListener();
+      }
+
+      this.getAutocompletesData();
+    });
   }
 
   ngAfterViewInit(): void {
@@ -491,15 +510,32 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
     const dialogWidth = isSmallScreen ? '95vw' : '70%';
 
+    const dialogData = this.idVehicleNumber
+      ? { vehicleNumber: this.idVehicleNumber }
+      : undefined;
+
     const dialogRef = this.dialog.open(AddVehicleRepairDialogComponent, {
       width: dialogWidth,
       maxWidth: '900px',
       disableClose: true,
+      data: dialogData,
     });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result === 'refresh') {
-        this.getTableData();
+        const formValues = this.vehicleRepairForm.value;
+        const hasFilter =
+          formValues.propietario ||
+          formValues.vehiculo ||
+          formValues.patio ||
+          formValues.fechaInicial ||
+          formValues.fechaFinal ||
+          this.idVehicleNumber;
+        if (hasFilter) {
+          this.getTableData();
+        } else {
+          this.getTableInitialData();
+        }
       }
     });
   }
