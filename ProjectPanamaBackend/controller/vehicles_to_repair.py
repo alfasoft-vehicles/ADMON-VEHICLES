@@ -20,7 +20,10 @@ import os
 import shutil
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from utils.pdf import qr_pdf
+from utils.pdf import qr_pdf, html2pdf
+from collections import defaultdict
+import jinja2
+import tempfile
 
 PDF_THREAD_POOL = ThreadPoolExecutor(max_workers=4)
 
@@ -373,9 +376,180 @@ async def generate_qr(entry_id: int):
     return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()
-  
-  #-----------------------------------------------------------------------------------------------
-  
+
+#-----------------------------------------------------------------------------------------------
+
+async def report_repairs(data: VehicleToRepairInfo, company_code: str):
+  db = session()
+  try:
+    filters = [
+      VehiculosReparacion.EMPRESA == company_code
+    ]
+
+    if data.fechaInicial and data.fechaInicial.strip() and data.fechaFinal and data.fechaFinal.strip():
+        filters.append(VehiculosReparacion.FECHA >= data.fechaInicial)
+        filters.append(VehiculosReparacion.FECHA <= data.fechaFinal)
+    
+    if data.propietario and data.propietario.strip():
+        filters.append(VehiculosReparacion.PROPI_IDEN == data.propietario)
+    
+    if data.patio and data.patio.strip():
+        filters.append(VehiculosReparacion.PATIO == data.patio)
+    
+    if data.vehiculo and data.vehiculo.strip():
+        filters.append(VehiculosReparacion.UNIDAD == data.vehiculo)
+
+    entries = db.query(VehiculosReparacion).filter(*filters).order_by(VehiculosReparacion.FECHA.desc(), VehiculosReparacion.HORA.desc()).all()
+
+    if not entries:
+      return JSONResponse(content={"message": "No records found"}, status_code=404)
+
+    await update_expired_entries(db, entries_list=entries)
+
+    owners_dict = defaultdict(list)
+
+    for entry in entries:
+      fecha_formateada = entry.FECHA.strftime('%d-%m-%Y') if entry.FECHA else ""
+      hora_formateada = entry.HORA.strftime('%H:%M') if entry.HORA else ""
+      
+      fotos = []
+      for i in range(1, 7): 
+        foto_field = f"FOTO{i:02d}"
+        foto_value = getattr(entry, foto_field, "")
+        if foto_value and foto_value.strip(): 
+          foto_url = f"{route_api}uploads/vehiculos/{foto_value}"
+          fotos.append(foto_url)
+
+      repair_info = {
+        "id": entry.ID,
+        "fecha_hora": f"{fecha_formateada} {hora_formateada}",
+        "unidad": entry.UNIDAD,
+        "placa": entry.PLACA,
+        "cupo": entry.NRO_CUPO,
+        "patio": entry.NOMPATIO,
+        "justificacion": entry.JUSTIFICACION,
+        "estado": entry.ESTADO,
+        "usuario": entry.NOMUSUARIO,
+        "fotos": fotos
+      }
+      owners_dict[entry.PROPI_IDEN].append(repair_info)
+
+    result = []
+    for owner_code, repairs in owners_dict.items():
+      owner = db.query(Propietarios).filter(Propietarios.CODIGO == owner_code, Propietarios.EMPRESA == company_code).first()
+      result.append({
+        "codigo_propietario": owner_code,
+        "nombre_propietario": owner.NOMBRE if owner else owner_code,
+        "cantidad_registros": len(repairs),
+        "repairs": repairs
+      })
+
+    user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.usuario).first()
+    
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    
+    data_view = {
+      'repairs': result,
+      'fechas': {
+            "fecha_inicial": datetime.strptime(data.fechaInicial, "%Y-%m-%d").strftime("%d/%m/%Y") if data.fechaInicial else "",
+            "fecha_final": datetime.strptime(data.fechaFinal, "%Y-%m-%d").strftime("%d/%m/%Y") if data.fechaFinal else ""
+        },
+      'total_registros': len(entries),
+      'fecha': now_in_panama.strftime("%d/%m/%Y"),
+      'hora': now_in_panama.strftime("%I:%M:%S %p"),
+      'usuario': user.NOMBRE if user else data.usuario,
+      'titulo': 'Reporte de Vehículos en Reparación'
+    }
+
+    headers = {
+      "Content-Disposition": "attachment; filename=reporte-reparaciones.pdf"
+    }
+
+    template_loader = jinja2.FileSystemLoader(searchpath="./templates")
+    template_env = jinja2.Environment(loader=template_loader)
+    
+    template = template_env.get_template("ReporteVehiculosReparacion.html")
+    header = template_env.get_template("header.html")
+    footer = template_env.get_template("footer.html")
+    
+    output_text = template.render(data_view=data_view)
+    output_header = header.render(data_view=data_view)
+    output_footer = footer.render(data_view=data_view)
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w') as html_file:
+      html_path = html_file.name
+      html_file.write(output_text)
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w') as header_file:
+      header_path = header_file.name
+      header_file.write(output_header)
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w') as footer_file:
+      footer_path = footer_file.name
+      footer_file.write(output_footer)
+    
+    pdf_path = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf').name
+
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(
+      PDF_THREAD_POOL,
+      html2pdf,
+      data_view['titulo'],
+      html_path,
+      pdf_path,
+      header_path,
+      footer_path
+    )
+
+    background_tasks = BackgroundTasks()
+    background_tasks.add_task(os.remove, html_path)
+    background_tasks.add_task(os.remove, header_path)
+    background_tasks.add_task(os.remove, footer_path)
+    background_tasks.add_task(os.remove, pdf_path)
+
+    return FileResponse(
+        pdf_path, 
+        media_type='application/pdf', 
+        filename='reporte-reparaciones.pdf', 
+        headers=headers,
+        background=background_tasks
+      )
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
+async def download_image_by_url(image_url: str):
+  try:
+    if "/uploads/" not in image_url:
+      return JSONResponse(content={"message": "URL no válida"}, status_code=400)
+    
+    relative_path = image_url.split("/uploads/")[1]
+    
+    full_image_path = os.path.join(upload_directory, "vehiculos", relative_path)
+    
+    if not os.path.exists(full_image_path):
+      return JSONResponse(content={"message": "Imagen no encontrada"}, status_code=404)
+    
+    filename = os.path.basename(full_image_path)
+    
+    headers = {
+      "Content-Disposition": f"attachment; filename={filename}"
+    }
+    
+    return FileResponse(
+      path=full_image_path,
+      media_type='image/jpeg',
+      filename=filename,
+      headers=headers
+    )
+    
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+
+#-----------------------------------------------------------------------------------------------
+
 async def get_pdf_url(entry_id: int):
   db = session()
   try:

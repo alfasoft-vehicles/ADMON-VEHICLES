@@ -22,3 +22,6 @@ class UpdateVehicleRepair(BaseModel):
     user: str
     patio_id: str
     description: str
+
+class DownloadImageRequest(BaseModel):
+    image_url: str

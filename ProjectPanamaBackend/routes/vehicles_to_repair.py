@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, UploadFile, File
+from typing import List
 from controller.vehicles_to_repair import *
 from schemas.vehicles_to_repair import *
 
@@ -39,3 +40,11 @@ async def get_repair_edit_data_route(entry_id: int):
 @vehicles_to_repair_router.put("/vehicles_to_repair/update_repair_entry/{entry_id}/", tags=["Vehicles to Repair"])
 async def put_update_repair_entry(entry_id: int, data: UpdateVehicleRepair):
   return await update_repair_entry(entry_id, data)
+
+@vehicles_to_repair_router.post("/vehicles_to_repair/report_repairs/{company_code}/", tags=["Vehicles to Repair"])
+async def post_report_repairs(data: VehicleToRepairInfo, company_code: str):
+  return await report_repairs(data, company_code)
+
+@vehicles_to_repair_router.post("/vehicles_to_repair/download_image/", tags=["Vehicles to Repair"])
+async def post_download_repair_image(request: DownloadImageRequest):
+  return await download_image_by_url(request.image_url)
