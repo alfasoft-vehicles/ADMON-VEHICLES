@@ -134,10 +134,9 @@ export class TakePhotosRepairComponent implements OnInit, OnDestroy {
       formData.append('images', photo.blob, `photo_${index + 1}.jpg`);
     });
 
-    // TODO: Replace with actual API endpoint when available
     return this.apiService
       .uploadPhoto(
-        'vehicle-repair/upload_images/' + this.vehicleRepairId,
+        'vehicles_to_repair/upload_images/' + this.vehicleRepairId,
         formData,
       )
       .pipe(

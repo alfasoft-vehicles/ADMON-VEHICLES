@@ -60,7 +60,6 @@ async def inspections_info_all(data: InspectionInfo, company_code: str):
 
     inspections_dict = {inspection.CODIGO: inspection.NOMBRE for inspection in inspections_types}
 
-    # Obtener todos los vehículos para obtener el campo cupo
     vehicles = db.query(Vehiculos).filter(Vehiculos.EMPRESA == company_code).all()
     vehicles_dict = {vehicle.NUMERO: vehicle.NRO_CUPO for vehicle in vehicles}
 
@@ -145,7 +144,6 @@ async def inspections_info(data: InspectionInfo, company_code: str):
 
     owners_dict = {owner.CODIGO: owner.NOMBRE for owner in db.query(Propietarios).filter(Propietarios.EMPRESA == company_code).all()}
 
-    # Obtener todos los vehículos para obtener el campo cupo
     vehicles = db.query(Vehiculos).filter(Vehiculos.EMPRESA == company_code).all()
     vehicles_dict = {vehicle.NUMERO: vehicle.NRO_CUPO for vehicle in vehicles}
 
@@ -262,31 +260,24 @@ async def upload_signature(inspection_id: int, signature: UploadFile = File(...)
     vehicle_number = inspection.UNIDAD
     company_code = inspection.EMPRESA
 
-    # Verificar si ya existe una firma
     if inspection.FIRMA:
       return JSONResponse(
         content={"message": "Ya existe una firma para esta inspección."},
         status_code=400
       )
 
-    # Crear el directorio para la firma dentro de la carpeta de inspecciones
     full_signature_path = os.path.join(upload_directory, "vehiculos", company_code, vehicle_number, "inspecciones", str(inspection_id))
     os.makedirs(full_signature_path, exist_ok=True)
 
-    # Obtener la extensión del archivo
     _, ext = os.path.splitext(signature.filename)
     new_filename = f"firma{ext}"
 
-    # Guardar el archivo
     full_file_path = os.path.join(full_signature_path, new_filename)
     with open(full_file_path, "wb") as buffer:
       shutil.copyfileobj(signature.file, buffer)
-
-    # Crear la ruta relativa para guardar en la base de datos
     relative_db_path = os.path.join(company_code, vehicle_number, "inspecciones", str(inspection_id), new_filename)
     normalized_path = relative_db_path.replace("\\", "/")
     
-    # Actualizar el campo FIRMA en la base de datos
     inspection.FIRMA = normalized_path
 
     db.commit()
@@ -311,7 +302,6 @@ async def report_inspections(data, company_code: str):
         filters.append(Inspecciones.FECHA >= data.fechaInicial)
         filters.append(Inspecciones.FECHA <= data.fechaFinal)
 
-    # Filtrar inspecciones por propietario, conductor y vehículo
     if data.propietario != '':
         filters.append(Inspecciones.PROPI_IDEN == data.propietario)
     
@@ -348,8 +338,8 @@ async def report_inspections(data, company_code: str):
       inspections_data ={
         "id": inspection.ID,
         "fecha_hora": inspection.FECHA.strftime('%d-%m-%Y') + ' ' + inspection.HORA.strftime('%H:%M') if inspection.FECHA and inspection.HORA else None,
-        "fecha_obj": inspection.FECHA,  # Guardar objeto fecha para ordenar
-        "hora_obj": inspection.HORA,    # Guardar objeto hora para ordenar
+        "fecha_obj": inspection.FECHA, 
+        "hora_obj": inspection.HORA,    
         "tipo_inspeccion": inspections_dict.get(inspection.TIPO_INSPEC, "").title(),
         "descripcion": inspection.DESCRIPCION,
         "unidad": inspection.UNIDAD,
@@ -362,13 +352,11 @@ async def report_inspections(data, company_code: str):
       }
       owners_dict[inspection.PROPI_IDEN].append(inspections_data)
 
-    # Ordenar las inspecciones de cada propietario por fecha y hora descendente
     for owner_code in owners_dict:
       owners_dict[owner_code].sort(
         key=lambda x: (x['fecha_obj'] or datetime.min.date(), x['hora_obj'] or datetime.min.time()),
         reverse=True
       )
-      # Eliminar los objetos temporales de fecha y hora
       for insp in owners_dict[owner_code]:
         del insp['fecha_obj']
         del insp['hora_obj']
@@ -387,15 +375,10 @@ async def report_inspections(data, company_code: str):
     user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.usuario).first()
     user = user.NOMBRE if user else ""
 
-    #Total de inspecciones sumando la cantidad de inspecciones por propietario
     total_inspecciones = sum(len(inspections) for inspections in owners_dict.values())
 
-    # Datos de la fecha y hora actual
-    # Define la zona horaria de Ciudad de Panamá
     panama_timezone = pytz.timezone('America/Panama')
-    # Obtén la hora actual en la zona horaria de Ciudad de Panamá
     now_in_panama = datetime.now(panama_timezone)
-    # Formatea la fecha y la hora según lo requerido
     fecha = now_in_panama.strftime("%d/%m/%Y")
     hora_actual = now_in_panama.strftime("%I:%M:%S %p")
 
@@ -439,7 +422,6 @@ async def report_inspections(data, company_code: str):
       footer_file.write(output_footer)
     pdf_path = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf').name
 
-    # Ejecutar la conversión PDF en un thread separado para no bloquear el event loop
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(
       PDF_THREAD_POOL,
@@ -504,15 +486,10 @@ async def new_inspection_data(company_code: str, vehicle_number: str):
     state_vehicle = next((state.NOMBRE for state in states if state.CODIGO == vehicle.ESTADO), '')
     
     panama_timezone = pytz.timezone('America/Panama')
-    # Obtén la hora actual en la zona horaria de Ciudad de Panamá
     now_in_panama = datetime.now(panama_timezone)
-    # Formatea la fecha y la hora según lo requerido
     fecha = now_in_panama.strftime("%d/%m/%Y")
     hora_actual = now_in_panama.strftime("%H:%M:%S")
 
-    print(hora_actual)
-
-    # Obtener el archivo de texto para la empresa
     txt_file_path = get_txt_file(vehicle.EMPRESA)
     if txt_file_path:
       panapass_value = search_value_in_txt('Unidad', vehicle_number, 'Saldo Cuenta PanaPass', txt_file_path)
@@ -671,11 +648,9 @@ async def update_inspection(data: UpdateInspection):
     if not inspection:
       return JSONResponse(content={"message": "Inspección no encontrada"}, status_code=404)
     
-    # Verificar que la inspección esté en estado PENDIENTE
     if inspection.ESTADO != "PEN":
       return JSONResponse(content={"message": "Solo se pueden editar inspecciones PENDIENTES"}, status_code=400)
     
-    # Verificar que el usuario sea el creador de la inspección
     if inspection.USUARIO != data.user:
       return JSONResponse(content={"message": "No tienes permiso para editar esta inspección"}, status_code=403)
     
@@ -683,7 +658,6 @@ async def update_inspection(data: UpdateInspection):
     if not mechanic:
       return JSONResponse(content={"message": "Mecánico no encontrado"}, status_code=404)
     
-    # Actualizar los campos de la inspección
     inspection.MECANICO = mechanic.CODIGO
     inspection.NOM_MECANICO = mechanic.NOMBRE
     inspection.KILOMETRAJ = data.mileage
@@ -715,7 +689,6 @@ async def update_inspection(data: UpdateInspection):
     inspection.DESCRIPCION = data.description
     inspection.OBSERVA = data.nota
     
-    # Actualizar kilometraje del vehículo si es mayor
     vehicle = db.query(Vehiculos).filter(
       Vehiculos.NUMERO == inspection.UNIDAD,
       Vehiculos.EMPRESA == inspection.EMPRESA
@@ -749,7 +722,9 @@ async def download_image_by_url(image_url: str):
     
     relative_path = image_url.split("/uploads/")[1]
     
-    full_image_path = os.path.join(upload_directory, "vehiculos", relative_path)
+    normalized_relative_path = os.path.normpath(relative_path)
+    
+    full_image_path = os.path.join(upload_directory, normalized_relative_path)
     
     if not os.path.exists(full_image_path):
       return JSONResponse(content={"message": "Imagen no encontrada"}, status_code=404)
@@ -937,12 +912,8 @@ async def generate_inspection_pdf(data: ReportInspection, company_code: str):
     user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
     user = user.NOMBRE if user else ""
 
-    # Datos de la fecha y hora actual
-    # Define la zona horaria de Ciudad de Panamá
     panama_timezone = pytz.timezone('America/Panama')
-    # Obtén la hora actual en la zona horaria de Ciudad de Panamá
     now_in_panama = datetime.now(panama_timezone)
-    # Formatea la fecha y la hora según lo requerido
     fecha = now_in_panama.strftime("%d/%m/%Y")
     hora_actual = now_in_panama.strftime("%I:%M:%S %p")
 
@@ -981,7 +952,6 @@ async def generate_inspection_pdf(data: ReportInspection, company_code: str):
       footer_file.write(output_footer)
     pdf_path = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf').name
 
-    # Ejecutar la conversión PDF en un thread separado para no bloquear el event loop
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(
       PDF_THREAD_POOL,

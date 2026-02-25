@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { map, Observable, startWith, forkJoin } from 'rxjs';
+import { map, Observable, startWith, forkJoin, tap } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { JwtService } from 'src/app/services/jwt.service';
 import { TakePhotosRepairComponent } from '../take-photos-repair/take-photos-repair.component';
@@ -17,12 +17,11 @@ interface Vehicles {
   nro_cupo: string;
   codigo_propietario: string;
   nombre_propietario: string;
+  propietario: string;
 }
-
-interface Patio {
+interface yards {
   id: string;
-  codigo: string;
-  nombre: string;
+  name: string;
 }
 
 interface VehicleRepairData {
@@ -38,6 +37,21 @@ interface VehicleRepairData {
   conductor_celular: string;
   fecha: string;
   hora: string;
+}
+
+interface VehicleInfoData {
+  vehicle_number: string;
+  brand: string;
+  model: string;
+  plate: string;
+  vehicle_state: string;
+  owner: string;
+  quota: string;
+  driver_name: string;
+  driver_code: string;
+  driver_phone: string;
+  date: string;
+  time: string;
 }
 
 interface VehicleRepairCreateResponse {
@@ -60,7 +74,7 @@ export class AddVehicleRepairDialogComponent implements OnInit {
   vehicles: Vehicles[] = [];
   optionsVehicles!: Observable<Vehicles[]>;
 
-  patios: Patio[] = [];
+  yards: yards[] = [];
 
   loadingVehicleInfo: boolean = false;
   selectedVehicle: boolean = false;
@@ -98,12 +112,17 @@ export class AddVehicleRepairDialogComponent implements OnInit {
       this.getInputsData();
       this.resetVehicleInfo();
       this.initForms();
+
+      if (this.data && this.data.vehicleNumber) {
+        this.loadingVehicleInfo = true;
+        this.getVehicleInfo(this.data.vehicleNumber);
+      }
     }
   }
 
   getInputsData() {
     this.getDataVehicles();
-    this.getPatios();
+    this.getYards().subscribe();
   }
 
   loadVehicleRepairData(vehicleRepairId: string) {
@@ -115,9 +134,11 @@ export class AddVehicleRepairDialogComponent implements OnInit {
 
     // Load data in parallel using forkJoin
     forkJoin({
-      vehicles: this.apiService.getData('inspections/vehicles_data/' + company),
-      patios: this.getMockPatios(),
-      vehicleRepairData: this.getMockVehicleRepairDetails(vehicleRepairId),
+      vehicles: this.apiService.getData('vehicles_data/' + company),
+      yards: this.getYards(),
+      vehicleRepairData: this.apiService.getData(
+        `vehicles_to_repair/get_repair_edit_data/${vehicleRepairId}`,
+      ),
     }).subscribe(
       (results: any) => {
         // Save vehicles
@@ -130,7 +151,7 @@ export class AddVehicleRepairDialogComponent implements OnInit {
           );
 
         // Save patios
-        this.patios = [...results.patios];
+        this.yards = [...results.yards];
 
         // Save vehicle repair data
         this.vehicleRepairDataEdit = results.vehicleRepairData;
@@ -151,45 +172,6 @@ export class AddVehicleRepairDialogComponent implements OnInit {
         this.closeDialog();
       },
     );
-  }
-
-  // Mock patios data - TODO: Replace with API call
-  getMockPatios(): Observable<Patio[]> {
-    return new Observable((observer) => {
-      setTimeout(() => {
-        observer.next([
-          { id: '1', codigo: 'PAT001', nombre: 'PATIO PRINCIPAL' },
-          { id: '2', codigo: 'PAT002', nombre: 'PATIO SECUNDARIO' },
-          { id: '3', codigo: 'PAT003', nombre: 'PATIO NORTE' },
-          { id: '4', codigo: 'PAT004', nombre: 'PATIO SUR' },
-        ]);
-        observer.complete();
-      }, 100);
-    });
-  }
-
-  // Mock vehicle repair details - TODO: Replace with API call
-  getMockVehicleRepairDetails(id: string): Observable<any> {
-    return new Observable((observer) => {
-      setTimeout(() => {
-        observer.next({
-          id: parseInt(id),
-          unidad: 'TT232',
-          placa: 'EE9910',
-          propietario: 'TOTAL TAXI PANAMA S.A.',
-          estado_vehiculo: 'EN REPARACIÓN',
-          cupo: '8RIO487',
-          conductor_nombre: 'PEDRO GÓMEZ',
-          conductor_codigo: '100',
-          conductor_celular: '6000-0000',
-          fecha: '26-01-2026',
-          hora: '18:05',
-          patio: { id: '1', codigo: 'PAT001', nombre: 'PATIO PRINCIPAL' },
-          descripcion: 'Reparación de frenos y suspensión',
-        });
-        observer.complete();
-      }, 100);
-    });
   }
 
   populateFormWithVehicleRepairData(data: any) {
@@ -223,8 +205,8 @@ export class AddVehicleRepairDialogComponent implements OnInit {
     }
 
     // Preselect patio
-    if (data.patio) {
-      const patioMatch = this.patios.find((p) => p.id === data.patio.id);
+    if (data.patio && data.patio.id) {
+      const patioMatch = this.yards.find((p) => p.id === data.patio.id);
       if (patioMatch) {
         this.vehicleRepairForm.patchValue({
           patio: patioMatch,
@@ -257,7 +239,7 @@ export class AddVehicleRepairDialogComponent implements OnInit {
   getDataVehicles() {
     const company = this.getCompany();
     this.apiService
-      .getData('inspections/vehicles_data/' + company)
+      .getData('vehicles_data/' + company)
       .subscribe((data: Vehicles[]) => {
         this.vehicles = [...data];
         this.optionsVehicles = this.vehicleRepairForm
@@ -271,11 +253,14 @@ export class AddVehicleRepairDialogComponent implements OnInit {
       });
   }
 
-  getPatios() {
-    // TODO: Replace with API call when endpoint is available
-    this.getMockPatios().subscribe((data: Patio[]) => {
-      this.patios = [...data];
-    });
+  getYards(): Observable<yards[]> {
+    const company = this.getCompany();
+    return this.apiService.getData('yards/' + company).pipe(
+      map((data: yards[]) => data.filter((yard) => yard.id && yard.id.trim() !== '')),
+      tap((filteredData: yards[]) => {
+        this.yards = filteredData;
+      }),
+    );
   }
 
   private _filterVehicles(value: string | Vehicles): Vehicles[] {
@@ -344,23 +329,26 @@ export class AddVehicleRepairDialogComponent implements OnInit {
     const company = this.getCompany();
 
     this.apiService
-      .getData('inspections/new_inspection_data/' + company + '/' + vehicle)
+      .getData(
+        'vehicles_to_repair/new_vehicle_entry_data/' + company + '/' + vehicle,
+      )
       .subscribe(
-        (data: any) => {
+        (data: VehicleInfoData) => {
           this.vehicleInfo = {
-            numero: data.numero,
-            marca: '',
-            modelo: '',
-            placa: data.placa,
-            propietario: data.propietario,
-            estado_vehiculo: data.estado_vehiculo,
-            cupo: data.cupo,
-            conductor_nombre: data.conductor_nombre,
-            conductor_codigo: data.conductor_codigo,
-            conductor_celular: data.conductor_celular,
-            fecha: data.fecha_inspeccion,
-            hora: data.hora_inspeccion,
+            numero: data.vehicle_number,
+            marca: data.brand,
+            modelo: data.model,
+            placa: data.plate,
+            propietario: data.owner,
+            estado_vehiculo: data.vehicle_state,
+            cupo: data.quota,
+            conductor_nombre: data.driver_name,
+            conductor_codigo: data.driver_code,
+            conductor_celular: data.driver_phone,
+            fecha: data.date,
+            hora: data.time,
           };
+          console.log(this.vehicleInfo);
           this.loadingVehicleInfo = false;
           this.selectedVehicle = true;
         },
@@ -393,82 +381,106 @@ export class AddVehicleRepairDialogComponent implements OnInit {
       return;
     }
 
-    const selectedPatio = this.vehicleRepairForm.get('patio')!.value;
+    const selectedYard = this.vehicleRepairForm.get('patio')!.value;
 
     if (this.isEditMode) {
       // Edit mode - update existing record
       const updateData = {
-        vehicle_repair_id: parseInt(this.vehicleRepairId),
         user: this.jwtService.getUserData()?.id,
-        patio_id: selectedPatio.id,
+        patio_id: selectedYard.id,
         description: this.vehicleRepairForm.value.descripcion || '',
       };
 
       this.isLoading = true;
 
-      // TODO: Replace with actual API call
-      // Simulating API call with timeout
-      setTimeout(() => {
-        this.isLoading = false;
-        this.openSnackbar(
-          'Registro actualizado con éxito. Ahora puedes subir las fotos.',
-        );
-        this.isEditMode = false;
-        this.wasEdited = true;
-      }, 500);
+      this.apiService
+        .updateData(
+          `vehicles_to_repair/update_repair_entry/${this.vehicleRepairId}`,
+          updateData,
+        )
+        .subscribe({
+          next: () => {
+            this.isLoading = false;
+            this.openSnackbar(
+              'Registro actualizado con éxito. Ahora puedes subir las fotos.',
+            );
+            this.isEditMode = false;
+            this.wasEdited = true;
+          },
+          error: (err) => {
+            this.isLoading = false;
+            this.openSnackbar('Error al actualizar el registro.');
+          },
+        });
     } else {
       // Create mode - create new record
       const newVehicleRepairData = {
         user: this.jwtService.getUserData()?.id,
         company_code: this.getCompany(),
         vehicle_number: this.vehicleInfo.numero,
-        patio_id: selectedPatio.id,
-        patio_name: selectedPatio.nombre,
-        description: this.vehicleRepairForm.value.descripcion || '',
-        repair_date: this.vehicleInfo.fecha,
-        repair_time: this.vehicleInfo.hora,
+        yard: selectedYard.id,
+        justify: this.vehicleRepairForm.value.descripcion,
+        date: this.vehicleInfo.fecha,
+        time: this.vehicleInfo.hora,
       };
+
+      console.log(newVehicleRepairData);
 
       this.isLoading = true;
 
-      // TODO: Replace with actual API call
-      // Simulating API call with timeout
-      setTimeout(() => {
-        // Simulate response with ID
-        this.vehicleRepairId = Math.floor(Math.random() * 1000).toString();
-        this.isLoading = false;
-        this.openSnackbar(
-          'Registro creado con éxito. Ahora puedes subir las fotos.',
-        );
-      }, 500);
+      this.apiService
+        .postData(
+          'vehicles_to_repair/create_vehicle_entry',
+          newVehicleRepairData,
+        )
+        .subscribe({
+          next: (response: VehicleRepairCreateResponse) => {
+            this.isLoading = false;
+            this.vehicleRepairId = response.id;
+            this.openSnackbar(
+              'Registro creado con éxito. Ahora puedes subir las fotos.',
+            );
+            this.isEditMode = false;
+            this.wasEdited = true;
+          },
+          error: (err) => {
+            this.isLoading = false;
+          },
+        });
     }
   }
 
   uploadImages() {
     if (this.takePhotosRepairComponent) {
+      if (this.takePhotosRepairComponent.photos.length === 0) {
+        this.openSnackbar(
+          'Realiza la captura de las fotos para guardar el registro',
+        );
+        return;
+      }
       this.isLoading = true;
       this.takePhotosRepairComponent.sendAllPhotos().subscribe({
         next: (response) => {
-          this.isLoading = false;
           this.openSnackbar('Todas las fotos se han subido con éxito.');
+          this.openQRPdf();
         },
         error: (err) => {
+          this.openSnackbar('Error al subir las fotos.');
           this.isLoading = false;
         },
       });
     }
   }
 
-  // Called when user clicks "Subir Fotos" - for now just closes without calling endpoint
-  finishAndUpload() {
-    // TODO: When API is ready, call uploadImages() here first
-    // For now, just close the dialog and refresh
-    this.openSnackbar('Registro guardado correctamente.');
-    this.closeDialog('refresh');
+  openQRPdf() {
+    const QRPdfEndpoint = 'vehicles_to_repair/generate_qr/' + this.vehicleRepairId;
+    localStorage.setItem('pdfEndpoint', QRPdfEndpoint);
+    window.open(`/pdf`, '_blank')
+    this.closeDialog();
   }
 
-  finishVehicleRepair() {
-    this.closeDialog('refresh');
+  finishAndUpload() {
+    this.uploadImages();
   }
 
   closeDialog(result?: string) {

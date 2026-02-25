@@ -17,6 +17,7 @@ export interface vehicles {
   codigo_conductor: string;
   codigo_propietario: string;
   nombre_propietario: string;
+  propietario: string;
   marca: string;
   linea: string;
   modelo: string;
@@ -34,7 +35,7 @@ export interface existDocumentsVehicles {
 @Component({
   selector: 'app-vehicles-documents',
   templateUrl: './vehicles-documents.component.html',
-  styleUrls: ['./vehicles-documents.component.css']
+  styleUrls: ['./vehicles-documents.component.css'],
 })
 export class VehiclesDocumentsComponent implements OnInit {
   vehiclesForm!: FormGroup;
@@ -55,8 +56,8 @@ export class VehiclesDocumentsComponent implements OnInit {
     private formBuilder: FormBuilder,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
-    private breakpointObserver: BreakpointObserver
-  ){}
+    private breakpointObserver: BreakpointObserver,
+  ) {}
 
   ngOnInit(): void {
     this.initForm();
@@ -65,7 +66,7 @@ export class VehiclesDocumentsComponent implements OnInit {
 
   initForm(): void {
     this.vehiclesForm = this.formBuilder.group({
-      vehiculo: ['']
+      vehiculo: [''],
     });
   }
 
@@ -74,67 +75,79 @@ export class VehiclesDocumentsComponent implements OnInit {
     return userData ? userData.empresa : '';
   }
 
-  getDataVehicles(){
+  getDataVehicles() {
     const company = this.getCompany();
-    this.apiService.getData('inspections/vehicles_data/'+company).subscribe(
-      (data: vehicles[]) => {
+    this.apiService
+      .getData('vehicles_data/' + company)
+      .subscribe((data: vehicles[]) => {
         this.vehicles = [...data];
-        this.optionsVehicles = this.vehiclesForm.get('vehiculo')!.valueChanges.pipe(
-          startWith(''),
-          map(value => this._filterVehicles(value || '')),
-        );
+        this.optionsVehicles = this.vehiclesForm
+          .get('vehiculo')!
+          .valueChanges.pipe(
+            startWith(''),
+            map((value) => this._filterVehicles(value || '')),
+          );
         this.isLoading = false;
-      }
-    );
+      });
   }
 
   private _filterVehicles(value: string | vehicles): vehicles[] {
-    const filterValue = typeof value === 'string' ? value.toLowerCase() : value.placa_vehiculo.toLowerCase();
-    return this.vehicles.filter(option => 
-      option.placa_vehiculo.toLowerCase().includes(filterValue) || 
-      option.numero_unidad.toLowerCase().includes(filterValue) ||
-      option.nro_cupo.toLowerCase().includes(filterValue) ||
-      option.nombre_propietario.toLowerCase().includes(filterValue) 
+    const filterValue =
+      typeof value === 'string'
+        ? value.toLowerCase()
+        : value.placa_vehiculo.toLowerCase();
+    return this.vehicles.filter(
+      (option) =>
+        option.placa_vehiculo.toLowerCase().includes(filterValue) ||
+        option.numero_unidad.toLowerCase().includes(filterValue) ||
+        option.nro_cupo.toLowerCase().includes(filterValue) ||
+        option.nombre_propietario.toLowerCase().includes(filterValue),
     );
   }
 
   displayVehicleData(vehicle: vehicles): string {
-    return vehicle ? `${vehicle.numero_unidad} ${vehicle.placa_vehiculo} - ${vehicle.marca} ${vehicle.linea} ${vehicle.modelo}` : '';
+    return vehicle
+      ? `${vehicle.numero_unidad} ${vehicle.placa_vehiculo} - ${vehicle.marca} ${vehicle.linea} ${vehicle.modelo}`
+      : '';
   }
 
   getDocumentsInfoVehicle(vehicle_number: string) {
     this.loadingDocumentsInfoVehicles = true;
     const company = this.getCompany();
-    this.apiService.getData('documents/vehicle-documents/' + company + '/' + vehicle_number).subscribe({
-      next: (data: existDocumentsVehicles[]) => {
-        this.loadingDocumentsInfoVehicles = false;
-        this.selectedVehicle = true;
-        this.documentsInfo = data; // Asignamos los datos a la propiedad
-      },
-      error: (err: HttpErrorResponse) => {
-        let snackbarMessage = '';
-  
-        if (err.status === 404) {
-          snackbarMessage = 'No se encontraron documentos para el vehículo seleccionado. Intenta con otro.';
-        } else {
-          snackbarMessage = 'Ocurrió un error inesperado. Por favor, intenta más tarde.';
-        }
-  
-        this.openSnackbar(snackbarMessage);
+    this.apiService
+      .getData('documents/vehicle-documents/' + company + '/' + vehicle_number)
+      .subscribe({
+        next: (data: existDocumentsVehicles[]) => {
+          this.loadingDocumentsInfoVehicles = false;
+          this.selectedVehicle = true;
+          this.documentsInfo = data; // Asignamos los datos a la propiedad
+        },
+        error: (err: HttpErrorResponse) => {
+          let snackbarMessage = '';
 
-        this.loadingDocumentsInfoVehicles = false;
-        // this.vehiclesForm.get('vehiculo')?.reset('');
-        this.selectedVehicle = false;
-        this.documentsInfo = []; // Limpiamos los datos en caso de error
-      }
-    });
+          if (err.status === 404) {
+            snackbarMessage =
+              'No se encontraron documentos para el vehículo seleccionado. Intenta con otro.';
+          } else {
+            snackbarMessage =
+              'Ocurrió un error inesperado. Por favor, intenta más tarde.';
+          }
+
+          this.openSnackbar(snackbarMessage);
+
+          this.loadingDocumentsInfoVehicles = false;
+          // this.vehiclesForm.get('vehiculo')?.reset('');
+          this.selectedVehicle = false;
+          this.documentsInfo = []; // Limpiamos los datos en caso de error
+        },
+      });
   }
 
   resetAutocomplete() {
     this.vehiclesForm.get('vehiculo')?.setValue('');
     this.selectedVehicle = false;
     this.displayInfoVehicle = false;
-    this.documentsInfo = []; 
+    this.documentsInfo = [];
   }
 
   selectedOptionVehicle(event: MatAutocompleteSelectedEvent): void {
@@ -144,7 +157,7 @@ export class VehiclesDocumentsComponent implements OnInit {
     this.documentsInfo = []; // Limpiamos al cambiar de vehículo
 
     if (selectedVehicle) {
-      this.displayInfoVehicle = true; 
+      this.displayInfoVehicle = true;
       this.getDocumentsInfoVehicle(selectedVehicle.numero_unidad);
     } else {
       this.vehiclesForm.get('vehiculo')?.reset('');
@@ -156,17 +169,29 @@ export class VehiclesDocumentsComponent implements OnInit {
 
     const company = this.getCompany();
 
-    const endpoint = 'documents/send-vehicle-documents/' + company + '/' + vehicle + '/' + document;
+    const endpoint =
+      'documents/send-vehicle-documents/' +
+      company +
+      '/' +
+      vehicle +
+      '/' +
+      document;
 
     localStorage.setItem('pdfEndpoint', endpoint);
     window.open(`/pdf`, '_blank');
   }
 
-  validateDocumentVehicle(document: existDocumentsVehicles, nombreHtml: string): void {
+  validateDocumentVehicle(
+    document: existDocumentsVehicles,
+    nombreHtml: string,
+  ): void {
     if (!document) return;
 
-    if(!document.folios){
-      this.getDocumentVehicle(this.vehiclesForm.get('vehiculo')?.value.numero_unidad, document.nombre_archivo);
+    if (!document.folios) {
+      this.getDocumentVehicle(
+        this.vehiclesForm.get('vehiculo')?.value.numero_unidad,
+        document.nombre_archivo,
+      );
       return;
     }
 
@@ -178,19 +203,23 @@ export class VehiclesDocumentsComponent implements OnInit {
       disableClose: true,
       data: {
         documentName: nombreHtml,
-        message: document.mensaje
-      }
-    })
+        message: document.mensaje,
+      },
+    });
 
-    dialogRef.afterClosed().subscribe(result => {
+    dialogRef.afterClosed().subscribe((result) => {
       if (result === true) {
-        this.getDocumentVehicle(this.vehiclesForm.get('vehiculo')?.value.numero_unidad, document.nombre_archivo);
+        this.getDocumentVehicle(
+          this.vehiclesForm.get('vehiculo')?.value.numero_unidad,
+          document.nombre_archivo,
+        );
       }
     });
   }
 
   openInfoVehicleDialog() {
-    const vehicleNumber = this.vehiclesForm.get('vehiculo')?.value.numero_unidad;
+    const vehicleNumber =
+      this.vehiclesForm.get('vehiculo')?.value.numero_unidad;
     if (!vehicleNumber) {
       this.openSnackbar('Por favor, selecciona un vehículo primero.');
       return;
@@ -198,15 +227,15 @@ export class VehiclesDocumentsComponent implements OnInit {
 
     const data = {
       driverCode: '',
-      vehicleNumber: vehicleNumber
-    }
+      vehicleNumber: vehicleNumber,
+    };
 
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
     const dialogWidth = isSmallScreen ? '90vw' : '40%';
 
     const dialogRef = this.dialog.open(InfoDocumentsDialogComponent, {
       width: dialogWidth,
-      data: data
+      data: data,
     });
   }
 
@@ -215,6 +244,6 @@ export class VehiclesDocumentsComponent implements OnInit {
       duration: 3000,
       horizontalPosition: 'center',
       verticalPosition: 'top',
-    })
+    });
   }
 }

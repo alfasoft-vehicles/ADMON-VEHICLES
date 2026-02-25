@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from controller.yards import yards, vehicle_yard
+from controller.yards import *
 
 yards_router = APIRouter()
 

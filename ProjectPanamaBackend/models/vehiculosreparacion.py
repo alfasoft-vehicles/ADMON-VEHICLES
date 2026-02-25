@@ -1,0 +1,32 @@
+from sqlalchemy import Column, DateTime, Text, Date, CHAR, Integer, Time, VARCHAR
+from config.dbconnection import Base
+
+class VehiculosReparacion(Base):
+    __tablename__ = 'VEHICULOSREPARACION'
+    EMPRESA = Column(CHAR(2), nullable=False)
+    ID = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    UNIDAD = Column(CHAR(8), default="")
+    PLACA = Column(CHAR(8), default="")
+    NRO_CUPO = Column(CHAR(12), default="")
+    PROPI_IDEN = Column(CHAR(12), default="")
+    NOMPROPI = Column(CHAR(50), default="")
+    CONDUCTOR = Column(CHAR(12), default="")
+    CEDULA = Column(CHAR(12), default="")
+    NOMCONDU = Column(CHAR(40), default="")
+    PATIO = Column(CHAR(2), nullable=False)
+    NOMPATIO = Column(CHAR(40), nullable=False)
+    JUSTIFICACION = Column(Text, nullable=False)
+    FECHA = Column(Date, default=None)
+    HORA = Column(Time, default=None)
+    FOTO01 = Column(VARCHAR(200), default="")
+    FOTO02 = Column(VARCHAR(200), default="")
+    FOTO03 = Column(VARCHAR(200), default="")
+    FOTO04 = Column(VARCHAR(200), default="")
+    FOTO05 = Column(VARCHAR(200), default="")
+    FOTO06 = Column(VARCHAR(200), default="")
+    NRO_FOTOS = Column(Integer, default=0)
+    DOCQR = Column(VARCHAR(200), default="")
+    USUARIO = Column(CHAR(10), nullable=False)
+    NOMUSUARIO = Column(CHAR(40), nullable=False)
+    ESTADO = Column(VARCHAR(10), nullable=False, default="PEN")
+    FEC_CREADO = Column(DateTime, default=None)

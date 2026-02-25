@@ -4,17 +4,17 @@ from controller.operations import *
 
 operations_router = APIRouter()
 
-@operations_router.get("/operations/deliveryvehicledriver/vehicle/{vehicle_number}/", tags=["Operations"])
-async def get_vehicle_operations(vehicle_number: str):
-  return await get_vehicle_operation(vehicle_number)
+@operations_router.get("/operations/deliveryvehicledriver/vehicle/{company_code}/{vehicle_number}/", tags=["Operations"])
+async def get_vehicle_operations(company_code: str, vehicle_number: str):
+  return await get_vehicle_operation(company_code, vehicle_number)
 
-@operations_router.get("/operations/deliveryvehicledriver/driver/{driver_number}/", tags=["Operations"])
-async def get_driver_operations(driver_number: str):
-  return await get_driver_operation(driver_number)
+@operations_router.get("/operations/deliveryvehicledriver/driver/{company_code}/{driver_number}/", tags=["Operations"])
+async def get_driver_operations(company_code: str, driver_number: str):
+  return await get_driver_operation(company_code, driver_number)
 
-@operations_router.post("/operations/deliveryvehicledriver/", tags=["Operations"])
-async def post_delivery_vehicle_driver(data: DeliveryVehicleDriver):
-  return await delivery_vehicle_driver(data)
+@operations_router.post("/operations/deliveryvehicledriver/{company_code}/", tags=["Operations"])
+async def post_delivery_vehicle_driver(company_code: str, data: DeliveryVehicleDriver):
+  return await delivery_vehicle_driver(company_code, data)
 
 @operations_router.get("/operations/generate-contract/info/{vehicle_number}/", tags=["Operations"])
 async def get_vehicle_delivery_info(vehicle_number: str):

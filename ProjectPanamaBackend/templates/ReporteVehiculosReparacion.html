@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reporte de vehículos en reparación</title>
+  <style type="text/css">
+    #logo {
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      text-align: center;
+      font-family: sans-serif;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+
+    /* Bordes más definidos para los encabezados */
+    th {
+      border: 1px solid black;
+      background-color: #ddd;
+      border-right: none;
+      border-bottom: 2px solid black; /* Línea inferior más gruesa */
+    }
+
+    /* Último encabezado con borde derecho */
+    th:last-child {
+      border-right: 1px solid black;
+    }
+
+    /* Primer celda de cada fila con borde izquierdo */
+    td:first-child {
+      border-left: 1px solid black;
+    }
+
+    /* Última celda de cada fila con borde derecho */
+    td:last-child {
+      border-right: 1px solid black;
+    }
+
+    /* Fila de totales con bordes completos */
+    tr.total-row td {
+      border: 1px solid black;
+      border-top: 2px solid black;
+      border-bottom: 2px solid black;
+    }
+
+    td.group {
+      border-right: none;
+      border-left: none;
+    }
+
+    td.right {
+      border-right: none;
+    }
+
+    /* Estilo para la fila de encabezados */
+    thead {
+      background-color: #f2f2f2;
+    }
+
+    /* Línea divisoria entre grupos de datos */
+    tr.divisor td {
+      border-top: 2px solid #999;
+    }
+
+    /* Estilo para la celda de la empresa (mitad de la tabla) */
+    .empresa-cell {
+      border: 2px solid #000;
+      border-radius: 10px;
+      padding: 10px;
+      font-weight: bold;
+      text-align: left;
+      background-color: #f8f8f8;
+    }
+
+    /* Estilo para la celda de Total Empresa */
+    .empresa-total {
+      border: 2px solid #000;
+      border-radius: 10px;
+      padding: 10px;
+      font-weight: bold;
+      text-align: left;
+      background-color: #f0f0f0;
+    }
+
+    .sin-borde {
+      border: none !important;
+    }
+
+    /* Fila vacía pero con línea horizontal */
+    tr.empty-row-with-line td {
+      height: 10px;
+    }
+
+    .total-general-row td {
+      background-color: #f2f2f2;
+      border: 3px solid #000;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: left;
+      padding: 15px;
+    }
+
+    .total-general-cell {
+      border-radius: 8px;
+    }
+
+  </style>
+</head>
+<body>
+  <div style="font-weight: bold; display: flex; justify-content: space-between;">
+    <div>Desde: {{ data_view['fechas']['fecha_inicial'] }} Hasta: {{ data_view['fechas']['fecha_final'] }}</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Id</th>
+        <th>Placa</th>
+        <th>Unidad</th>
+        <th>Cupo</th>
+        <th>Fecha</th>
+        <th>Patio</th>
+        <th>Justificación</th>
+        <th>Estado</th>
+        <th>Usuario</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="empty-row-with-line">
+        <td colspan="9"></td>
+      </tr>
+
+      <!-- INICIO SECCIÓN ITERATIVA POR EMPRESA (PROPIETARIO) -->
+      {% for propietario in data_view['repairs'] %}
+      <!-- Fila para mostrar la sección "EMPRESA..." -->
+      <tr class="empresa-row">
+        <td colspan="9" class="empresa-cell">
+          EMPRESA: {{ propietario['codigo_propietario'] }} - &nbsp; {{ propietario['nombre_propietario'] }}
+        </td>
+      </tr>
+      
+      <!-- Filas de datos dinámicas cada unidad de la empresa -->
+      {% for repair in propietario['repairs'] %}
+      <tr>
+        <td>{{ repair['id'] }}</td>
+        <td>{{ repair['placa'] }}</td>
+        <td>{{ repair['unidad'] }}</td>
+        <td>{{ repair['cupo'] }}</td>
+        <td>{{ repair['fecha_hora'] }}</td>
+        <td>{{ repair['patio'] }}</td>
+        <td>{{ repair['justificacion'] }}</td>
+        <td>
+          {% if repair['estado'] == 'PEN' %}
+            PENDIENTE
+          {% elif repair['estado'] == 'FIN' %}
+            FINALIZADO
+          {% elif repair['estado'] == 'SUS' %}
+            SUSPENDIDO
+          {% else %}
+            {{ repair['estado'] }}
+          {% endif %}
+        </td>
+        <td>{{ repair['usuario'] }}</td>
+      </tr>
+      {% endfor %}
+
+      <!-- Fila con el total de la empresa -->
+      <tr class="total-row">
+        <td colspan="9" class="empresa-total">Total Empresa: {{ propietario['cantidad_registros'] }}</td>
+      </tr>
+
+      <tr class="empty-row-with-line">
+        <td colspan="9"></td>
+      </tr>
+      {% endfor %}
+      <!-- FIN DE SECCIÓN ITERATIVA POR EMPRESA -->
+
+      <tr class="empty-row-with-line">
+        <td colspan="9" style="border-top: 2px dashed #999;"></td>
+      </tr>
+      <tr class="total-general-row">
+        <td colspan="9" class="total-general-cell"> TOTAL GENERAL DE REGISTROS: {{ data_view['total_registros'] }}</td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>

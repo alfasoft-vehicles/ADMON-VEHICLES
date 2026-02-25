@@ -4,6 +4,13 @@ from io import BytesIO
 import subprocess
 import PyPDF2
 import tempfile
+import qrcode
+from PIL import Image as PILImage
+import requests
+from io import BytesIO
+from qrcode.image.styledpil import StyledPilImage
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet
 
 def html2pdf(titulo, html_path, pdf_path, header_path, footer_path, orientation='Portrait'):
     """
@@ -70,3 +77,76 @@ def merge_pdfs(pdf_list):
     except Exception as e:
         pdf_merger.close()
         raise RuntimeError(f"Error al unir los PDFs: {e}")
+    
+def qr_pdf(route_app, qr_path, data, pdf_path):
+
+    styles = getSampleStyleSheet()
+
+    full_url = f"{route_app}{qr_path}/{data['vehicle_number']}"
+
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_qr:
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_H,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(full_url)
+        qr.make(fit=True)
+
+        img_qr = qr.make_image(image_factory=StyledPilImage).convert('RGB')
+
+        qr_width, qr_height = img_qr.size
+
+        response = requests.get(data['company_logo'])
+        logo = PILImage.open(BytesIO(response.content)).convert("RGBA")
+        white_bg = PILImage.new("RGB", logo.size, (255, 255, 255))
+        white_bg.paste(logo, mask=logo.split()[3])
+        logo = white_bg
+        logo_size = qr_width // 3
+        logo.thumbnail((logo_size, logo_size))
+
+        pos = ((img_qr.size[0] - logo.size[0]) // 2, (img_qr.size[1] - logo.size[1]) // 2)
+        img_qr.paste(logo, pos)
+
+        img_qr.save(tmp_qr.name)
+        qr_path_temp = tmp_qr.name
+
+    story = []
+
+    story.append(Paragraph("QR de ingreso a patio", styles['Title']))
+    story.append(Spacer(1, 10))
+
+    qr_img = Image(qr_path_temp, width=300, height=300)
+    story.append(qr_img)
+
+    story.append(Spacer(1, 10))
+
+    justificacion = data['justification'] or "Sin justificación"
+    story.append(Paragraph("Justificación:", styles['Heading2']))
+    story.append(Paragraph(justificacion, styles['Normal']))
+
+    story.append(Spacer(1, 20))
+
+    info = f"""
+    Unidad: {data['vehicle_number']}<br/>
+    Placa: {data['plate']}<br/>
+    Marca: {data['brand']} - {data['model']}<br/>
+    Estado: {data['vehicle_state']}<br/>
+    Cupo: {data['quota']}<br/>
+    Propietario: {data['owner']}<br/>
+    Conductor: {data['driver_name']}<br/>
+    Código del conductor: {data['driver_code']}<br/>
+    Teléfono del conductor: {data['driver_phone']}<br/>
+    """
+    story.append(Paragraph("Información del vehículo:", styles['Heading2']))
+    
+    custom_style = styles['Normal'].clone('CustomNormal')
+    custom_style.leading = 18
+    
+    story.append(Paragraph(info, custom_style))
+
+    doc = SimpleDocTemplate(pdf_path)
+    doc.build(story)
+
+    os.remove(qr_path_temp)

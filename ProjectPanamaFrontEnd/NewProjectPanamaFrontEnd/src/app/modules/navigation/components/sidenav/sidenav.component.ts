@@ -115,7 +115,7 @@ export class SidenavComponent implements OnInit {
         icon: 'photo_camera',
         label: 'Firma / Foto',
         action: () => this.openDialogTakeSignaturePhoto(),
-        conditions: true
+        conditions: this.permisos.tarea10
       }
     ];
   }

@@ -783,7 +783,7 @@ async def vehicles_data(company_code: str):
         "codigo_conductor": vehicle.CONDUCTOR,
         "codigo_propietario": vehicle.PROPI_IDEN,
         "nombre_propietario": owner_name,
-        "propietario": vehicle.PROPI_IDEN + " - " + owner_name if owner_name else vehicle.PROPI_IDEN,
+        "propietario": owner_name + " (" + vehicle.PROPI_IDEN + ")" if owner_name else vehicle.PROPI_IDEN,
         "kilometraje": vehicle.KILOMETRAJ if vehicle.KILOMETRAJ else "",
         "estado_vehiculo": state_name,
         "marca": vehicle.NOMMARCA,

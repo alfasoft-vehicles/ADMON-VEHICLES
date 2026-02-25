@@ -44,7 +44,7 @@
         </div>
 
         <!-- Vehicle autocomplete (only in create mode) -->
-        <div class="inputs-container" *ngIf="!isLoading && !isEditMode">
+        <div class="inputs-container" *ngIf="!isLoading && !isEditMode && !(data && data.vehicleNumber)">
           <mat-form-field class="field-input">
             <mat-label>Vehículo</mat-label>
             <input
@@ -66,8 +66,7 @@
               >
                 {{ option.numero_unidad }} - {{ option.placa_vehiculo }} -
                 {{ option.nro_cupo }} - {{ option.marca }} {{ option.linea }}
-                {{ option.modelo }} - {{ option.codigo_propietario }} -
-                {{ option.nombre_propietario }}
+                {{ option.modelo }} - {{ option.propietario }} 
               </mat-option>
             </mat-autocomplete>
           </mat-form-field>
@@ -81,17 +80,17 @@
         </div>
 
         <ng-container *ngIf="selectedVehicle && !isLoading">
-          <!-- Vehicle info readonly (shown in EDIT mode at the top) -->
+          <!-- Vehicle info readonly (shown in EDIT mode OR specialized flow at the top) -->
           <div
             class="inputs-container"
-            *ngIf="isEditMode && selectedVehicleObject"
+            *ngIf="(isEditMode && selectedVehicleObject) || (data && data.vehicleNumber)"
           >
             <mat-form-field class="field-input">
               <mat-label>Vehículo</mat-label>
               <input
                 matInput
                 readonly
-                [value]="displayVehicleData(selectedVehicleObject)"
+                [value]="isEditMode && selectedVehicleObject ? displayVehicleData(selectedVehicleObject) : vehicleInfo.numero + ' - ' + vehicleInfo.placa + ' - ' + vehicleInfo.marca + ' ' + vehicleInfo.modelo"
               />
             </mat-form-field>
           </div>
@@ -153,8 +152,8 @@
                 formControlName="patio"
               >
                 <mat-option [value]="null"> - </mat-option>
-                <mat-option *ngFor="let patio of patios" [value]="patio">
-                  {{ patio.codigo }} - {{ patio.nombre }}
+                <mat-option *ngFor="let yard of yards" [value]="yard">
+                  {{ yard.id }} - {{ yard.name }}
                 </mat-option>
               </mat-select>
               <mat-error
@@ -209,7 +208,7 @@
   <!-- Empezar: shown only in CREATE mode (form visible, no ID yet) -->
   <button
     mat-button
-    [disabled]="vehicleRepairForm.invalid || loadingVehicleInfo"
+    [disabled]="vehicleRepairForm.invalid || loadingVehicleInfo || isLoading"
     (click)="startVehicleRepair()"
     *ngIf="vehicleRepairId === '' && !isEditMode"
   >
@@ -219,7 +218,7 @@
   <!-- Guardar: shown only in EDIT mode -->
   <button
     mat-button
-    [disabled]="loadingVehicleInfo"
+    [disabled]="loadingVehicleInfo || isLoading"
     (click)="onSaveOrNext()"
     *ngIf="isEditMode"
   >
@@ -229,7 +228,7 @@
   <!-- Subir Fotos: shown only in PHOTO mode (has ID, not editing) -->
   <button
     mat-button
-    [disabled]="loadingVehicleInfo"
+    [disabled]="loadingVehicleInfo || isLoading"
     (click)="finishAndUpload()"
     *ngIf="vehicleRepairId !== '' && !isEditMode"
   >
