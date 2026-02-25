@@ -12,7 +12,7 @@
     >
       Nueva
     </button>
-    <button mat-raised-button class="button btn-reporte">Reporte</button>
+    <button mat-raised-button class="button btn-reporte" (click)="getPdfData()">Reporte</button>
   </div>
 
   <form [formGroup]="vehicleRepairForm" *ngIf="!isLoadingData">
@@ -135,7 +135,7 @@
 
       <div class="field-input buttons-container">
         <button mat-raised-button class="button btn-buscar" (click)="getTableData()">Buscar</button>
-        <button mat-raised-button class="button btn-reporte-desktop">
+        <button mat-raised-button class="button btn-reporte-desktop" (click)="getPdfData()">
           Reporte
         </button>
         <button
@@ -193,7 +193,18 @@
         <!-- Justificacion Column -->
         <ng-container matColumnDef="Justificacion">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Justificación</th>
-          <td mat-cell *matCellDef="let row">{{ row.Justificacion }}</td>
+          <td mat-cell *matCellDef="let row">
+            <div class="justification-wrapper">
+              <div class="justification-text" [class.expanded]="row.expanded">
+                {{ row.Justificacion }}
+              </div>
+              <button mat-button color="primary" class="toggle-btn" 
+                      *ngIf="isLongText(row.Justificacion)"
+                      (click)="row.expanded = !row.expanded">
+                {{ row.expanded ? 'Ver menos' : 'Ver más' }}
+              </button>
+            </div>
+          </td>
         </ng-container>
 
         <!-- Propietario Column -->

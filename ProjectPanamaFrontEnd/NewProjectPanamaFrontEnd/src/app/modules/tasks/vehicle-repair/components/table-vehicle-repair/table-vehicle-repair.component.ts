@@ -47,6 +47,7 @@ export interface VehicleRepairData {
   Estado: string;
   PuedeEditar: number;
   Fotos: string[];
+  expanded?: boolean;
 }
 
 export interface apiResponse {
@@ -117,13 +118,13 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
       propietario: [''],
       vehiculo: [''],
       patio: [''],
-      fechaInicial: [''],
-      fechaFinal: [''],
+      fechaInicial: ['', Validators.required],
+      fechaFinal: ['', Validators.required],
     });
   }
 
   ngOnInit(): void {
-    this.getTableData();
+    this.getTableInitialData();
     this.getAutocompletesData();
     this.setupListeners();
   }
@@ -147,6 +148,54 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
       this.sort.direction = 'desc';
       this.dataSource.sort = this.sort;
     }
+  }
+
+  getTableInitialData() {
+    this.isLoadingData = true;
+
+    const company = this.getCompany();
+    const formattedValues = {
+      usuario: this.getUserId(),
+      propietario: '',
+      vehiculo: '',
+      patio: '',
+      fechaInicial: '',
+      fechaFinal: '',
+    };
+
+    this.apiService
+      .postData('vehicles_to_repair/vehicles_info/' + company, formattedValues)
+      .subscribe({
+        next: (data: apiResponse[]) => {
+          this.dataSource.data = data.map((item) => ({
+            id: item.id,
+            Fecha: item.fecha_hora,
+            Unidad: item.unidad,
+            Placa: item.placa,
+            Cupo: item.cupo,
+            Patio: item.patio,
+            Justificacion: item.justificacion,
+            Propietario: item.propietario,
+            Usuario: item.usuario,
+            Estado: item.estado,
+            PuedeEditar: item.puede_editar,
+            Fotos: item.fotos || [],
+          }));
+
+          this.initializePaginator();
+
+          if (data.length === 0) {
+            this.openSnackbar('No se encontraron registros.');
+          } else {
+            this.openSnackbar('Registros cargados correctamente.');
+          }
+          this.isLoadingData = false;
+        },
+        error: (error) => {
+          console.error('Error fetching vehicles to repair:', error);
+          this.isLoadingData = false;
+        },
+      });
   }
 
   getAutocompletesData() {
@@ -334,6 +383,9 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
 
   getTableData() {
     if (this.vehicleRepairForm.invalid) {
+      this.openSnackbar(
+        'Por favor, complete las fechas requeridas para realizar la búsqueda.',
+      );
       this.vehicleRepairForm.markAllAsTouched();
       return;
     }
@@ -409,6 +461,10 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
       default:
         return 'DESCONOCIDO';
     }
+  }
+
+  isLongText(text: string): boolean {
+    return text ? text.length > 60 : false;
   }
 
   openInfoVehicleRepairDialog(vehicleRepairId: number): void {
@@ -503,6 +559,39 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
         this.openSnackbar('Error al obtener el documento.');
       }
     });
+  }
+
+  getPdfData() {
+    if (this.vehicleRepairForm.invalid) {
+      this.openSnackbar(
+        'Por favor, complete las fechas requeridas para generar el reporte.',
+      );
+      this.vehicleRepairForm.markAllAsTouched();
+      return;
+    }
+
+    const formValues = this.vehicleRepairForm.value;
+    const user = this.getUserId();
+    const company = this.getCompany();
+
+    const formattedValues = {
+      usuario: user,
+      propietario: formValues.propietario?.id || '',
+      vehiculo: formValues.vehiculo?.numero_unidad || '',
+      patio: formValues.patio?.id || '',
+      fechaInicial: formValues.fechaInicial
+        ? new Date(formValues.fechaInicial).toISOString().split('T')[0]
+        : '',
+      fechaFinal: formValues.fechaFinal
+        ? new Date(formValues.fechaFinal).toISOString().split('T')[0]
+        : '',
+    };
+
+    const endpoint = 'vehicles_to_repair/report_repairs/' + company;
+
+    localStorage.setItem('pdfEndpoint', endpoint);
+    localStorage.setItem('pdfData', JSON.stringify(formattedValues));
+    window.open(`/pdf`, '_blank');
   }
 
   private openSnackbar(message: string) {

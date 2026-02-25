@@ -251,7 +251,7 @@ export class FinishImagesRepairDialogComponent {
     const filename = this.getDownloadFileName();
 
     this.documentsService
-      .downloadDocument('inspections/download_image', data, filename)
+      .downloadDocument('vehicles_to_repair/download_image', data, filename)
       .subscribe({
         next: () => {
           this.openSnackbar('Imagen descargada correctamente.');
