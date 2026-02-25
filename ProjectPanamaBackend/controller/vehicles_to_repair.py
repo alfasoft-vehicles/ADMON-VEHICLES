@@ -527,7 +527,9 @@ async def download_image_by_url(image_url: str):
     
     relative_path = image_url.split("/uploads/")[1]
     
-    full_image_path = os.path.join(upload_directory, "vehiculos", relative_path)
+    normalized_relative_path = os.path.normpath(relative_path)
+    
+    full_image_path = os.path.join(upload_directory, normalized_relative_path)
     
     if not os.path.exists(full_image_path):
       return JSONResponse(content={"message": "Imagen no encontrada"}, status_code=404)
@@ -644,7 +646,6 @@ async def vehicles_info(data: VehicleToRepairInfo, company_code: str):
 
     await update_expired_entries(db, entries_list=entries)
 
-    # Obtener todos los vehículos para obtener el campo cupo
     vehicles = db.query(Vehiculos).filter(Vehiculos.EMPRESA == company_code).all()
     vehicles_dict = {vehicle.NUMERO: vehicle.NRO_CUPO for vehicle in vehicles}
 
@@ -674,7 +675,7 @@ async def vehicles_info(data: VehicleToRepairInfo, company_code: str):
       hora_formateada = None
       if entry.HORA:
         if isinstance(entry.HORA, str):
-          hora_formateada = entry.HORA[:5] # Asumiendo HH:MM:SS
+          hora_formateada = entry.HORA[:5]
         else:
           hora_formateada = entry.HORA.strftime('%H:%M')
 
