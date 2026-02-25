@@ -13,6 +13,7 @@ import { JwtService } from 'src/app/services/jwt.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FinishImagesRepairDialogComponent } from '../dialogs/finish-images-repair-dialog/finish-images-repair-dialog.component';
+import { VehiclesRepairInfoComponent } from '../dialogs/vehicles-repair-info/vehicles-repair-info.component';
 
 interface owners {
   id: string;
@@ -578,6 +579,26 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
       if (result === 'viewPhotos') {
         this.openInfoVehicleRepairDialog(row.id);
       }
+    });
+  }
+
+  openInfoVehicle() {
+    if (!this.idVehicleNumber) {
+      this.openSnackbar('No hay vehículo seleccionado.');
+      return;
+    }
+
+    const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
+    const dialogWidth = isSmallScreen ? '90vw' : '40%';
+
+    const data = {
+      driverCode: '',
+      vehicleNumber: this.idVehicleNumber,
+    };
+
+    const dialogRef = this.dialog.open(VehiclesRepairInfoComponent, {
+      width: dialogWidth,
+      data: data,
     });
   }
 

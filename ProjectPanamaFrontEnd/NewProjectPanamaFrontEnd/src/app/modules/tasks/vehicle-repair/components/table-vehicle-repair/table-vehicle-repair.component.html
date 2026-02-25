@@ -28,6 +28,14 @@
     <button
       mat-raised-button
       class="button btn-info"
+      (click)="openInfoVehicle()"
+      *ngIf="idVehicleNumber"
+    >
+      Información
+    </button>
+    <button
+      mat-raised-button
+      class="button btn-info"
       [routerLink]="['/inspections', idVehicleNumber]"
       [queryParams]="{ from: 'vehicle-repair' }"
       *ngIf="idVehicleNumber"
@@ -178,6 +186,14 @@
           *ngIf="idVehicleNumber"
         >
           Regresar
+        </button>
+        <button
+          mat-raised-button
+          class="button btn-info"
+          (click)="openInfoVehicle()"
+          *ngIf="idVehicleNumber"
+        >
+          Información
         </button>
         <button
           mat-raised-button
