@@ -89,12 +89,12 @@
           <div class="info-item">
             <span class="label">Código:</span>
             <span class="value">{{
-              getPatioCode(vehicleRepairData.patio)
+              getYardCode(vehicleRepairData.patio)
             }}</span>
           </div>
           <div class="info-item">
             <span class="label">Nombre:</span>
-            <span class="value">{{ vehicleRepairData.patio || "N/A" }}</span>
+            <span class="value">{{ getYardName(vehicleRepairData.patio) }}</span>
           </div>
           <div class="info-item full-width description-container">
             <span class="label">Descripción:</span>

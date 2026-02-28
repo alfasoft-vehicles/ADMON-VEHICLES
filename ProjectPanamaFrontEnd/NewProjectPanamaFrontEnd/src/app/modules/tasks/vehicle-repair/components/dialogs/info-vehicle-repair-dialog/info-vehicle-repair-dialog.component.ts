@@ -58,26 +58,30 @@ export class InfoVehicleRepairDialogComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error fetching vehicle repair details:', error);
-          this.openSnackbar('Error al obtener los detalles del vehículo a reparar.');
+          this.openSnackbar(
+            'Error al obtener los detalles del vehículo a reparar.',
+          );
           this.closeDialog('');
         },
       });
   }
 
   openDocumentPDF(entryId: number) {
-    this.apiService.getData(`vehicles_to_repair/get_pdf_url/${entryId}`).subscribe({
-      next: (response: any) => {
-        if (response.url) {
-          window.open(response.url, '_blank');
-        } else {
-          this.openSnackbar('No se encontró la URL del documento.');
-        }
-      },
-      error: (error) => {
-        console.error('Error fetching PDF URL:', error);
-        this.openSnackbar('Error al obtener el documento.');
-      }
-    });
+    this.apiService
+      .getData(`vehicles_to_repair/get_pdf_url/${entryId}`)
+      .subscribe({
+        next: (response: any) => {
+          if (response.url) {
+            window.open(response.url, '_blank');
+          } else {
+            this.openSnackbar('No se encontró la URL del documento.');
+          }
+        },
+        error: (error) => {
+          console.error('Error fetching PDF URL:', error);
+          this.openSnackbar('Error al obtener el documento.');
+        },
+      });
   }
 
   getStatusText(status: string): string {
@@ -99,11 +103,18 @@ export class InfoVehicleRepairDialogComponent implements OnInit {
     return match ? match[1] : ownerString;
   }
 
-  getPatioCode(patioString: string): string {
+  getYardCode(patioString: string): string {
     if (!patioString) return 'N/A';
-    // Extract code if format is "CODE - NAME", otherwise return first part
     const match = patioString.match(/^([^\s-]+)/);
     return match ? match[1] : patioString;
+  }
+
+  getYardName(patioString: string): string {
+    if (!patioString) return 'N/A';
+    const separatorIndex = patioString.indexOf(' - ');
+    return separatorIndex !== -1
+      ? patioString.substring(separatorIndex + 3).trim()
+      : patioString;
   }
 
   toggleDescription(): void {

@@ -605,7 +605,7 @@ async def repair_details(entry_id: int):
       "placa": entry.PLACA,
       "cupo": vehicle.NRO_CUPO if vehicle else entry.NRO_CUPO,
       "descripcion": entry.JUSTIFICACION,
-      "patio": entry.NOMPATIO,
+      "patio": entry.PATIO + ' - ' + entry.NOMPATIO,
       "usuario": user.NOMBRE if user else entry.NOMUSUARIO,
       "estado": entry.ESTADO,
       "fotos": fotos,
