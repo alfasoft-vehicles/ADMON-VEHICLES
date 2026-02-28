@@ -17,6 +17,9 @@
   <button mat-icon-button routerLink="/inspections" aria-label="Inspecciones" *ngIf="ownerView">
     <mat-icon>card_travel</mat-icon>
   </button>
+  <button mat-icon-button routerLink="/vehicle-repair" aria-label="Reparación de vehículos" *ngIf="ownerView">
+    <mat-icon>car_rental</mat-icon>
+  </button>
   <button mat-icon-button aria-label="Información de la empresa" *ngIf="ownerView" (click)="openDialogInfoCompany()">
     <mat-icon>info</mat-icon>
   </button>
