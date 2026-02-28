@@ -198,7 +198,7 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
     if (vehicleValue !== '') {
       this.isLoadingVehicleInfo = true;
       this.apiService
-        .getData(`operations/deliveryvehicledriver/vehicle/${vehicleValue}`)
+        .getData(`operations/deliveryvehicledriver/vehicle/${this.getCompany()}/${vehicleValue}`)
         .subscribe({
           next: (data: vehicleInfo) => {
             this.vehicleData = data;
@@ -264,7 +264,7 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
   driverSearch(driverValue: string, vehicleValue: string) {
     if (driverValue !== '') {
       this.apiService
-        .getData(`operations/deliveryvehicledriver/driver/${driverValue}`)
+        .getData(`operations/deliveryvehicledriver/driver/${this.getCompany()}/${driverValue}`)
         .subscribe({
           next: (data: driverInfo) => {
             this.driverData = data;
@@ -308,7 +308,7 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
 
   originalVehicleSearch(vehicle_number: string) {
     this.apiService
-      .getData(`operations/deliveryvehicledriver/vehicle/${vehicle_number}`)
+      .getData(`operations/deliveryvehicledriver/vehicle/${this.getCompany()}/${vehicle_number}`)
       .subscribe({
         next: (data: vehicleInfo) => {
           this.originalVehicleData = data;

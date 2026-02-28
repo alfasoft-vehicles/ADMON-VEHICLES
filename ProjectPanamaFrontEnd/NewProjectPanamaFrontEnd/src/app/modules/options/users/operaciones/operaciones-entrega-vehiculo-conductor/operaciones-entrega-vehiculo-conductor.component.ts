@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from 'src/app/services/api.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { JwtService } from 'src/app/services/jwt.service';
 
 interface vehicleInfo {
   numero: string;
@@ -85,7 +86,8 @@ export class OperacionesEntregaVehiculoConductorComponent {
 
   constructor(
     private apiService: ApiService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private jwtService: JwtService
   ) { }
 
   ngOnInit(): void {
@@ -102,6 +104,11 @@ export class OperacionesEntregaVehiculoConductorComponent {
         console.error('Error al obtener el día de Panamá', error);
       }
     });
+  }
+
+  getCompany() {
+    const userData = this.jwtService.getUserData();
+    return userData ? userData.empresa : '';
   }
 
   vehicleValidations(){
@@ -126,7 +133,7 @@ export class OperacionesEntregaVehiculoConductorComponent {
   }
 
   vehicleSearch(vehicleValue: string){
-    this.apiService.getData(`operations/deliveryvehicledriver/vehicle/${vehicleValue}`).subscribe({
+    this.apiService.getData(`operations/deliveryvehicledriver/vehicle/${this.getCompany()}/${vehicleValue}`).subscribe({
       next: (data: vehicleInfo) => {
         this.vehicleData = data;
         this.vehicleValidations();
@@ -176,7 +183,7 @@ export class OperacionesEntregaVehiculoConductorComponent {
 
   driverSearch(driverValue: string, validations?: boolean){
     this.deliveryVehicleDriverDisabled = true;
-    this.apiService.getData(`operations/deliveryvehicledriver/driver/${driverValue}`).subscribe({
+    this.apiService.getData(`operations/deliveryvehicledriver/driver/${this.getCompany()}/${driverValue}`).subscribe({
       next: (data: driverInfo) => {
         this.driverData = data;
         if (validations !== false) {
@@ -242,7 +249,7 @@ export class OperacionesEntregaVehiculoConductorComponent {
       delivery_date: this.day.time
     }
 
-    this.apiService.postData('operations/deliveryvehicledriver', data).subscribe({
+    this.apiService.postData(`operations/deliveryvehicledriver/${this.getCompany()}`, data).subscribe({
       next: () => {
         window.alert('Entrega de vehículo al conductor guardada exitosamente');
         this.closeModal();
