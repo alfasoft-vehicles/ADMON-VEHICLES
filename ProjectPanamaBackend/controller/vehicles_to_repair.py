@@ -9,7 +9,7 @@ from models.estados import Estados
 from models.permisosusuario import PermisosUsuario
 from models.vehiculosreparacion import VehiculosReparacion
 from models.infoempresas import InfoEmpresas
-from schemas.vehicles_to_repair import NewVehicleEntry, VehicleToRepairInfo, UpdateVehicleRepair
+from schemas.vehicles_to_repair import NewVehicleEntry, VehicleToRepairInfo, UpdateVehicleRepair, FinishRepairRequest
 from utils.vehicles_to_repair import update_expired_entries
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime
@@ -695,6 +695,30 @@ async def vehicles_info(data: VehicleToRepairInfo, company_code: str):
       })
 
     return JSONResponse(content=jsonable_encoder(entries_data), status_code=200)
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
+async def finish_repair(data: FinishRepairRequest):
+  db = session()
+  try:
+    entry = db.query(VehiculosReparacion).filter(VehiculosReparacion.ID == data.entry_id).first()
+    if not entry:
+      return JSONResponse(content={"message": "Record not found"}, status_code=404)
+
+    if entry.ESTADO != 'FIN':
+      return JSONResponse(content={"message": "The record must be in 'FIN' state to be finished"}, status_code=400)
+
+    entry.ESTADO = 'TER'
+    entry.NOTASFIN = data.notes
+
+    db.commit()
+
+    return JSONResponse(content={"message": "Record finished successfully"}, status_code=200)
   except Exception as e:
     db.rollback()
     return JSONResponse(content={"message": str(e)}, status_code=500)

@@ -25,3 +25,7 @@ class UpdateVehicleRepair(BaseModel):
 
 class DownloadImageRequest(BaseModel):
     image_url: str
+
+class FinishRepairRequest(BaseModel):
+    entry_id: int
+    notes: str

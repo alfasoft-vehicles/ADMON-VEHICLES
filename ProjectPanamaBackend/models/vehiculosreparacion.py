@@ -30,3 +30,4 @@ class VehiculosReparacion(Base):
     NOMUSUARIO = Column(CHAR(40), nullable=False)
     ESTADO = Column(VARCHAR(10), nullable=False, default="PEN")
     FEC_CREADO = Column(DateTime, default=None)
+    NOTASFIN = Column(Text, default="")

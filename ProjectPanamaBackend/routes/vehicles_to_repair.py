@@ -48,3 +48,7 @@ async def post_report_repairs(data: VehicleToRepairInfo, company_code: str):
 @vehicles_to_repair_router.post("/vehicles_to_repair/download_image/", tags=["Vehicles to Repair"])
 async def post_download_repair_image(request: DownloadImageRequest):
   return await download_image_by_url(request.image_url)
+
+@vehicles_to_repair_router.post("/vehicles_to_repair/finish_repair/", tags=["Vehicles to Repair"])
+async def post_finish_repair(data: FinishRepairRequest):
+  return await finish_repair(data)
