@@ -306,43 +306,31 @@
           <th mat-header-cell *matHeaderCellDef>Acciones</th>
           <td mat-cell *matCellDef="let row" class="actions-column">
             <div class="actions-container">
-              <button
-                mat-icon-button
-                color="primary"
-                matTooltip="Editar registro"
-                *ngIf="row.PuedeEditar === 1"
-                (click)="openEditVehicleRepairDialog(row.id)"
-              >
-                <mat-icon>edit</mat-icon>
+              <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Opciones de registro">
+                <mat-icon>more_vert</mat-icon>
               </button>
-
-              <button
-                mat-icon-button
-                color="warn"
-                matTooltip="Ver formulario"
-                (click)="openInfoVehicleRepairDialog(row.id)"
-              >
-                <mat-icon>assignment</mat-icon>
-              </button>
-
-              <button
-                mat-icon-button
-                color="accent"
-                matTooltip="Ver imagen"
-                *ngIf="row.Estado == 'FIN'"
-                (click)="openImgDialog(row)"
-              >
-                <mat-icon>image</mat-icon>
-              </button>
-
-              <button
-                mat-icon-button
-                matTooltip="Ver documento"
-                *ngIf="row.Estado == 'FIN'"
-                (click)="openDocumentPDF(row.id)"
-              >
-                <mat-icon>description</mat-icon>
-              </button>
+              <mat-menu #menu="matMenu">
+                <button mat-menu-item *ngIf="row.PuedeEditar === 1" (click)="openEditVehicleRepairDialog(row.id)">
+                  <mat-icon color="primary">edit</mat-icon>
+                  <span>Editar registro</span>
+                </button>
+                <button mat-menu-item (click)="openInfoVehicleRepairDialog(row.id)">
+                  <mat-icon color="warn">assignment</mat-icon>
+                  <span>Ver formulario</span>
+                </button>
+                <button mat-menu-item *ngIf="row.Estado == 'FIN'" (click)="openImgDialog(row)">
+                  <mat-icon color="accent">image</mat-icon>
+                  <span>Ver imagen</span>
+                </button>
+                <button mat-menu-item *ngIf="row.Estado == 'FIN'" (click)="openDocumentPDF(row.id)">
+                  <mat-icon>description</mat-icon>
+                  <span>Ver documento</span>
+                </button>
+                <button mat-menu-item *ngIf="row.Estado == 'FIN'" (click)="openRemoveVehicleDialog(row)">
+                  <mat-icon>directions_car</mat-icon>
+                  <span>Retirar vehículo</span>
+                </button>
+              </mat-menu>
             </div>
           </td>
         </ng-container>

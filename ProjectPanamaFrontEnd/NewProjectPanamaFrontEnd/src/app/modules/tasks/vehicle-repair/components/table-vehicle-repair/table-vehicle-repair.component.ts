@@ -618,6 +618,10 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
     });
   }
 
+  openRemoveVehicleDialog(row: VehicleRepairData) {
+    console.log('Retirar vehículo', row);
+  }
+
   getPdfData() {
     if (this.vehicleRepairForm.invalid) {
       this.openSnackbar(
