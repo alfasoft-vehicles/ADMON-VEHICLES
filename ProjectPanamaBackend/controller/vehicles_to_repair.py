@@ -383,7 +383,8 @@ async def report_repairs(data: VehicleToRepairInfo, company_code: str):
   db = session()
   try:
     filters = [
-      VehiculosReparacion.EMPRESA == company_code
+      VehiculosReparacion.EMPRESA == company_code,
+      VehiculosReparacion.ESTADO == 'FIN'
     ]
 
     if data.fechaInicial and data.fechaInicial.strip() and data.fechaFinal and data.fechaFinal.strip():
