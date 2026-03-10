@@ -318,11 +318,11 @@
                   <mat-icon color="warn">assignment</mat-icon>
                   <span>Ver formulario</span>
                 </button>
-                <button mat-menu-item *ngIf="row.Estado == 'FIN'" (click)="openImgDialog(row)">
+                <button mat-menu-item *ngIf="row.Estado == 'FIN' || row.Estado == 'TER'" (click)="openImgDialog(row)">
                   <mat-icon color="accent">image</mat-icon>
                   <span>Ver imagen</span>
                 </button>
-                <button mat-menu-item *ngIf="row.Estado == 'FIN'" (click)="openDocumentPDF(row.id)">
+                <button mat-menu-item *ngIf="row.Estado == 'FIN' || row.Estado == 'TER'" (click)="openDocumentPDF(row.id)">
                   <mat-icon>description</mat-icon>
                   <span>Ver documento</span>
                 </button>
@@ -342,6 +342,7 @@
           [ngClass]="{
             'row-suspended': row.Estado === 'SUS',
             'row-pending': row.Estado === 'PEN',
+            'row-terminated': row.Estado === 'TER'
           }"
         ></tr>
 

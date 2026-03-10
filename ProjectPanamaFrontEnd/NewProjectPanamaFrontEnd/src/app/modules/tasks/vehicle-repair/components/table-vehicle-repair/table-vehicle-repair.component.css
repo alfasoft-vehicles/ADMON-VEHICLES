@@ -136,6 +136,15 @@ td:first-child {
   background-color: #ffcc80 !important;
 }
 
+.row-terminated td:not(.actions-column) {
+  background-color: #e0e0e0 !important;
+  color: #757575 !important;
+}
+
+.row-terminated:hover td:not(.actions-column) {
+  background-color: #cccccc !important;
+}
+
 .justification-wrapper {
   display: flex;
   flex-direction: column;

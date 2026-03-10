@@ -9,6 +9,8 @@ import { TakePhotosRepairComponent } from './components/dialogs/take-photos-repa
 import { ImagePreviewRepairDialogComponent } from './components/dialogs/image-preview-repair-dialog/image-preview-repair-dialog.component';
 import { FinishImagesRepairDialogComponent } from './components/dialogs/finish-images-repair-dialog/finish-images-repair-dialog.component';
 import { VehiclesRepairInfoComponent } from './components/dialogs/vehicles-repair-info/vehicles-repair-info.component';
+import { FinishRepairNoteDialogComponent } from './components/dialogs/finish-repair-note-dialog/finish-repair-note-dialog.component';
+import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
   declarations: [
@@ -19,7 +21,8 @@ import { VehiclesRepairInfoComponent } from './components/dialogs/vehicles-repai
     ImagePreviewRepairDialogComponent,
     FinishImagesRepairDialogComponent,
     VehiclesRepairInfoComponent,
+    FinishRepairNoteDialogComponent,
   ],
-  imports: [CommonModule, VehicleRepairRoutingModule, MaterialModule],
+  imports: [CommonModule, VehicleRepairRoutingModule, MaterialModule, SharedModule],
 })
 export class VehicleRepairModule {}

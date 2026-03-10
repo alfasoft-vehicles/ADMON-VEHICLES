@@ -609,7 +609,8 @@ async def repair_details(entry_id: int):
       "usuario": user.NOMBRE if user else entry.NOMUSUARIO,
       "estado": entry.ESTADO,
       "fotos": fotos,
-      "qr": 1 if entry.DOCQR and entry.DOCQR.strip() else 0
+      "qr": 1 if entry.DOCQR and entry.DOCQR.strip() else 0,
+      "notasfin": getattr(entry, 'NOTAFIN', "") or ""
     }
 
     return JSONResponse(content=jsonable_encoder(repair_data), status_code=200)
@@ -714,7 +715,7 @@ async def finish_repair(data: FinishRepairRequest):
       return JSONResponse(content={"message": "The record must be in 'FIN' state to be finished"}, status_code=400)
 
     entry.ESTADO = 'TER'
-    entry.NOTASFIN = data.notes
+    entry.NOTAFIN = data.notes
 
     db.commit()
 

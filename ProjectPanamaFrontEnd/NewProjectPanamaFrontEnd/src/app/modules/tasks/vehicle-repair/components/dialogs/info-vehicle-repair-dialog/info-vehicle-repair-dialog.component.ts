@@ -25,6 +25,7 @@ export interface VehicleRepairDetails {
   estado: string;
   fotos: string[];
   qr: number;
+  notasfin?: string;
 }
 
 @Component({
@@ -36,6 +37,7 @@ export class InfoVehicleRepairDialogComponent implements OnInit {
   vehicleRepairData!: VehicleRepairDetails;
   isLoading: boolean = true;
   isDescriptionExpanded: boolean = false;
+  isNotesExpanded: boolean = false;
 
   constructor(
     public dialogRef: MatDialogRef<InfoVehicleRepairDialogComponent>,
@@ -92,6 +94,8 @@ export class InfoVehicleRepairDialogComponent implements OnInit {
         return 'Finalizado';
       case 'SUS':
         return 'Suspendido';
+      case 'TER':
+        return 'Retirado';
       default:
         return status;
     }
@@ -119,6 +123,10 @@ export class InfoVehicleRepairDialogComponent implements OnInit {
 
   toggleDescription(): void {
     this.isDescriptionExpanded = !this.isDescriptionExpanded;
+  }
+
+  toggleNotes(): void {
+    this.isNotesExpanded = !this.isNotesExpanded;
   }
 
   openSnackbar(message: string) {
