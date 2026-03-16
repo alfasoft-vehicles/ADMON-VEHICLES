@@ -79,3 +79,7 @@ async def post_driver_settlement(data: DriverSettlement):
 @operations_router.post("/operations/save-remove-driver/", tags=["Operations"])
 async def post_save_remove_driver(data: RemoveDriver):
   return await save_remove_driver(data)
+
+@operations_router.post("/operations/account-opening/", tags=["Operations"])
+async def post_save_account_opening(data: AccountOpening):
+  return await account_opening(data)
