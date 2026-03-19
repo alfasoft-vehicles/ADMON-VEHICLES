@@ -1552,3 +1552,104 @@ async def account_opening(data: AccountOpening):
     return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()
+
+#-----------------------------------------------------------------------------------------------
+
+async def account_opening_pdf(data: AccountOpeningPDF):
+  db = session()
+  try:
+
+    driver = db.query(Conductores).filter(Conductores.EMPRESA == data.company_code, Conductores.CODIGO == data.driver_number).first()
+
+    user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
+    user = user.NOMBRE if user else ""
+
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    date = now_in_panama.strftime("%d/%m/%Y")
+    current_time = now_in_panama.strftime("%I:%M:%S %p")
+
+    title = 'Apertura de Cuenta por Cobrar'
+    
+    data_view = {
+      'fecha': date,
+      'hora': current_time,
+      'company_code': data.company_code,
+      'vehicle_number': data.vehicle_number,
+      'usuario': user,
+      # 'consecutive': data.consecutive,
+      'registration': f"{data.registration:.2f}",
+      'savings': f"{data.savings:.2f}",
+      'total_funds': f"{data.total_funds:.2f}",
+      'advances': f"{data.advances:.2f}",
+      'daily_rent': f"{data.daily_rent:.2f}",
+      'accidents': f"{data.accidents:.2f}",
+      'total_debt': f"{data.total_debt:.2f}",
+      'total_opening': f"{data.total_opening:.2f}",
+      'details': data.details if data.details else '',
+      'driver': {
+        'code': driver.CODIGO,
+        'name': driver.NOMBRE,
+        'cc': driver.CEDULA,
+        'cellphone': driver.CELULAR,
+        'address': driver.DIRECCION
+      } if driver else {},
+      'title': title
+    }
+
+    headers = {
+      "Content-Disposition": f"attachment; filename=AperturaCuenta_{data.vehicle_number}.pdf"
+    }
+
+    template_loader = jinja2.FileSystemLoader(searchpath="./templates")
+    template_env = jinja2.Environment(loader=template_loader)
+    template = template_env.get_template("AperturaCuentaConductor.html")
+    header = template_env.get_template("header.html")
+    footer = template_env.get_template("footer.html")
+    output_text = template.render(data_view=data_view)
+    output_header = header.render(data_view=data_view)
+    output_footer = footer.render(data_view=data_view)
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w') as html_file:
+      html_path = html_file.name
+      html_file.write(output_text)
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w') as header_file:
+      header_path = header_file.name
+      header_file.write(output_header)
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w') as footer_file:
+      footer_path = footer_file.name
+      footer_file.write(output_footer)
+    pdf_path = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf').name
+
+    # Ejecutar la conversión PDF en un thread separado para no bloquear el event loop
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(
+      PDF_THREAD_POOL,
+      html2pdf,
+      title,
+      html_path,
+      pdf_path,
+      header_path,
+      footer_path
+    )
+
+    background_tasks = BackgroundTasks()
+    background_tasks.add_task(os.remove, html_path)
+    background_tasks.add_task(os.remove, header_path)
+    background_tasks.add_task(os.remove, footer_path)
+    background_tasks.add_task(os.remove, pdf_path)
+
+    response = FileResponse(
+      pdf_path, 
+      media_type='application/pdf', 
+      filename=f'AperturaCuenta_{data.vehicle_number}.pdf', 
+      headers=headers,
+      background=background_tasks
+    )
+
+    return response
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()

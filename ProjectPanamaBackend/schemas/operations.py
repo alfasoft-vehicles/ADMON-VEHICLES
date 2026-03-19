@@ -91,3 +91,19 @@ class AccountOpening(BaseModel):
   details: Optional[str] = ''
   amount: Optional[float] = 0.0
   user: Optional[str] = ''
+
+class AccountOpeningPDF(BaseModel):
+  company_code: str
+  vehicle_number: str
+  driver_number: str
+  # consecutive: str
+  registration: Optional[float] = 0.0
+  savings: Optional[float] = 0.0
+  total_funds: Optional[float] = 0.0
+  advances: Optional[float] = 0.0
+  daily_rent: Optional[float] = 0.0
+  accidents: Optional[float] = 0.0
+  total_debt: Optional[float] = 0.0
+  total_opening: Optional[float] = 0.0
+  details: Optional[str] = ''
+  user: str = ''

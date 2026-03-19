@@ -83,3 +83,7 @@ async def post_save_remove_driver(data: RemoveDriver):
 @operations_router.post("/operations/account-opening/", tags=["Operations"])
 async def post_save_account_opening(data: AccountOpening):
   return await account_opening(data)
+
+@operations_router.post("/operations/account-opening/pdf/", tags=["Operations"])
+async def post_account_opening_pdf(data: AccountOpeningPDF):
+  return await account_opening_pdf(data)
