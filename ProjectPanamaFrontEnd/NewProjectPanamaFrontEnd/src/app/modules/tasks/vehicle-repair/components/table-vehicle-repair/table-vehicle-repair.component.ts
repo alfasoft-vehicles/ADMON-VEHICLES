@@ -653,6 +653,7 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
             const payload = {
               entry_id: row.id,
               notes: noteResult,
+              user: this.getUserId(),
             };
 
             this.apiService

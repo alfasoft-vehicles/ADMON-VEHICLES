@@ -717,6 +717,7 @@ async def finish_repair(data: FinishRepairRequest):
 
     entry.ESTADO = 'TER'
     entry.NOTAFIN = data.notes
+    entry.USUARIOFIN = data.user
 
     db.commit()
 
