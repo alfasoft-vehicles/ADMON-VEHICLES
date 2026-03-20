@@ -1467,6 +1467,48 @@ async def save_remove_driver(data: RemoveDriver):
 
 #-----------------------------------------------------------------------------------------------
 
+async def info_account_opening(company_code: str, vehicle_number: str, driver_number: str):
+  db = session()
+  try:
+    debts = (db.query(Cartera.TIPO, func.sum(Cartera.SALDO).label('total_saldo')).filter(
+                Cartera.EMPRESA == company_code,
+                Cartera.UNIDAD == vehicle_number,
+                Cartera.CLIENTE == driver_number,
+                Cartera.TIPO.in_(['01', '02', '10', '11', '12'])
+              ).group_by(Cartera.TIPO).all())
+    
+    debt_map = {debt.TIPO: debt.total_saldo for debt in debts}
+
+    registration = debt_map.get('01', 0)
+    savings = debt_map.get('02', 0)
+
+    daily_rent = debt_map.get('10', 0)
+    accidents = debt_map.get('11', 0)
+    other_debts = debt_map.get('12', 0)
+
+    total_funds = registration + savings
+    
+    total_debt = daily_rent + accidents  + other_debts
+
+    response = {
+      "registration": registration,
+      "savings": savings,
+      "total_funds": total_funds,
+      "daily_rent": daily_rent,
+      "accidents": accidents,
+      "other_debts": other_debts,
+      "total_debt": total_debt
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
 async def account_opening(data: AccountOpening):
   db = session()
   try:

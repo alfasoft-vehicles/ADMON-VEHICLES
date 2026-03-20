@@ -80,6 +80,10 @@ async def post_driver_settlement(data: DriverSettlement):
 async def post_save_remove_driver(data: RemoveDriver):
   return await save_remove_driver(data)
 
+@operations_router.get("/operations/info-account-opening/{company_code}/{vehicle_number}/{driver_number}/", tags=["Operations"])
+async def get_info_account_opening(company_code: str, vehicle_number: str, driver_number: str):
+  return await info_account_opening(company_code, vehicle_number, driver_number)
+
 @operations_router.post("/operations/account-opening/", tags=["Operations"])
 async def post_save_account_opening(data: AccountOpening):
   return await account_opening(data)
