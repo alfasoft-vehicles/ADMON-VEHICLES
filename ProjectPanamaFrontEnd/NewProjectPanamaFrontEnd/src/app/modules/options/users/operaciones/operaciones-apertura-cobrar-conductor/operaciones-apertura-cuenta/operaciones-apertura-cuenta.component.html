@@ -1,0 +1,98 @@
+<h2 mat-dialog-title>Apertura de Cuenta</h2>
+<mat-divider></mat-divider>
+
+<mat-dialog-content *ngIf="isLoading">
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+</mat-dialog-content>
+
+<mat-dialog-content class="scrollable-content" *ngIf="!isLoading">
+  <div class="info-section">
+    <!-- TARJETA FONDOS -->
+    <div class="section-card">
+      <div class="section-card-header header-green">
+        <mat-icon>account_balance_wallet</mat-icon>
+        <span>Fondos</span>
+      </div>
+      <table class="info-table">
+        <tbody>
+          <tr>
+            <td class="info-header">Inscripción</td>
+            <td class="info-data">$ {{ data.registration | number: "1.2-2" }}</td>
+          </tr>
+          <tr>
+            <td class="info-header">Ahorros</td>
+            <td class="info-data">$ {{ data.savings | number: "1.2-2" }}</td>
+          </tr>
+          <tr class="total-row-style">
+            <td class="info-header">Total Fondos</td>
+            <td class="info-data text-green">
+              $ {{ data.total_funds | number: "1.2-2" }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TARJETA DEUDAS -->
+    <div class="section-card">
+      <div class="section-card-header header-red">
+        <mat-icon>assignment_late</mat-icon>
+        <span>Deudas</span>
+      </div>
+      <table class="info-table">
+        <tbody>
+          <tr>
+            <td class="info-header">Renta Diaria</td>
+            <td class="info-data">$ {{ data.daily_rent | number: "1.2-2" }}</td>
+          </tr>
+          <tr>
+            <td class="info-header">Siniestros</td>
+            <td class="info-data">$ {{ data.accidents | number: "1.2-2" }}</td>
+          </tr>
+          <tr>
+            <td class="info-header">Otras Deudas</td>
+            <td class="info-data">$ {{ data.other_debts | number: "1.2-2" }}</td>
+          </tr>
+          <tr class="total-row-style">
+            <td class="info-header">Total Deudas</td>
+            <td class="info-data text-red">
+              $ {{ data.total_debt | number: "1.2-2" }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="summary-section">
+    <div class="summary-card">
+      <div class="action-field-container">
+        <mat-form-field class="full-width no-subscript result-field" appearance="fill">
+          <mat-label>Total Apertura de la Cuenta</mat-label>
+          <span matPrefix class="currency-prefix">$</span>
+          <input
+            matInput
+            [value]="totalApertura | number: '1.2-2'"
+            readonly
+          />
+        </mat-form-field>
+
+        <button
+          mat-button
+          class="custom-action-button"
+          (click)="openOtherExpenses()"
+        >
+          <mat-icon>add_shopping_cart</mat-icon>
+          Otros Gastos / Cargos
+        </button>
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="print()">
+    <mat-icon>print</mat-icon> Imprimir
+  </button>
+  <button mat-button cdkFocusInitial (click)="accept()">Aceptar</button>
+</mat-dialog-actions>

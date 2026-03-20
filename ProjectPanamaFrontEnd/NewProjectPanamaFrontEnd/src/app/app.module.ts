@@ -71,6 +71,10 @@ import { OperacionesLiquidacionCuentaComponent } from './modules/options/users/o
 
 import { OperacionesExplicacionOtrosGastosComponent } from './modules/options/users/operaciones/operaciones-bajar-conductor-vehiculo/operaciones-otros-gastos/operaciones-explicacion-otros-gastos/operaciones-explicacion-otros-gastos.component';
 import { OperacionesLiquidacionOtrosGastosComponent } from './modules/options/users/operaciones/operaciones-bajar-conductor-vehiculo/operaciones-otros-gastos/operaciones-liquidacion-otros-gastos/operaciones-liquidacion-otros-gastos.component';
+import { OperacionesAperturaCobrarConductorComponent } from './modules/options/users/operaciones/operaciones-apertura-cobrar-conductor/operaciones-apertura-cobrar-conductor.component';
+import { OperacionesAperturaCuentaComponent } from './modules/options/users/operaciones/operaciones-apertura-cobrar-conductor/operaciones-apertura-cuenta/operaciones-apertura-cuenta.component';
+import { OperacionesRelacionCuentasPagarComponent } from './modules/options/users/operaciones/operaciones-apertura-cobrar-conductor/operaciones-relacion-cuentas-pagar/operaciones-relacion-cuentas-pagar.component';
+import { OperacionesExplicacionCuentasPagarComponent } from './modules/options/users/operaciones/operaciones-apertura-cobrar-conductor/operaciones-relacion-cuentas-pagar/operaciones-explicacion-cuentas-pagar/operaciones-explicacion-cuentas-pagar.component';
 
 @NgModule({
   declarations: [
@@ -138,6 +142,10 @@ import { OperacionesLiquidacionOtrosGastosComponent } from './modules/options/us
     OperacionesLiquidacionCuentaComponent,
     OperacionesLiquidacionOtrosGastosComponent,
     OperacionesExplicacionOtrosGastosComponent,
+    OperacionesAperturaCobrarConductorComponent,
+    OperacionesAperturaCuentaComponent,
+    OperacionesRelacionCuentasPagarComponent,
+    OperacionesExplicacionCuentasPagarComponent,
   ],
   imports: [
     BrowserModule,

@@ -9,6 +9,7 @@ import { OperacionesCorregirKilometrajeActualComponent } from '../operaciones-co
 import { OperacionesPrestamoVehiculoConductorComponent } from '../operaciones-prestamo-vehiculo-conductor/operaciones-prestamo-vehiculo-conductor.component';
 import { OperacionesDevolucionVehiculoPrestadoComponent } from '../operaciones-devolucion-vehiculo-prestado/operaciones-devolucion-vehiculo-prestado.component';
 import { OperacionesBajarConductorVehiculoComponent } from '../operaciones-bajar-conductor-vehiculo/operaciones-bajar-conductor-vehiculo.component';
+import { OperacionesAperturaCobrarConductorComponent } from '../operaciones-apertura-cobrar-conductor/operaciones-apertura-cobrar-conductor.component';
 
 @Component({
   selector: 'app-opciones-operaciones',
@@ -26,7 +27,7 @@ export class OpcionesOperacionesComponent {
     { name: 'Devolución de Vehículos Prestados', icon: 'info', url: 'DevolucionVehiculoPrestado', disabled: false },
     { name: 'Bajar Conductor del Vehículo (Culminación del Contrato)', icon: 'info', url: 'BajarConductorVehiculo', disabled: false },
     { name: 'Corregir Kilometraje Actual al Vehículo', icon: 'info', url: 'CorregirKilometrajeActualVehiculo', disabled: false },
-    { name: 'Apertura de Cuenta por Cobrar a un Conductor', icon: 'info', url: 'hoalalalal', disabled: true },
+    { name: 'Apertura de Cuenta por Cobrar a un Conductor', icon: 'info', url: 'AperturaCuentaCobrarConductor', disabled: false },
   ];
 
   selectOptionModal: string = '';
@@ -117,7 +118,13 @@ export class OpcionesOperacionesComponent {
           }
         );
         break;
-      case 'Apertura de Cuenta por Cobrar a un Conductor':
+      case 'AperturaCuentaCobrarConductor':
+        this.dialog.open(OperacionesAperturaCobrarConductorComponent,
+          {
+            width: dialogWidth,
+            disableClose: true,
+          }
+        );
         break;
     }
   }
