@@ -1,18 +1,26 @@
-<!-- <app-header></app-header> -->
-<div class="container">
-  <h1>OPERACIONES GENERALES DE VEHÍCULOS</h1>
-  <div class="options-container">
-    <ng-container *ngFor="let option of options">
-      <button class="option" type="button" [disabled]="option.disabled" (click)="selectOption(option.url)">
-        <span class="material-symbols-outlined" translate="no">
-          {{ option.icon }}
-        </span>
-        <p class="option-text">{{ option.name }}</p>
+<div class="main-container">
+  <div class="title-container">
+    <h1 class="title">Operaciones Generales de Vehículos</h1>
+  </div>
+
+  <div class="operations-grid-container">
+    <div class="cards-grid">
+      <button 
+        class="operation-card" 
+        matRipple 
+        *ngFor="let item of options" 
+        (click)="selectOption(item.actionCode)">
+        
+        <div class="icon-container">
+          <mat-icon>{{ item.icon }}</mat-icon>
+        </div>
+        <div class="card-content">
+          <span class="card-label">{{ item.name }}</span>
+        </div>
+        <mat-icon class="chevron-icon">chevron_right</mat-icon>
       </button>
-    </ng-container>
+    </div>
   </div>
 </div>
 
 <app-operaciones-entrega-vehiculo-conductor *ngIf="entregaVehiculoConductor" (close)="hideModal()"></app-operaciones-entrega-vehiculo-conductor>
-
-<!-- <app-footer></app-footer> -->
