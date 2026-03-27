@@ -18,6 +18,7 @@ from utils.reports import *
 from utils.docx import *
 from utils.pdf import *
 from utils.images import *
+from utils.files import *
 from fastapi import BackgroundTasks, UploadFile, File
 import tempfile
 import os
@@ -47,6 +48,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 load_dotenv()
 
+upload_directory = os.getenv('DIRECTORY_IMG')
 driver_documents_path = os.getenv('DRIVER_DOCS_PATH')
 path_10  = os.getenv('DROPBOX_INTEGRATION_PATH_10')
 path_58  = os.getenv('DROPBOX_INTEGRATION_PATH_58')
@@ -1518,6 +1520,9 @@ async def account_opening(data: AccountOpening):
     current_time = now_in_panama.strftime("%H:%M:%S")
     complete_date = now_in_panama.strftime("%Y-%m-%d %H:%M:%S")
     text_date = now_in_panama.strftime("%Y%m%d")
+    date_pdf = now_in_panama.strftime("%d/%m/%Y")
+    time_pdf = now_in_panama.strftime("%I:%M:%S %p")
+    timestamp = now_in_panama.strftime("%Y%m%d%H%M%S")
 
     vehicle = db.query(Vehiculos).filter(Vehiculos.EMPRESA == data.company_code, Vehiculos.NUMERO == data.vehicle_number).first()
     if not vehicle:
@@ -1546,8 +1551,8 @@ async def account_opening(data: AccountOpening):
       PROPI_IDEN=vehicle.PROPI_IDEN,
       ZONA=vehicle.PROPI_IDEN,
       FORMAPAGO='6',
-      TOTAL=data.amount,
-      VLR_ND=data.amount,
+      TOTAL=data.total_opening,
+      VLR_ND=data.total_opening,
       TIPO='11',
       FACTURA=new_record,
       DETALLE=f"Apertura de Cuenta por Cobrar Conductor: {driver.CODIGO}   Unidad: {vehicle.NUMERO} / {data.details}",
@@ -1571,13 +1576,13 @@ async def account_opening(data: AccountOpening):
       UNIDAD=vehicle.NUMERO,
       PROPI_IDEN=vehicle.PROPI_IDEN,
       FEC_ENTREG=date,
-      VALOR=data.amount,
+      VALOR=data.total_opening,
       FECHA=date,
       FEC_FACTU=date,
       DOC_FACTU=new_record,
       CAN_FACTU=1,
       DETALLE=f"Apertura de Cuenta por Cobrar Conductor: {driver.CODIGO}   Unidad: {vehicle.NUMERO} / {data.details}",
-      SALDO=data.amount,
+      SALDO=data.total_opening,
       FEC_CUADRE=date,
       FEC_DOC=text_date,
       FEC_DOCUM=text_date,
@@ -1588,36 +1593,17 @@ async def account_opening(data: AccountOpening):
     
     db.commit()
 
-    return JSONResponse(content={"message": "Apertura de cuenta realizada correctamente"}, status_code=200)
-  except Exception as e:
-    db.rollback()
-    return JSONResponse(content={"message": str(e)}, status_code=500)
-  finally:
-    db.close()
-
-#-----------------------------------------------------------------------------------------------
-
-async def account_opening_pdf(data: AccountOpeningPDF):
-  db = session()
-  try:
-
-    driver = db.query(Conductores).filter(Conductores.EMPRESA == data.company_code, Conductores.CODIGO == data.driver_number).first()
-
-    user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
-    user = user.NOMBRE if user else ""
-
-    panama_timezone = pytz.timezone('America/Panama')
-    now_in_panama = datetime.now(panama_timezone)
-    date = now_in_panama.strftime("%d/%m/%Y")
-    current_time = now_in_panama.strftime("%I:%M:%S %p")
+    pdf_directory_path = os.path.join(upload_directory, "temp")
+    os.makedirs(pdf_directory_path, exist_ok=True)
 
     title = 'Apertura de Cuenta por Cobrar'
     
     data_view = {
-      'fecha': date,
-      'hora': current_time,
+      'fecha': date_pdf,
+      'hora': time_pdf,
       'company_code': data.company_code,
       'vehicle_number': data.vehicle_number,
+      'consecutive': new_record,
       'usuario': user,
       'registration': f"{data.registration:.2f}",
       'savings': f"{data.savings:.2f}",
@@ -1638,10 +1624,6 @@ async def account_opening_pdf(data: AccountOpeningPDF):
       'title': title
     }
 
-    headers = {
-      "Content-Disposition": f"attachment; filename=AperturaCuenta_{data.vehicle_number}.pdf"
-    }
-
     template_loader = jinja2.FileSystemLoader(searchpath="./templates")
     template_env = jinja2.Environment(loader=template_loader)
     template = template_env.get_template("AperturaCuentaConductor.html")
@@ -1660,7 +1642,7 @@ async def account_opening_pdf(data: AccountOpeningPDF):
     with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w') as footer_file:
       footer_path = footer_file.name
       footer_file.write(output_footer)
-    pdf_path = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf').name
+    pdf_path = os.path.join(pdf_directory_path, f"AperturaCuenta_{data.vehicle_number}_{timestamp}.pdf")
 
     # Ejecutar la conversión PDF en un thread separado para no bloquear el event loop
     loop = asyncio.get_event_loop()
@@ -1678,17 +1660,14 @@ async def account_opening_pdf(data: AccountOpeningPDF):
     background_tasks.add_task(os.remove, html_path)
     background_tasks.add_task(os.remove, header_path)
     background_tasks.add_task(os.remove, footer_path)
-    background_tasks.add_task(os.remove, pdf_path)
+    background_tasks.add_task(remove_file_delayed, pdf_path, 10)
 
-    response = FileResponse(
-      pdf_path, 
-      media_type='application/pdf', 
-      filename=f'AperturaCuenta_{data.vehicle_number}.pdf', 
-      headers=headers,
-      background=background_tasks
-    )
+    response = {
+      "result": 1 if pdf_path else 0,
+      "url": f"{upload_directory}/temp/AperturaCuenta_{data.vehicle_number}_{timestamp}.pdf" if pdf_path else ""
+    }
 
-    return response
+    return JSONResponse(content=jsonable_encoder(response), status_code=200, background=background_tasks)
   except Exception as e:
     db.rollback()
     return JSONResponse(content={"message": str(e)}, status_code=500)

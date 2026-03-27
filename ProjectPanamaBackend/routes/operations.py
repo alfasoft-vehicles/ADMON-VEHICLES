@@ -87,7 +87,3 @@ async def get_info_account_opening(company_code: str, vehicle_number: str, drive
 @operations_router.post("/operations/account-opening/", tags=["Operations"])
 async def post_save_account_opening(data: AccountOpening):
   return await account_opening(data)
-
-@operations_router.post("/operations/account-opening/pdf/", tags=["Operations"])
-async def post_account_opening_pdf(data: AccountOpeningPDF):
-  return await account_opening_pdf(data)
