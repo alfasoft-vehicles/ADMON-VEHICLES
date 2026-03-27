@@ -17,7 +17,9 @@
         <tbody>
           <tr>
             <td class="info-header">Inscripción</td>
-            <td class="info-data">$ {{ data.registration | number: "1.2-2" }}</td>
+            <td class="info-data">
+              $ {{ data.registration | number: "1.2-2" }}
+            </td>
           </tr>
           <tr>
             <td class="info-header">Ahorros</td>
@@ -51,7 +53,9 @@
           </tr>
           <tr>
             <td class="info-header">Otras Deudas</td>
-            <td class="info-data">$ {{ data.other_debts | number: "1.2-2" }}</td>
+            <td class="info-data">
+              $ {{ data.other_debts | number: "1.2-2" }}
+            </td>
           </tr>
           <tr class="total-row-style">
             <td class="info-header">Total Deudas</td>
@@ -67,14 +71,13 @@
   <div class="summary-section">
     <div class="summary-card">
       <div class="action-field-container">
-        <mat-form-field class="full-width no-subscript result-field" appearance="fill">
+        <mat-form-field
+          class="full-width no-subscript result-field"
+          appearance="fill"
+        >
           <mat-label>Total Apertura de la Cuenta</mat-label>
           <span matPrefix class="currency-prefix">$</span>
-          <input
-            matInput
-            [value]="totalApertura | number: '1.2-2'"
-            readonly
-          />
+          <input matInput [value]="totalApertura | number: '1.2-2'" readonly />
         </mat-form-field>
 
         <button
@@ -91,8 +94,6 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button (click)="print()">
-    <mat-icon>print</mat-icon> Imprimir
-  </button>
+  <button mat-button (click)="close()">Cancelar</button>
   <button mat-button cdkFocusInitial (click)="accept()">Aceptar</button>
 </mat-dialog-actions>

@@ -5,10 +5,12 @@ import { FormControl } from '@angular/forms';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { map, Observable, startWith } from 'rxjs';
-import { ConfirmActionDialogComponent } from 'src/app/modules/shared/components/confirm-action-dialog/confirm-action-dialog.component';
 import { ApiService } from 'src/app/services/api.service';
 import { JwtService } from 'src/app/services/jwt.service';
-import { AccountOpeningDetail, OperacionesAperturaCuentaComponent } from './operaciones-apertura-cuenta/operaciones-apertura-cuenta.component';
+import {
+  AccountOpeningDetail,
+  OperacionesAperturaCuentaComponent,
+} from './operaciones-apertura-cuenta/operaciones-apertura-cuenta.component';
 import { OtherExpensesItem } from '../operaciones-bajar-conductor-vehiculo/operaciones-otros-gastos/operaciones-liquidacion-otros-gastos/operaciones-liquidacion-otros-gastos.component';
 
 interface vehicle {
@@ -47,7 +49,7 @@ interface driverInfo {
 @Component({
   selector: 'app-operaciones-apertura-cobrar-conductor',
   templateUrl: './operaciones-apertura-cobrar-conductor.component.html',
-  styleUrls: ['./operaciones-apertura-cobrar-conductor.component.css']
+  styleUrls: ['./operaciones-apertura-cobrar-conductor.component.css'],
 })
 export class OperacionesAperturaCobrarConductorComponent implements OnInit {
   vehicles = new FormControl('');
@@ -152,7 +154,9 @@ export class OperacionesAperturaCobrarConductorComponent implements OnInit {
     if (vehicleValue !== '') {
       this.isLoadingVehicleInfo = true;
       this.apiService
-        .getData(`operations/deliveryvehicledriver/vehicle/${this.getCompany()}/${vehicleValue}`)
+        .getData(
+          `operations/deliveryvehicledriver/vehicle/${this.getCompany()}/${vehicleValue}`,
+        )
         .subscribe({
           next: (data: vehicleInfo) => {
             this.vehicleData = data;
@@ -177,7 +181,9 @@ export class OperacionesAperturaCobrarConductorComponent implements OnInit {
   driverSearch(driverValue: string) {
     if (driverValue !== '') {
       this.apiService
-        .getData(`operations/deliveryvehicledriver/driver/${this.getCompany()}/${driverValue}`)
+        .getData(
+          `operations/deliveryvehicledriver/driver/${this.getCompany()}/${driverValue}`,
+        )
         .subscribe({
           next: (data: driverInfo) => {
             this.isLoadingVehicleInfo = false;
@@ -239,7 +245,9 @@ export class OperacionesAperturaCobrarConductorComponent implements OnInit {
 
   openAperturaDeCuentaDialog() {
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.Small);
-    const isXsmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
+    const isXsmallScreen = this.breakpointObserver.isMatched(
+      Breakpoints.XSmall,
+    );
     const dialogWidth = isSmallScreen || isXsmallScreen ? '90vw' : '60%';
 
     const dialogRef = this.dialog.open(OperacionesAperturaCuentaComponent, {
@@ -253,66 +261,16 @@ export class OperacionesAperturaCobrarConductorComponent implements OnInit {
       },
       disableClose: true,
     });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result && result.accepted) {
-        this.savedAperturaData = result.data;
-        this.savedOtherExpensesItems = result.otherExpensesItems;
-        this.hasAcceptedApertura = true;
-
-        const detailText = this.formatOtherExpensesDescription(result.otherExpensesItems);
-        this.description.setValue(detailText);
-        this.openSnackbar('Para guardar la apertura de cuenta, debes confirmar.');
-      }
-    });
   }
 
   formatOtherExpensesDescription(items: OtherExpensesItem[]): string {
     if (!items || items.length === 0) return '';
-    const modifiedItems = items.filter(item => item.value > 0 || item.explanation.trim() !== '');
+    const modifiedItems = items.filter(
+      (item) => item.value > 0 || item.explanation.trim() !== '',
+    );
     return modifiedItems
-      .map(item => `${item.name} ${item.explanation} ${item.value}`)
+      .map((item) => `${item.name} ${item.explanation} ${item.value}`)
       .join(' // ');
-  }
-
-  confirm() {
-    const amount = this.savedAperturaData 
-      ? (this.savedAperturaData.total_debt + (this.savedAperturaData.other_expenses || 0) - this.savedAperturaData.total_funds)
-      : 0;
-
-    const body = {
-      company_code: this.getCompany(),
-      vehicle_number: this.vehicleData.numero,
-      driver_number: this.vehicleData.conductor,
-      details: this.description.value,
-      amount: amount,
-      user: this.getUser(),
-    };
-
-    const dialogRef = this.dialog.open(ConfirmActionDialogComponent, {
-      width: '400px',
-      data: {
-        documentName: 'Confirmar Apertura de Cuenta',
-        message: `¿Estás seguro de que deseas realizar la apertura de cuenta del conductor ${this.driverData.nombre} para el vehículo ${this.vehicleData.numero}?`,
-      },
-      disableClose: true,
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        this.isLoadingCreate = true;
-        this.apiService.postData('operations/account-opening', body).subscribe({
-          next: () => {
-            this.openSnackbar('Apertura de cuenta realizada exitosamente.');
-            this.closeDialog();
-          },
-          error: () => {
-            this.isLoadingCreate = false;
-            this.openSnackbar('Error al realizar la apertura de cuenta.');
-          },
-        });
-      }
-    });
   }
 
   openSnackbar(message: string) {

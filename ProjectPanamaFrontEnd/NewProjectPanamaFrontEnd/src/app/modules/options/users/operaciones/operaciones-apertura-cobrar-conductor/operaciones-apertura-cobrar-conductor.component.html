@@ -3,10 +3,7 @@
 <mat-dialog-content *ngIf="isLoadingVehicles">
   <mat-progress-bar mode="indeterminate"></mat-progress-bar>
 </mat-dialog-content>
-<mat-dialog-content
-  class="scrollable-content"
-  *ngIf="!isLoadingVehicles"
->
+<mat-dialog-content class="scrollable-content" *ngIf="!isLoadingVehicles">
   <div class="vehicle-info">
     <mat-form-field class="form-field">
       <mat-label>Vehículo</mat-label>
@@ -26,7 +23,8 @@
           *ngFor="let option of filteredOptions | async"
           [value]="option.vehicle_number"
         >
-          {{ option.vehicle_number }} - {{ option.vehicle_plate }} - {{ option.quota_number }} - {{ option.owner }}
+          {{ option.vehicle_number }} - {{ option.vehicle_plate }} -
+          {{ option.quota_number }} - {{ option.owner }}
         </mat-option>
       </mat-autocomplete>
     </mat-form-field>
@@ -118,18 +116,15 @@
 
     <div class="date-message">
       <div class="liquidation-container">
-        <mat-form-field class="full-width">
-          <mat-label>Detalle</mat-label>
-          <textarea matInput [formControl]="description"></textarea>
-        </mat-form-field>
         <button
-          mat-mini-fab
-          class="liquidation-button"
+          mat-button
+          class="liquidation-button full-width"
           aria-label="Apertura de Cuenta"
           matTooltip="Abrir Apertura de Cuenta"
           (click)="openAperturaDeCuentaDialog()"
         >
           <mat-icon>payments</mat-icon>
+          Apertura de Cuenta
         </button>
       </div>
     </div>
@@ -137,5 +132,4 @@
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button mat-dialog-close>Cancelar</button>
-  <button mat-button cdkFocusInitial [disabled]="isLoadingVehicles || isLoadingVehicleInfo || !selectedVehicle || !hasAcceptedApertura" (click)="confirm()">Confirmar</button>
 </mat-dialog-actions>

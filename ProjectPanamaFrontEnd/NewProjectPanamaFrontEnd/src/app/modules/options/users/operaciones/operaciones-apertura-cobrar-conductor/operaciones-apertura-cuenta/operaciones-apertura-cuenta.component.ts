@@ -13,6 +13,7 @@ import {
   OtherExpensesItem,
   OtherExpensesResult,
 } from '../operaciones-relacion-cuentas-pagar/operaciones-relacion-cuentas-pagar.component';
+import { ConfirmActionDialogComponent } from 'src/app/modules/shared/components/confirm-action-dialog/confirm-action-dialog.component';
 
 export interface AccountOpeningDetail {
   registration: number;
@@ -31,6 +32,11 @@ interface dialogData {
   driverNumber: string;
   savedLiquidationData?: AccountOpeningDetail | null;
   savedOtherExpensesItems?: OtherExpensesItem[] | null;
+}
+
+interface printResult {
+  result: number;
+  url: string;
 }
 
 @Component({
@@ -101,7 +107,10 @@ export class OperacionesAperturaCuentaComponent implements OnInit {
       this.incomingData.savedOtherExpensesItems.length > 0
     ) {
       this.otherExpensesItems = [...this.incomingData.savedOtherExpensesItems];
-      this.otherExpensesTotal = this.otherExpensesItems.reduce((acc, item) => acc + item.value, 0);
+      this.otherExpensesTotal = this.otherExpensesItems.reduce(
+        (acc, item) => acc + item.value,
+        0,
+      );
       this.isLoading = false;
     } else {
       this.getItemsCxP();
@@ -113,11 +122,11 @@ export class OperacionesAperturaCuentaComponent implements OnInit {
       .getData(`operations/items-cxp/${this.incomingData.companyCode}`)
       .subscribe({
         next: (data: any[]) => {
-          this.otherExpensesItems = data.map(item => ({
+          this.otherExpensesItems = data.map((item) => ({
             code: item.code,
             name: item.name,
             explanation: '',
-            value: 0
+            value: 0,
           }));
         },
         error: (error: HttpErrorResponse) => {
@@ -149,18 +158,27 @@ export class OperacionesAperturaCuentaComponent implements OnInit {
   }
 
   get totalApertura(): number {
-    return this.data.total_debt + (this.data.other_expenses || 0) - this.data.total_funds;
+    return (
+      this.data.total_debt +
+      (this.data.other_expenses || 0) -
+      this.data.total_funds
+    );
   }
 
   accept(): void {
-    if (!this.hasPrinted) {
-      this.openSnackbar('Debes imprimir la apertura de cuenta primero para continuar.');
-      return;
-    }
-    this.dialogRef.close({
-      accepted: true,
-      data: this.data,
-      otherExpensesItems: this.otherExpensesItems,
+    const dialogRef = this.dialog.open(ConfirmActionDialogComponent, {
+      width: '400px',
+      data: {
+        documentName: 'Confirmar Apertura de Cuenta',
+        message: `¿Estás seguro de que deseas realizar la apertura de cuenta del conductor ${this.incomingData.driverNumber} para el vehículo ${this.incomingData.vehicleNumber}?`,
+      },
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.print();
+      }
     });
   }
 
@@ -181,13 +199,24 @@ export class OperacionesAperturaCuentaComponent implements OnInit {
       user: this.getUserId(),
     };
 
-    const endpoint = 'operations/account-opening/pdf';
+    const endpoint = 'operations/account-opening';
 
-    localStorage.setItem('pdfEndpoint', endpoint);
-    localStorage.setItem('pdfData', JSON.stringify(printData));
+    this.apiService.postData(endpoint, printData).subscribe({
+      next: (data: printResult) => {
+        if (data.result === 0) {
+          this.openSnackbar('No se ha podido generar el documento');
+          this.close();
+          return;
+        }
 
-    window.open('/pdf', '_blank');
-    this.hasPrinted = true;
+        this.openSnackbar('Apertura de cuenta realizada exitosamente.');
+        window.open(data.url, '_blank');
+        this.close();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.openSnackbar('Error al realizar la apertura de cuenta.');
+      },
+    });
   }
 
   get itemsModified(): OtherExpensesItem[] {

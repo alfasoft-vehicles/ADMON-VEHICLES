@@ -111,12 +111,21 @@ h2 {
 .liquidation-container {
   display: flex;
   gap: 10px;
-  align-items: baseline;
+  align-items: center;
+  width: 100%;
 }
 
 .liquidation-button {
-  background-color: rgba(63, 81, 181, 0.1);
-  color: #3f51b5;
+  background-color: #f1f8e9;
+  color: #2e7d32;
+  height: 48px;
+  border-radius: 8px;
+  font-weight: 600;
+  border: 1px solid #dcedc8;
+}
+
+.liquidation-button mat-icon {
+  margin-right: 8px;
 }
 
 .message {
