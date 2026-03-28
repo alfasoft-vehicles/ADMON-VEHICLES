@@ -29,6 +29,7 @@ h2 { margin-bottom: 0; }
   border: 1px solid #e0e0e0;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  flex-shrink: 0; /* Evita que la tarjeta se encoja cuando el contenido es extenso */
 }
 
 .section-card-header {
@@ -93,6 +94,7 @@ h2 { margin-bottom: 0; }
   gap: 20px;
   box-shadow: 0 4px 12px rgba(63, 81, 181, 0.1);
   position: relative;
+  flex-shrink: 0; /* Evita que la tarjeta se encoja */
 }
 
 .summary-card::before {
