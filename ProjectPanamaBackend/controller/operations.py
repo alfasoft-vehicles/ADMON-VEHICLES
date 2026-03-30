@@ -368,7 +368,8 @@ async def vehicle_delivery_info(vehicle_number: str):
 #-----------------------------------------------------------------------------------------------
 
 base_dir = os.path.dirname(os.path.dirname(__file__))
-docx_template_path = os.path.join(base_dir, 'documents', 'ContratoOriginal2.docx')
+docx_template_path_con_cupo = os.path.join(base_dir, 'documents', 'ContratoOriginal_ConCupo_0010.docx')
+docx_template_path_sin_cupo = os.path.join(base_dir, 'documents', 'ContratoOriginal_SinCupo_0010.docx')
 
 locale.setlocale(locale.LC_TIME, "es_ES.utf8")
 
@@ -438,9 +439,6 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
     elif not vehicle.PLACA:
       wReg = 1
       message = 'VEHICULO no Tiene Nº de Placa'
-    elif vehicle.CON_CUPO == '0':
-      wReg = 1
-      message = 'VEHICULO no Tiene marca Con Cupo o Sin Cupo'
     # Verificar datos del propietario
     elif not owner.REPRESENTA:
       wReg = 1
@@ -511,34 +509,19 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
     if wReg == 1:
       return JSONResponse(content={"message": message}, status_code=400)
     
+    if vehicle.CON_CUPO == '1':
+      docx_template_path = docx_template_path_con_cupo
+    else:
+      docx_template_path = docx_template_path_sin_cupo
+    
     zMsg = num2words(float(vehicle.NROENTREGA), lang='es')
 
     xMsg = "{:,.2f}".format(vehicle.CTA_RENTA + vehicle.CTA_SINIES)
-    xMsg1 = "{:,.2f}".format(vehicle.CTA_RENTA)
-    xMsg2 = "{:,.2f}".format(vehicle.CTA_SINIES)
 
     wMsg = num2words(float(vehicle.CTA_RENTA + vehicle.CTA_SINIES), lang='es')
-    wMsg1 = num2words(float(vehicle.CTA_RENTA), lang='es')
-    wMsg2 = num2words(float(vehicle.CTA_SINIES), lang='es')
 
     vDepGar = vehicle.VLR_DEPOSI
     wDepGar = num2words(int(vDepGar), lang='es')
-    
-    if vehicle.NUEVOUSADO == '1':
-      wTipAut = 'Nuevo'
-    elif vehicle.NUEVOUSADO == '2':
-      wTipAut = 'Usado'
-    else:
-      wTipAut = '**********'
-
-    if vehicle.CON_CUPO == '1':
-      Mensaje1 = 'El plan de financiamiento implícito en este contrato otorga el beneficio al ARRENDATARIO que en su favor se haga la '
-      Mensaje2 = 'transferencia del Certificado de operación, siempre y cuando éste cumpla con todos los presupuestos para el ' 
-      Mensaje3 = 'traspaso por  tanto,  no debe entender el ARRENDATARIO que con el pago de cuotas de financiamientos o repuestos se '
-      Mensaje4 = 'computan abonos al valor que representa el certificado de operación, dado a que,  este beneficio es otorgado por la '
-      Mensaje5 = 'naturaleza del contrato solo en casos de cumplimiento total y efectivo del mismo.'
-    else:
-      Mensaje1, Mensaje2, Mensaje3, Mensaje4, Mensaje5 = '', '', '', '', ''
 
     panama_timezone = pytz.timezone('America/Panama')
     now_in_panama = datetime.now(panama_timezone)
@@ -557,6 +540,8 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
     with open(final_signature_path, "wb") as f:
       f.write(image_data)
 
+    representative_signature_path = os.path.join(base_dir, 'assets', 'img', 'firma_blanco.png')
+
     current_docx_path = docx_template_path
     temp_docx_fd, temp_docx_path = tempfile.mkstemp(suffix=".docx")
     os.close(temp_docx_fd)
@@ -565,56 +550,33 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
     
     data = {
       'Representa': owner.REPRESENTA,
-      'Rep_sexo': owner.REP_SEXO,
-      'Rep_estado': owner.REP_ESTADO,
-      'Rep_tipdoc': owner.REP_TIPDOC,
       'Rep_numero': owner.REP_NUMERO,
       'Empresa': owner.RAZONSOCIA,
-      'Ficha': owner.FICHA,
-      'Documento': owner.DOCUMENTO,
-      'Rep_admon': owner.REP_ADMON,
+      'Diremp': owner.DIRECCION,
       'LimNorte': central.LIMI_NORTE,
       'LimSur': central.LIMI_SUR,
       'LimEste': central.LIMI_ESTE,
       'LimOeste': central.LIMI_OESTE,
-      'Operador': driver.CODIGO,
+      'xOpe': driver.CODIGO,
       'Con_sexo': 'varón' if driver.SEXO == '1' else 'mujer',
-      'Con_estado': civil_status.NOMBRE.lower(),
       'Nombre': driver.NOMBRE,
       'Cedula': str(driver.NIT),
-      'Codigo': driver.CODIGO,
       'Direccion': driver.DIRECCION,
       'Telefono': driver.TELEFONO + ' ' + driver.CELULAR,
-      'NomRecomen': driver.RECOME_NOM,
-      'CedRecom': driver.RECOME_CED,
       'laCuota': zMsg,
       'Cuotas': str(vehicle.NROENTREGA),
-      'Puertas': vehicle.PUERTAS,
-      'Capacidad': vehicle.CAPACIDAD,
       'Marca': vehicle.NOMMARCA,
       'Linea': vehicle.LINEA,
       'Ano': vehicle.MODELO,
       'Chasis': vehicle.CHASISNRO,
       'Motor': vehicle.MOTORNRO,
-      'PanaPass': vehicle.PANAPASSNU,
+      'NroPana': vehicle.PANAPASSNU,
       'laSuma': wMsg,
-      'laSuma1': wMsg1,
-      'laSuma2': wMsg2,
       'elValor': xMsg,
-      'elValor1': xMsg1,
-      'elValor2': xMsg2,
       'Unidad': vehicle.NUMERO,
       'Placa': vehicle.PLACA,
-      'NroCupo': vehicle.NRO_CUPO,
-      'ConCupo': 'Con Cupo' if vehicle.CON_CUPO == '1' else 'Sin certificado de operación',
       'wDepGar': wDepGar,
       'vDepGar': vDepGar,
-      'wTipAut': wTipAut,
-      'Mensaje1': Mensaje1,
-      'Mensaje2': Mensaje2,
-      'Mensaje3': Mensaje3,
-      'Mensaje4': Mensaje4,
-      'Mensaje5': Mensaje5,
       'fAno': year,
       'fMes': month,
       'fDia': day,
@@ -622,6 +584,7 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
       'nMes': n_month,
       'nDia': n_day,
       'Firma': InlineImage(doc, final_signature_path, width=Inches(2)),
+      'FirmaRepresenta': InlineImage(doc, representative_signature_path, width=Inches(2)),
     }
     
     doc.render(data)
