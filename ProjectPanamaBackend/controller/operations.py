@@ -48,7 +48,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 load_dotenv()
 
-upload_directory = os.getenv('DIRECTORY_IMG')
 driver_documents_path = os.getenv('DRIVER_DOCS_PATH')
 path_10  = os.getenv('DROPBOX_INTEGRATION_PATH_10')
 path_58  = os.getenv('DROPBOX_INTEGRATION_PATH_58')
@@ -1593,9 +1592,6 @@ async def account_opening(data: AccountOpening):
     
     db.commit()
 
-    pdf_directory_path = os.path.join(upload_directory, "temp")
-    os.makedirs(pdf_directory_path, exist_ok=True)
-
     title = 'Apertura de Cuenta por Cobrar'
     
     data_view = {
@@ -1624,6 +1620,10 @@ async def account_opening(data: AccountOpening):
       'title': title
     }
 
+    headers = {
+      "Content-Disposition": f"attachment; filename=AperturaCuenta_{data.vehicle_number}.pdf"
+    }
+
     template_loader = jinja2.FileSystemLoader(searchpath="./templates")
     template_env = jinja2.Environment(loader=template_loader)
     template = template_env.get_template("AperturaCuentaConductor.html")
@@ -1642,7 +1642,7 @@ async def account_opening(data: AccountOpening):
     with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w') as footer_file:
       footer_path = footer_file.name
       footer_file.write(output_footer)
-    pdf_path = os.path.join(pdf_directory_path, f"AperturaCuenta_{data.vehicle_number}_{timestamp}.pdf")
+    pdf_path = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf').name
 
     # Ejecutar la conversión PDF en un thread separado para no bloquear el event loop
     loop = asyncio.get_event_loop()
@@ -1660,14 +1660,17 @@ async def account_opening(data: AccountOpening):
     background_tasks.add_task(os.remove, html_path)
     background_tasks.add_task(os.remove, header_path)
     background_tasks.add_task(os.remove, footer_path)
-    background_tasks.add_task(remove_file_delayed, pdf_path, 10)
+    background_tasks.add_task(os.remove, pdf_path)
 
-    response = {
-      "result": 1 if pdf_path else 0,
-      "url": f"{upload_directory}/temp/AperturaCuenta_{data.vehicle_number}_{timestamp}.pdf" if pdf_path else ""
-    }
+    response = FileResponse(
+      pdf_path, 
+      media_type='application/pdf', 
+      filename=f'AperturaCuenta_{data.vehicle_number}.pdf', 
+      headers=headers,
+      background=background_tasks
+    )
 
-    return JSONResponse(content=jsonable_encoder(response), status_code=200, background=background_tasks)
+    return response
   except Exception as e:
     db.rollback()
     return JSONResponse(content={"message": str(e)}, status_code=500)
