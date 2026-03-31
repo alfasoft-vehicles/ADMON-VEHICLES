@@ -261,6 +261,12 @@ export class OperacionesAperturaCobrarConductorComponent implements OnInit {
       },
       disableClose: true,
     });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result === 'printed') {
+        this.closeDialog();
+      }
+    });
   }
 
   formatOtherExpensesDescription(items: OtherExpensesItem[]): string {

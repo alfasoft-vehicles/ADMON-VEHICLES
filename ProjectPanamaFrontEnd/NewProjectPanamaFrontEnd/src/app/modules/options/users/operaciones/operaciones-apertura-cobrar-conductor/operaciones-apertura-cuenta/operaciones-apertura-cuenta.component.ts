@@ -158,11 +158,7 @@ export class OperacionesAperturaCuentaComponent implements OnInit {
   }
 
   get totalApertura(): number {
-    return (
-      this.data.total_debt +
-      (this.data.other_expenses || 0) -
-      this.data.total_funds
-    );
+    return this.data.other_expenses || 0;
   }
 
   accept(): void {
@@ -201,22 +197,11 @@ export class OperacionesAperturaCuentaComponent implements OnInit {
 
     const endpoint = 'operations/account-opening';
 
-    this.apiService.postData(endpoint, printData).subscribe({
-      next: (data: printResult) => {
-        if (data.result === 0) {
-          this.openSnackbar('No se ha podido generar el documento');
-          this.close();
-          return;
-        }
+    localStorage.setItem('pdfEndpoint', endpoint);
+    localStorage.setItem('pdfData', JSON.stringify(printData));
 
-        this.openSnackbar('Apertura de cuenta realizada exitosamente.');
-        window.open(data.url, '_blank');
-        this.close();
-      },
-      error: (error: HttpErrorResponse) => {
-        this.openSnackbar('Error al realizar la apertura de cuenta.');
-      },
-    });
+    window.open(`/pdf`, '_blank');
+    this.dialogRef.close('printed');
   }
 
   get itemsModified(): OtherExpensesItem[] {
