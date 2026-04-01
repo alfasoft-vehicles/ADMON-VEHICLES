@@ -22,7 +22,7 @@ import os
 import shutil
 from typing import List
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 from utils.pdf import html2pdf
 from utils.text import clean_text
@@ -49,7 +49,12 @@ PDF_THREAD_POOL = ThreadPoolExecutor(max_workers=2)
 async def inspections_info_all(data: InspectionInfo, company_code: str):
   db = session()
   try:
-    inspections = db.query(Inspecciones).filter(Inspecciones.EMPRESA == company_code).order_by(Inspecciones.FECHA.desc(), Inspecciones.HORA.desc()).all()
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    today = now_in_panama.date()
+    yesterday = today - timedelta(days=1)
+
+    inspections = db.query(Inspecciones).filter(Inspecciones.EMPRESA == company_code, Inspecciones.FECHA >= yesterday).order_by(Inspecciones.FECHA.desc(), Inspecciones.HORA.desc()).all()
 
     if not inspections:
       return JSONResponse(content={"message": "No inspections found"}, status_code=404)
