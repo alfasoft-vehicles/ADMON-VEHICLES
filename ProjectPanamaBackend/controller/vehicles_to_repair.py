@@ -12,7 +12,7 @@ from models.infoempresas import InfoEmpresas
 from schemas.vehicles_to_repair import NewVehicleEntry, VehicleToRepairInfo, UpdateVehicleRepair, FinishRepairRequest
 from utils.vehicles_to_repair import update_expired_entries
 from fastapi.encoders import jsonable_encoder
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 from dotenv import load_dotenv
 from typing import List
@@ -628,6 +628,19 @@ async def vehicles_info(data: VehicleToRepairInfo, company_code: str):
       VehiculosReparacion.EMPRESA == company_code
     ]
 
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    today = now_in_panama.date()
+    yesterday = today - timedelta(days=1)
+
+    has_filters = any([
+      data.fechaInicial and data.fechaInicial.strip(),
+      data.fechaFinal and data.fechaFinal.strip(),
+      data.propietario and data.propietario.strip(),
+      data.patio and data.patio.strip(),
+      data.vehiculo and data.vehiculo.strip()
+    ])
+
     if data.fechaInicial and data.fechaInicial.strip() and data.fechaFinal and data.fechaFinal.strip():
         filters.append(VehiculosReparacion.FECHA >= data.fechaInicial)
         filters.append(VehiculosReparacion.FECHA <= data.fechaFinal)
@@ -640,6 +653,9 @@ async def vehicles_info(data: VehicleToRepairInfo, company_code: str):
     
     if data.vehiculo and data.vehiculo.strip():
         filters.append(VehiculosReparacion.UNIDAD == data.vehiculo)
+
+    if not has_filters:
+        filters.append(VehiculosReparacion.FECHA >= yesterday)
 
     entries = db.query(VehiculosReparacion).filter(*filters).order_by(VehiculosReparacion.FECHA.desc(), VehiculosReparacion.HORA.desc()).all()
 
