@@ -140,6 +140,13 @@ const routes: Routes = [
           ),
         canActivate: [vehicleRepairGuard],
       },
+      {
+        path: 'cash-register',
+        loadChildren: () =>
+          import('../options/users/cash-register/cash-register.module').then(
+            (m) => m.CashRegisterModule,
+          ),
+      }
     ],
   },
 ];
