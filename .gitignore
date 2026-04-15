@@ -247,3 +247,5 @@ claude.md
 GEMINI.md
 gemini.md
 copilot-instructions.md
+.geminiignore
+.claudeignore
