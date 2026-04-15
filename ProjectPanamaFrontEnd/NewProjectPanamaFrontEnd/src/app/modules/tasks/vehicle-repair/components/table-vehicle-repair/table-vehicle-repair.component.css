@@ -247,3 +247,11 @@ td:first-child {
     padding: 8px;
   }
 }
+
+.no-data-message {
+  padding: 30px;
+  font-weight: 500;
+  color: #666;
+  text-align: center;
+  font-style: italic;
+}
