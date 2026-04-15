@@ -30,7 +30,7 @@
 
 ::ng-deep .field-input .mat-mdc-icon-button {
   transform: scale(1);
-} 
+}
 
 .buttons-container {
   display: flex;
@@ -72,8 +72,8 @@ form {
 }
 
 .table-scroll-container {
-  overflow-x: auto; 
-  position: relative; 
+  overflow-x: auto;
+  position: relative;
 }
 
 th {
@@ -101,7 +101,7 @@ td {
 
 th:first-child,
 td:first-child {
-  padding-left: 20px; 
+  padding-left: 20px;
 }
 
 .actions-container {
@@ -121,19 +121,19 @@ td:first-child {
 
 /* Estilos para filas según el estado */
 .row-suspended td:not(.actions-column) {
-  background-color: #FFCDD2 !important;
+  background-color: #ffcdd2 !important;
 }
 
 .row-suspended:hover td:not(.actions-column) {
-  background-color: #FFAAAA !important;
+  background-color: #ffaaaa !important;
 }
 
 .row-pending td:not(.actions-column) {
-  background-color: #FFE0B2 !important;
+  background-color: #ffe0b2 !important;
 }
 
 .row-pending:hover td:not(.actions-column) {
-  background-color: #FFCC80 !important;
+  background-color: #ffcc80 !important;
 }
 
 @media (max-width: 768px) {
@@ -206,4 +206,12 @@ td:first-child {
   ::ng-deep .mat-elevation-z8 .mat-mdc-table thead {
     padding: 8px;
   }
+}
+
+.no-data-message {
+  padding: 30px;
+  font-weight: 500;
+  color: #666;
+  text-align: center;
+  font-style: italic;
 }

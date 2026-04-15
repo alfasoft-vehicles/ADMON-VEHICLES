@@ -20,7 +20,11 @@
       >
         Nueva
       </button>
-      <button mat-raised-button class="button btn-info" (click)="openInfoVehicle()">
+      <button
+        mat-raised-button
+        class="button btn-info"
+        (click)="openInfoVehicle()"
+      >
         Información
       </button>
       <button
@@ -40,7 +44,11 @@
       >
         Nueva
       </button>
-      <button mat-raised-button [matMenuTriggerFor]="menuTop" class="button btn-opciones">
+      <button
+        mat-raised-button
+        [matMenuTriggerFor]="menuTop"
+        class="button btn-opciones"
+      >
         Opciones
       </button>
       <mat-menu #menuTop="matMenu">
@@ -182,7 +190,10 @@
         </mat-error>
       </mat-form-field>
 
-      <div class="field-input buttons-container" [class.vehicle-mode]="idVehicleNumber">
+      <div
+        class="field-input buttons-container"
+        [class.vehicle-mode]="idVehicleNumber"
+      >
         <button
           mat-raised-button
           class="button btn-buscar"
@@ -191,10 +202,20 @@
         >
           Buscar
         </button>
-        <button mat-raised-button class="button btn-regresar" (click)="goBack()" *ngIf="idVehicleNumber">
+        <button
+          mat-raised-button
+          class="button btn-regresar"
+          (click)="goBack()"
+          *ngIf="idVehicleNumber"
+        >
           Regresar
         </button>
-        <button mat-raised-button class="button btn-info" (click)="openInfoVehicle()" *ngIf="idVehicleNumber">
+        <button
+          mat-raised-button
+          class="button btn-info"
+          (click)="openInfoVehicle()"
+          *ngIf="idVehicleNumber"
+        >
           Información
         </button>
         <button
@@ -207,7 +228,11 @@
         </button>
         <!-- Botones duplicados para desktop (se ocultan en mobile) -->
         <ng-container *ngIf="!idVehicleNumber">
-          <button mat-raised-button [matMenuTriggerFor]="menuBottom" class="button btn-opciones-desktop">
+          <button
+            mat-raised-button
+            [matMenuTriggerFor]="menuBottom"
+            class="button btn-opciones-desktop"
+          >
             Opciones
           </button>
           <mat-menu #menuBottom="matMenu">
@@ -237,10 +262,7 @@
     *ngIf="isLoadingData"
   ></mat-progress-bar>
 
-  <div
-    class="mat-elevation-z8"
-    *ngIf="!isLoadingData && dataSource.data.length > 0"
-  >
+  <div class="mat-elevation-z8" *ngIf="!isLoadingData">
     <div class="table-scroll-container">
       <table mat-table [dataSource]="dataSource" matSort>
         <!-- fecha_hora Column -->
@@ -349,18 +371,16 @@
           *matRowDef="let row; columns: displayedColumns"
           [ngClass]="{
             'row-suspended': row.Estado === 'SUS',
-            'row-pending': row.Estado === 'PEN'
+            'row-pending': row.Estado === 'PEN',
           }"
         ></tr>
 
         <!-- Row shown when there is no matching data. -->
         <tr class="mat-row" *matNoDataRow>
-          <td class="mat-cell" colspan="16">
-            <!-- Updated colspan to match number of columns -->
-            <!-- <mat-progress-bar
-              mode="indeterminate"
-            ></mat-progress-bar>
-            <span>No se encontraron resultados</span> -->
+          <td class="mat-cell" colspan="10">
+            <div class="no-data-message">
+              No se han realizado inspecciones recientemente.
+            </div>
           </td>
         </tr>
       </table>
