@@ -1,0 +1,342 @@
+/* ==========================================================================
+   GLOBAL LAYOUT (Following Project Patterns)
+   ========================================================================== */
+.main-container {
+  min-height: 92vh;
+  padding: 2vh 20px 20px;
+  background-color: #fff;
+}
+
+.title-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.title {
+  font-weight: bold;
+  font-size: 2rem;
+  margin: 0;
+  color: #333;
+}
+
+.subtitle {
+  margin: 5px 0 0 0;
+  font-size: 1rem;
+  color: #666;
+}
+
+/* ==========================================================================
+   SEARCH SECTION
+   ========================================================================== */
+.search-section-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 0 22px;
+}
+
+.search-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-grow: 1;
+}
+
+.search-field-custom {
+  width: 250px;
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+}
+
+.button {
+  height: 46px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Specific Project Button Styles */
+.btn-buscar {
+  background-color: #3f51b5 !important;
+  color: white !important;
+}
+
+.btn-regresar {
+  background-color: #f44336 !important;
+  color: white !important;
+}
+
+.btn-opciones {
+  background-color: #ff9800 !important;
+  color: white !important;
+}
+
+.receipt-info {
+  display: flex;
+  gap: 1.5rem;
+  background-color: #f8f9fa;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.receipt-col { text-align: center; }
+.receipt-label { font-size: 0.7rem; color: #3f51b5; font-weight: 700; margin: 0 0 2px 0; text-transform: uppercase; }
+.receipt-value-lg { font-size: 1.1rem; font-weight: 700; color: #333; margin: 0; }
+.receipt-value-md { font-size: 0.85rem; font-weight: 700; color: #333; margin: 0; }
+.receipt-value-sm { font-size: 0.7rem; color: #666; margin: 0; }
+.receipt-divider { height: 40px; }
+
+/* ==========================================================================
+   EMPTY STATE
+   ========================================================================== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  margin: 0 22px;
+  background-color: #fdfdfd;
+  border-radius: 12px;
+  border: 1px dashed #ccc;
+}
+.empty-icon { font-size: 48px; height: 48px; width: 48px; color: #bdbdbd; margin-bottom: 16px; }
+.empty-title { font-size: 1.25rem; font-weight: 600; color: #666; margin: 0; }
+.empty-subtitle { color: #999; margin: 8px 0 16px 0; text-align: center; }
+.empty-tip { font-size: 0.85rem; }
+
+/* ==========================================================================
+   MAIN GRID SYSTEM
+   ========================================================================== */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  padding: 0 22px;
+}
+@media (min-width: 1024px) {
+  .main-grid { grid-template-columns: repeat(12, 1fr); }
+}
+
+.col-left, .col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.col-center {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (min-width: 1024px) {
+  .col-left { grid-column: span 3; }
+  .col-center { grid-column: span 6; }
+  .col-right { grid-column: span 3; }
+}
+
+.card-container {
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.p-4 { padding: 16px; }
+.p-5 { padding: 20px; }
+.no-padding { padding: 0; }
+
+/* ==========================================================================
+   TABLES & INFO (Left Column)
+   ========================================================================== */
+.info-table { width: 100%; border-collapse: collapse; }
+.info-table td, .info-table th { padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+.compact-table td { padding: 6px 0; font-size: 13px; }
+
+.info-header { font-weight: 500; color: #888; text-align: left; padding-right: 10px; font-size: 0.85rem; }
+.info-data { color: #333; text-align: right; font-size: 0.9rem; }
+.info-data-left { color: #333; text-align: left; font-size: 0.9rem; }
+
+.section-header { 
+  font-size: 11px; 
+  font-weight: 700; 
+  letter-spacing: 1px; 
+  padding-top: 15px; 
+  padding-bottom: 5px; 
+  border-bottom: 2px solid #eee !important;
+  text-align: left;
+}
+.first-header { padding-top: 0 !important; }
+.spacer-row td { border: none; padding: 4px; }
+
+.detail-debts-card { display: flex; flex-direction: column; }
+.detail-header { 
+  padding: 12px 16px; 
+  background-color: #f5f5f5; 
+  border-bottom: 1px solid #e0e0e0; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+}
+.detail-title { font-weight: 700; font-size: 0.8rem; color: #555; }
+.detail-icon { color: #999; font-size: 1.2rem; }
+
+.table-scroll-container { overflow-y: auto; max-height: 280px; }
+.details-table { width: 100%; font-size: 0.75rem; text-align: left; border-collapse: collapse; }
+.details-table thead { background-color: #fafafa; color: #777; position: sticky; top: 0; z-index: 1; }
+.details-table th { padding: 10px; border-bottom: 1px solid #eee; text-transform: uppercase; font-weight: 600; font-size: 0.7rem; }
+.details-table td { padding: 10px; border-bottom: 1px solid #eee; color: #444; }
+.row-highlight { background-color: #e8eaf6 !important; cursor: pointer; }
+.detail-footer { padding: 8px 12px; background-color: #fafafa; border-top: 1px solid #eee; }
+
+/* ==========================================================================
+   CENTER COLUMN (OPERATOR & FORM)
+   ========================================================================== */
+.info-card-wrapper { position: relative; }
+.info-accent-line { position: absolute; top: 0; left: 0; width: 4px; height: 100%; background-color: #3f51b5; }
+
+.info-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.operator-name { font-size: 1.2rem; font-weight: 700; color: #1a237e; margin: 0; }
+.operator-code { font-size: 0.85rem; color: #777; margin: 0; }
+.operator-code span { font-weight: 700; color: #333; }
+.info-label-sm { font-size: 0.7rem; color: #999; margin: 0; }
+.info-value-md { font-size: 0.85rem; font-weight: 700; color: #444; margin: 0; }
+
+.badge-active { margin-left: 8px; padding: 2px 8px; background-color: #e8f5e9; color: #2e7d32; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+
+.stats-bar { 
+  margin-top: 16px; 
+  background-color: #f9f9f9; 
+  border-radius: 6px; 
+  padding: 10px; 
+  display: flex; 
+  justify-content: space-around; 
+  font-size: 0.85rem; 
+  border: 1px solid #eee; 
+}
+.stat-item { display: flex; align-items: center; gap: 4px; }
+.stat-label { color: #777; }
+.stat-value { font-weight: 700; }
+
+.payment-title { 
+  font-size: 1rem; 
+  font-weight: 700; 
+  color: #444; 
+  margin-bottom: 16px; 
+  border-bottom: 1px solid #eee; 
+  padding-bottom: 8px; 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+}
+
+.payment-methods-row { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  flex-wrap: wrap;
+  gap: 16px; 
+  margin-bottom: 20px; 
+  background-color: #fafafa; 
+  padding: 12px; 
+  border-radius: 6px; 
+}
+.input-km-custom { width: 120px; }
+
+.payment-inputs-grid { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); 
+  gap: 12px; 
+  margin-bottom: 16px; 
+}
+.payment-input ::ng-deep input { text-align: right; font-weight: 700; color: #2e7d32; }
+
+.total-box { 
+  background-color: #e8f5e9; 
+  border-radius: 8px; 
+  padding: 16px; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  border: 1px solid #c8e6c9;
+}
+.total-label { font-size: 1.1rem; font-weight: 700; color: #1b5e20; text-transform: uppercase; }
+.total-value { font-size: 2rem; font-weight: 800; color: #2e7d32; }
+
+/* ==========================================================================
+   RIGHT COLUMN (ACTIONS & UTILS)
+   ========================================================================== */
+.actions-card { display: flex; flex-direction: column; gap: 12px; }
+.btn-large-custom { height: 50px; font-size: 1rem; width: 100%; border-radius: 6px; }
+
+.consult-title { 
+  font-size: 0.85rem; 
+  font-weight: 700; 
+  color: #666; 
+  margin-bottom: 16px; 
+  border-bottom: 1px solid #eee; 
+  padding-bottom: 8px; 
+  text-align: center; 
+  letter-spacing: 0.5px;
+}
+.consult-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+
+.consult-btn { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 6px; 
+  background: #fff; 
+  border: 1px solid #e0e0e0; 
+  border-radius: 8px; 
+  padding: 12px 4px; 
+  cursor: pointer; 
+  transition: all 0.2s ease; 
+}
+.consult-btn:hover { background: #f0f2f5; border-color: #999; transform: translateY(-1px); }
+.consult-btn span { font-size: 10px; font-weight: 600; color: #444; text-align: center; line-height: 1.2; }
+
+/* ==========================================================================
+   UTILITARIOS
+   ========================================================================== */
+.text-bold { font-weight: 700; }
+.text-right { text-align: right; }
+.text-green { color: #2e7d32; }
+.text-red { color: #d32f2f; }
+.text-red-600 { color: #e53935; }
+.text-green-600 { color: #43a047; }
+.text-blue-600 { color: #1e88e5; }
+
+.fade-in {
+  animation: fadeIn 0.4s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none !important; }
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .search-section-wrapper { padding: 0; }
+  .main-grid { padding: 0; }
+  .search-controls { flex-direction: column; width: 100%; }
+  .search-field-custom { width: 100%; }
+  .button-group { width: 100%; }
+  .button-group button { flex-grow: 1; }
+  .receipt-info { width: 100%; justify-content: center; }
+}

@@ -24,6 +24,8 @@ import { MatCardModule } from '@angular/material/card';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import { MatChipsModule} from '@angular/material/chips';
 import { ReactiveFormsModule } from '@angular/forms';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatRippleModule } from '@angular/material/core';
 
 const materialModules = [
   MatFormFieldModule, 
@@ -50,7 +52,9 @@ const materialModules = [
   MatCardModule,
   MatTooltipModule,
   MatChipsModule,
-  ReactiveFormsModule
+  ReactiveFormsModule,
+  MatCheckboxModule,
+  MatRippleModule
 ]
 
 @NgModule({
