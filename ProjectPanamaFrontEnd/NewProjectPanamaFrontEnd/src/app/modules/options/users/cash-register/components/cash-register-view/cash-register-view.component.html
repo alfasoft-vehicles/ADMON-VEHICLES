@@ -1,14 +1,14 @@
-<div class="main-container">
+<div class="cr-main-container">
   <!-- HEADER -->
-  <div class="title-container">
-    <h1 class="title">GENERAR RECAUDOS</h1>
-    <p class="subtitle">Gestión de pagos y saldos de conductores</p>
+  <div class="cr-title-container">
+    <h1 class="cr-title">CAJA</h1>
+    <!-- <p class="cr-subtitle">Gestión de pagos y saldos de conductores</p> -->
   </div>
 
   <!-- BARRA DE BÚSQUEDA Y RECIBO -->
-  <div class="inputs-container search-section-wrapper">
-    <div class="search-controls">
-      <mat-form-field class="field-input search-field-custom">
+  <div class="cr-inputs-container cr-search-section-wrapper">
+    <div class="cr-search-controls">
+      <mat-form-field class="cr-field-input cr-search-field-custom">
         <mat-label>Cédula / Código</mat-label>
         <input
           matInput
@@ -19,7 +19,7 @@
         <mat-icon matSuffix>badge</mat-icon>
       </mat-form-field>
 
-      <mat-form-field class="field-input search-field-custom">
+      <mat-form-field class="cr-field-input cr-search-field-custom">
         <mat-label>Unidad</mat-label>
         <input
           matInput
@@ -30,386 +30,268 @@
         <mat-icon matSuffix>directions_car</mat-icon>
       </mat-form-field>
 
-      <div class="button-group">
+      <div class="cr-button-group">
         <button
-          mat-raised-button
-          class="button btn-buscar"
+          mat-flat-button
+          class="cr-button cr-btn-pastel-blue"
           (click)="buscar()"
         >
           <mat-icon>search</mat-icon> Buscar
         </button>
 
-        <button *ngIf="hasData" mat-raised-button color="warn" class="button" (click)="limpiar()">
+        <button *ngIf="hasData" mat-flat-button class="cr-button cr-btn-pastel-red" (click)="limpiar()">
           <mat-icon>clear</mat-icon> Limpiar
         </button>
       </div>
     </div>
 
-    <!-- Info de Recibo (Solo visible con datos) -->
-    <div *ngIf="hasData" class="receipt-info mat-elevation-z2">
-      <div class="receipt-col">
-        <p class="receipt-label">Nº Recibo</p>
-        <p class="receipt-value-lg">94827</p>
+    <!-- Alerta de Mantenimiento -->
+    <div *ngIf="hasData" class="cr-alert-warning mat-elevation-z2">
+      <mat-icon class="cr-icon-warning">warning</mat-icon>
+      <div class="cr-alert-content">
+        <p class="cr-alert-title">Próximo Mantenimiento 05/04/2026</p>
+        <p class="cr-alert-subtitle">Le faltan <span>-4 Días</span></p>
       </div>
-      <mat-divider vertical class="receipt-divider"></mat-divider>
-      <div class="receipt-col">
-        <p class="receipt-label">Fecha / Hora</p>
-        <p class="receipt-value-md">09/04/2026</p>
-        <p class="receipt-value-sm">20:17:59</p>
+    </div>
+
+    <!-- Info de Recibo -->
+    <div *ngIf="hasData" class="cr-receipt-info mat-elevation-z2">
+      <div class="cr-receipt-col">
+        <p class="cr-receipt-label">Nº Recibo</p>
+        <p class="cr-receipt-value-lg">94827</p>
+      </div>
+      <mat-divider vertical class="cr-receipt-divider"></mat-divider>
+      <div class="cr-receipt-col">
+        <p class="cr-receipt-label">Fecha / Hora</p>
+        <p class="cr-receipt-value-md">09/04/2026</p>
+        <p class="cr-receipt-value-sm">20:17:59</p>
       </div>
     </div>
   </div>
 
   <!-- ESTADO VACÍO -->
-  <div *ngIf="!hasData" class="empty-state mat-elevation-z1">
-    <mat-icon class="empty-icon">manage_search</mat-icon>
-    <h2 class="empty-title">No hay unidad seleccionada</h2>
-    <p class="empty-subtitle">
+  <div *ngIf="!hasData" class="cr-empty-state mat-elevation-z1">
+    <mat-icon class="cr-empty-icon">manage_search</mat-icon>
+    <h2 class="cr-empty-title">No hay unidad seleccionada</h2>
+    <p class="cr-empty-subtitle">
       Ingrese un código o número de unidad para cargar los datos del recaudo.
     </p>
-    <button mat-button color="primary" class="empty-tip" (click)="searchUnidad = '0363'; buscar()">
+    <button mat-button color="primary" class="cr-empty-tip" (click)="searchUnidad = '0363'; buscar()">
       (Tip: Escribe 0363 y haz clic en Buscar para ver el diseño)
     </button>
   </div>
 
-  <!-- GRID PRINCIPAL (Visible cuando hay datos) -->
-  <div *ngIf="hasData" class="main-grid fade-in">
+  <!-- GRID PRINCIPAL -->
+  <div *ngIf="hasData" class="cr-main-grid">
     
-    <!-- COLUMNA IZQ: Estados Financieros -->
-    <div class="col-left">
-      <!-- Saldos -->
-      <div class="mat-elevation-z8 card-container p-4">
-        <table class="info-table">
+    <!-- COLUMNA IZQ -->
+    <div class="cr-col-left">
+      <div class="mat-elevation-z8 cr-card-container cr-p-4">
+        <table class="cr-info-table">
           <tbody>
+            <tr><th colspan="2" class="cr-section-header cr-text-green cr-first-header">FONDOS</th></tr>
             <tr>
-              <th colspan="2" class="section-header text-green first-header">
-                FONDOS
-              </th>
+              <td class="cr-info-header">Inscripción</td>
+              <td class="cr-info-data cr-text-bold">$ 200.00</td>
             </tr>
             <tr>
-              <td class="info-header">Inscripción</td>
-              <td class="info-data text-bold">$ 200.00</td>
+              <td class="cr-info-header">Ahorros</td>
+              <td class="cr-info-data cr-text-bold">$ 0.00</td>
+            </tr>
+            <tr class="cr-spacer-row"><td colspan="2"></td></tr>
+            <tr><th colspan="2" class="cr-section-header cr-text-red">DEUDAS</th></tr>
+            <tr>
+              <td class="cr-info-header">Renta Diaria</td>
+              <td class="cr-info-data cr-text-bold cr-text-red-600">$ 105.79</td>
             </tr>
             <tr>
-              <td class="info-header">Ahorros</td>
-              <td class="info-data text-bold">$ 0.00</td>
-            </tr>
-            <tr class="spacer-row">
-              <td colspan="2"></td>
+              <td class="cr-info-header">Siniestros</td>
+              <td class="cr-info-data cr-text-bold cr-text-red-600">$ 116.85</td>
             </tr>
             <tr>
-              <th colspan="2" class="section-header text-red">DEUDAS</th>
-            </tr>
-            <tr>
-              <td class="info-header">Renta Diaria</td>
-              <td class="info-data text-bold text-red-600">$ 105.79</td>
-            </tr>
-            <tr>
-              <td class="info-header">Siniestros</td>
-              <td class="info-data text-bold text-red-600">$ 116.85</td>
-            </tr>
-            <tr>
-              <td class="info-header">Recargos/Vtas</td>
-              <td class="info-data text-bold">$ 0.00</td>
+              <td class="cr-info-header">Recargos/Vtas</td>
+              <td class="cr-info-data cr-text-bold">$ 0.00</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Tabla Deudas Detalle -->
-      <div class="mat-elevation-z8 card-container no-padding detail-debts-card">
-        <div class="detail-header">
-          <span class="detail-title">DETALLE DE DEUDAS</span>
-          <mat-icon class="detail-icon">list_alt</mat-icon>
+      <div class="mat-elevation-z8 cr-card-container cr-no-padding cr-detail-debts-card cr-flex-grow">
+        <div class="cr-card-header">
+          <span class="cr-card-title">DETALLE DE DEUDAS</span>
         </div>
-        <div class="table-scroll-container">
-          <table class="details-table">
+        <div class="cr-table-scroll-container">
+          <table class="cr-details-table">
             <thead>
               <tr>
                 <th>FECHA</th>
                 <th>TIPO</th>
                 <th>FACTURA</th>
-                <th class="text-right">SALDO</th>
+                <th class="cr-text-right">SALDO</th>
               </tr>
             </thead>
             <tbody>
-              <tr class="row-highlight" (click)="$event.stopPropagation()">
+              <tr class="cr-row-highlight">
                 <td>06/04/2026</td>
                 <td>RtaDiaria</td>
                 <td>260406-10</td>
-                <td class="text-right text-bold">0.79</td>
+                <td class="cr-text-right cr-text-bold">0.79</td>
               </tr>
-              <tr>
-                <td>07/04/2026</td>
-                <td>RtaDiaria</td>
-                <td>260407-10</td>
-                <td class="text-right text-bold">35.00</td>
-              </tr>
-              <tr>
-                <td>08/04/2026</td>
-                <td>RtaDiaria</td>
-                <td>260408-10</td>
-                <td class="text-right text-bold">35.00</td>
-              </tr>
-              <tr>
-                <td>09/04/2026</td>
-                <td>RtaDiaria</td>
-                <td>260409-10</td>
-                <td class="text-right text-bold">35.00</td>
-              </tr>
+              <tr><td>07/04/2026</td><td>RtaDiaria</td><td>260407-10</td><td class="cr-text-right cr-text-bold">35.00</td></tr>
+              <tr><td>08/04/2026</td><td>RtaDiaria</td><td>260408-10</td><td class="cr-text-right cr-text-bold">35.00</td></tr>
+              <tr><td>09/04/2026</td><td>RtaDiaria</td><td>260409-10</td><td class="cr-text-right cr-text-bold">35.00</td></tr>
             </tbody>
           </table>
         </div>
-        <div class="detail-footer">
-          <mat-checkbox color="primary" class="checkbox-small"
-            >Ver Cuotas Pagas Adelantadas</mat-checkbox
-          >
+        <div class="cr-detail-footer">
+          <mat-checkbox color="primary" class="cr-checkbox-small">Ver Cuotas Pagas Adelantadas</mat-checkbox>
         </div>
       </div>
     </div>
 
-    <!-- COLUMNA CENTRO: Info Operador + Formulario -->
-    <div class="col-center">
-      <!-- Tarjeta de Info -->
-      <div class="mat-elevation-z8 card-container p-5 info-card-wrapper">
-        <div class="info-accent-line"></div>
-
-        <div class="info-card-header">
+    <!-- COLUMNA CENTRO -->
+    <div class="cr-col-center">
+      <div class="mat-elevation-z8 cr-card-container cr-p-5 cr-info-card-wrapper">
+        <div class="cr-info-accent-line"></div>
+        <div class="cr-info-card-header">
           <div>
-            <h3 class="operator-name">ANTOLINO MENDEZ MORA</h3>
-            <p class="operator-code">Operador: <span>10748</span></p>
+            <h3 class="cr-operator-name">ANTOLINO MENDEZ MORA</h3>
+            <p class="cr-operator-code">Operador: <span>10748</span></p>
           </div>
-          <div class="text-right">
-            <p class="info-label-sm">Fecha Inicio</p>
-            <p class="info-value-md">24/10/2025</p>
+          <div class="cr-text-right">
+            <p class="cr-info-label-sm">Fecha Inicio</p>
+            <p class="cr-info-value-md">24/10/2025</p>
           </div>
         </div>
 
-        <table class="info-table compact-table">
+        <table class="cr-info-table cr-compact-table">
           <tbody>
             <tr>
-              <td class="info-header w-25">Tel / Cel:</td>
-              <td class="info-data-left">69452302</td>
-              <td class="info-header w-25">Central:</td>
-              <td class="info-data-left">CIUDAD DE PANAMA</td>
+              <td class="cr-info-header cr-w-25">Tel / Cel:</td>
+              <td class="cr-info-data-left">69452302</td>
+              <td class="cr-info-header cr-w-25">Central:</td>
+              <td class="cr-info-data-left">CIUDAD DE PANAMA</td>
             </tr>
             <tr>
-              <td class="info-header">Dirección:</td>
-              <td class="info-data-left" colspan="3">
-                El 20 De Colon Subiendo Por La Garita Policial
-              </td>
+              <td class="cr-info-header">Dirección:</td>
+              <td class="cr-info-data-left" colspan="3">El 20 De Colon Subiendo Por La Garita Policial</td>
             </tr>
             <tr>
-              <td class="info-header">Propietario:</td>
-              <td class="info-data-left">43 - UNBATTP S.A</td>
-              <td class="info-header">F. Pago:</td>
-              <td class="info-data-left text-bold text-blue-600">
-                Diario
-              </td>
+              <td class="cr-info-header">Propietario:</td>
+              <td class="cr-info-data-left">43 - UNBATTP S.A</td>
+              <td class="cr-info-header">F. Pago:</td>
+              <td class="cr-info-data-left cr-text-bold cr-text-blue-600">Diario</td>
             </tr>
             <tr>
-              <td class="info-header">Vehículo:</td>
-              <td class="info-data-left text-bold">Kia SOLUTO 2025</td>
-              <td class="info-header">Placa:</td>
-              <td class="info-data-left">
-                EG6842 <span class="badge-active">Activo</span>
-              </td>
+              <td class="cr-info-header">Vehículo:</td>
+              <td class="cr-info-data-left cr-text-bold">Kia SOLUTO 2025</td>
+              <td class="cr-info-header">Placa:</td>
+              <td class="cr-info-data-left">EG6842 <span class="cr-badge-active">Activo</span></td>
             </tr>
             <tr>
-              <td class="info-header">Nº Panapass:</td>
-              <td class="info-data-left">-</td>
-              <td class="info-header">Kilometraje:</td>
-              <td class="info-data-left">0.00</td>
+              <td class="cr-info-header">Nº Panapass:</td>
+              <td class="cr-info-data-left">-</td>
+              <td class="cr-info-header">Kilometraje:</td>
+              <td class="cr-info-data-left">0.00</td>
             </tr>
           </tbody>
         </table>
 
-        <!-- Stats Bar -->
-        <div class="stats-bar">
-          <div class="stat-item">
-            <span class="stat-label">Cuentas:</span>
-            <span class="stat-value">975</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Pagas:</span>
-            <span class="stat-value text-green-600">134</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Faltan:</span>
-            <span class="stat-value text-red-500">840</span>
-          </div>
+        <div class="cr-stats-bar">
+          <div class="cr-stat-item"><span class="cr-stat-label">Cuentas:</span> <span class="cr-stat-value">975</span></div>
+          <div class="cr-stat-item"><span class="cr-stat-label">Pagas:</span> <span class="cr-stat-value cr-text-green-600">134</span></div>
+          <div class="cr-stat-item"><span class="cr-stat-label">Faltan:</span> <span class="cr-stat-value cr-text-red-500">840</span></div>
         </div>
       </div>
 
-      <!-- Tarjeta Formulario de Pago -->
-      <div class="mat-elevation-z8 card-container p-5 payment-form-card">
-        <h3 class="payment-title">
-          <mat-icon class="text-blue-500">payments</mat-icon> Carga de Recaudo
-        </h3>
-
-        <!-- Forma de pago y KMs -->
-        <div class="payment-methods-row">
-          <mat-radio-group
-            color="primary"
-            class="radio-group"
-            [(ngModel)]="formaPago"
-          >
-            <mat-radio-button value="efectivo">Efectivo</mat-radio-button>
-            <mat-radio-button value="ach">ACH</mat-radio-button>
-            <mat-radio-button value="yappy">Yappy</mat-radio-button>
-            <mat-radio-button value="nequi">Nequi</mat-radio-button>
-          </mat-radio-group>
-
-          <mat-form-field class="field-input input-km-custom">
-            <mat-label>Km Actual</mat-label>
-            <input matInput type="number" value="0.00" />
-          </mat-form-field>
+      <div class="mat-elevation-z8 cr-card-container cr-no-padding cr-payment-form-card cr-flex-grow">
+        <div class="cr-card-header">
+          <span class="cr-card-title">CARGA DE RECAUDO</span>
         </div>
+        <div class="cr-p-5">
+          <div class="cr-payment-methods-row">
+            <mat-radio-group color="primary" class="cr-radio-group" [(ngModel)]="formaPago">
+              <mat-radio-button value="efectivo">Efectivo</mat-radio-button>
+              <mat-radio-button value="ach">ACH</mat-radio-button>
+              <mat-radio-button value="yappy">Yappy</mat-radio-button>
+              <mat-radio-button value="nequi">Nequi</mat-radio-button>
+            </mat-radio-group>
+            <mat-form-field class="cr-field-input cr-input-km-custom">
+              <mat-label>Km Actual</mat-label>
+              <input matInput type="number" value="0.00" />
+            </mat-form-field>
+          </div>
 
-        <!-- Inputs de Distribución de Dinero -->
-        <div class="payment-inputs-grid">
-          <mat-form-field class="field-input payment-input">
-            <mat-label>Renta</mat-label>
-            <span matPrefix class="currency-prefix">$</span>
-            <input
-              matInput
-              type="number"
-              [(ngModel)]="pagoRenta"
-              (ngModelChange)="calcularTotal()"
-            />
+          <div class="cr-payment-inputs-grid">
+            <mat-form-field class="cr-field-input cr-payment-input">
+              <mat-label>Renta</mat-label>
+              <span matPrefix class="cr-currency-prefix">$</span>
+              <input matInput type="number" [(ngModel)]="pagoRenta" (ngModelChange)="calcularTotal()" />
+            </mat-form-field>
+            <mat-form-field class="cr-field-input cr-payment-input">
+              <mat-label>Siniestros</mat-label>
+              <span matPrefix class="cr-currency-prefix">$</span>
+              <input matInput type="number" [(ngModel)]="pagoSiniestros" (ngModelChange)="calcularTotal()" />
+            </mat-form-field>
+            <mat-form-field class="cr-field-input cr-payment-input">
+              <mat-label>Recargos</mat-label>
+              <span matPrefix class="cr-currency-prefix">$</span>
+              <input matInput type="number" [(ngModel)]="pagoRecargos" (ngModelChange)="calcularTotal()" />
+            </mat-form-field>
+            <mat-form-field class="cr-field-input cr-payment-input">
+              <mat-label>Inscripción</mat-label>
+              <span matPrefix class="cr-currency-prefix">$</span>
+              <input matInput type="number" [(ngModel)]="pagoInscripcion" (ngModelChange)="calcularTotal()" />
+            </mat-form-field>
+            <mat-form-field class="cr-field-input cr-payment-input">
+              <mat-label>Ahorros</mat-label>
+              <span matPrefix class="cr-currency-prefix">$</span>
+              <input matInput type="number" [(ngModel)]="pagoAhorros" (ngModelChange)="calcularTotal()" />
+            </mat-form-field>
+          </div>
+
+          <mat-form-field class="cr-full-width cr-field-input cr-textarea-note">
+            <mat-label>Nota de Recaudo</mat-label>
+            <textarea matInput rows="1" placeholder="Observaciones opcionales..."></textarea>
           </mat-form-field>
 
-          <mat-form-field class="field-input payment-input">
-            <mat-label>Siniestros</mat-label>
-            <span matPrefix class="currency-prefix">$</span>
-            <input
-              matInput
-              type="number"
-              [(ngModel)]="pagoSiniestros"
-              (ngModelChange)="calcularTotal()"
-            />
-          </mat-form-field>
-
-          <mat-form-field class="field-input payment-input">
-            <mat-label>Recargos</mat-label>
-            <span matPrefix class="currency-prefix">$</span>
-            <input
-              matInput
-              type="number"
-              [(ngModel)]="pagoRecargos"
-              (ngModelChange)="calcularTotal()"
-            />
-          </mat-form-field>
-
-          <mat-form-field class="field-input payment-input">
-            <mat-label>Inscripción</mat-label>
-            <span matPrefix class="currency-prefix">$</span>
-            <input
-              matInput
-              type="number"
-              [(ngModel)]="pagoInscripcion"
-              (ngModelChange)="calcularTotal()"
-            />
-          </mat-form-field>
-
-          <mat-form-field class="field-input payment-input">
-            <mat-label>Ahorros</mat-label>
-            <span matPrefix class="currency-prefix">$</span>
-            <input
-              matInput
-              type="number"
-              [(ngModel)]="pagoAhorros"
-              (ngModelChange)="calcularTotal()"
-            />
-          </mat-form-field>
-        </div>
-
-        <mat-form-field class="full-width field-input textarea-note">
-          <mat-label>Nota de Recaudo</mat-label>
-          <textarea
-            matInput
-            rows="1"
-            placeholder="Observaciones opcionales..."
-          ></textarea>
-        </mat-form-field>
-
-        <!-- Total Recibido -->
-        <div class="total-box">
-          <span class="total-label">Valor Recibido</span>
-          <span class="total-value"
-            >$ {{ totalRecibido | number: "1.2-2" }}</span
-          >
+          <div class="cr-total-box">
+            <span class="cr-total-label">Valor Recibido</span>
+            <span class="cr-total-value">$ {{ totalRecibido | number: "1.2-2" }}</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- COLUMNA DERECHA: Acciones Principales y Consultas -->
-    <div class="col-right">
-      <!-- Acciones de Guardado -->
-      <div class="mat-elevation-z8 card-container p-4 actions-card">
-        <button mat-raised-button class="button btn-buscar btn-large-custom">
+    <!-- COLUMNA DERECHA -->
+    <div class="cr-col-right">
+      <div class="mat-elevation-z8 cr-card-container cr-p-4 cr-actions-card">
+        <button mat-flat-button class="cr-button cr-btn-pastel-green cr-btn-large-custom">
           <mat-icon>check_circle</mat-icon> Aceptar
         </button>
-        <button
-          mat-raised-button
-          class="button btn-opciones btn-large-custom"
-        >
+        <button mat-flat-button class="cr-button cr-btn-pastel-orange cr-btn-large-custom">
           <mat-icon>save</mat-icon> Recaudar
-        </button>
-        <button mat-raised-button class="button btn-regresar btn-large-custom">
-          <mat-icon>exit_to_app</mat-icon> Salir
         </button>
       </div>
 
-      <!-- Botones de Consultas -->
-      <div class="mat-elevation-z8 card-container p-4">
-        <h3 class="consult-title">CONSULTAS</h3>
-
-        <div class="consult-grid">
-          <button class="consult-btn" matRipple>
-            <mat-icon class="text-green-600">request_quote</mat-icon>
-            <span>Inf. Comisiones</span>
-          </button>
-          <button class="consult-btn" matRipple>
-            <mat-icon class="text-gray-600">receipt_long</mat-icon>
-            <span>Copia Recibo</span>
-          </button>
-          <button class="consult-btn" matRipple>
-            <mat-icon class="text-blue-600">point_of_sale</mat-icon>
-            <span>Ventas Contado</span>
-          </button>
-          <button class="consult-btn" matRipple>
-            <mat-icon class="text-orange-600">format_list_numbered</mat-icon>
-            <span>Consecutivo</span>
-          </button>
-          <button class="consult-btn" matRipple>
-            <mat-icon class="text-indigo-600">list_alt</mat-icon>
-            <span>Detalle General</span>
-          </button>
-          <button class="consult-btn" matRipple>
-            <mat-icon class="text-purple-600">business</mat-icon>
-            <span>Resumen Emp.</span>
-          </button>
-          <button class="consult-btn" matRipple>
-            <mat-icon class="text-teal-600">person</mat-icon>
-            <span>Resumen Cajero</span>
-          </button>
-          <button class="consult-btn" matRipple>
-            <mat-icon class="text-blue-400">sync_alt</mat-icon>
-            <span>Transferencias</span>
-          </button>
-          <button class="consult-btn" matRipple>
-            <mat-icon class="text-red-500">lock_clock</mat-icon>
-            <span>Resumen Cierre</span>
-          </button>
-          <button class="consult-btn" matRipple>
-            <mat-icon class="text-green-500">account_balance</mat-icon>
-            <span>Cuadre Caja</span>
-          </button>
-          <button class="consult-btn col-span-2" matRipple>
-            <mat-icon class="text-gray-700">calendar_today</mat-icon>
-            <span>Resumen Diario</span>
-          </button>
+      <div class="mat-elevation-z8 cr-card-container cr-no-padding cr-flex-grow">
+        <div class="cr-card-header">
+          <span class="cr-card-title">CONSULTAS</span>
+        </div>
+        <div class="cr-p-4">
+          <div class="cr-consult-grid">
+            <button class="cr-consult-btn" matRipple><mat-icon class="cr-text-green-600">request_quote</mat-icon><span>Inf. Comisiones</span></button>
+            <button class="cr-consult-btn" matRipple><mat-icon class="cr-text-gray-600">receipt_long</mat-icon><span>Copia Recibo</span></button>
+            <button class="cr-consult-btn" matRipple><mat-icon class="cr-text-blue-600">point_of_sale</mat-icon><span>Ventas Contado</span></button>
+            <button class="cr-consult-btn" matRipple><mat-icon class="cr-text-orange-600">format_list_numbered</mat-icon><span>Consecutivo</span></button>
+            <button class="cr-consult-btn" matRipple><mat-icon class="cr-text-indigo-600">list_alt</mat-icon><span>Detalle General</span></button>
+            <button class="cr-consult-btn" matRipple><mat-icon class="cr-text-purple-600">business</mat-icon><span>Resumen Emp.</span></button>
+            <button class="cr-consult-btn" matRipple><mat-icon class="cr-text-teal-600">person</mat-icon><span>Resumen Cajero</span></button>
+            <button class="cr-consult-btn" matRipple><mat-icon class="cr-text-blue-400">sync_alt</mat-icon><span>Transferencias</span></button>
+            <button class="cr-consult-btn" matRipple><mat-icon class="cr-text-red-500">lock_clock</mat-icon><span>Resumen Cierre</span></button>
+            <button class="cr-consult-btn" matRipple><mat-icon class="cr-text-green-500">account_balance</mat-icon><span>Cuadre Caja</span></button>
+            <button class="cr-consult-btn cr-col-span-2" matRipple><mat-icon class="cr-text-gray-700">calendar_today</mat-icon><span>Resumen Diario</span></button>
+          </div>
         </div>
       </div>
     </div>
