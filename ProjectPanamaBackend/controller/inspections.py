@@ -24,6 +24,8 @@ from typing import List
 from collections import defaultdict
 from datetime import datetime, timedelta
 import pytz
+# TODO: TEMPORAL
+import traceback
 from utils.pdf import html2pdf
 from utils.text import clean_text
 import tempfile
@@ -639,6 +641,8 @@ async def create_inspection(data: NewInspection):
 
     return JSONResponse(content={"id": new_inspection.ID}, status_code=201)
   except Exception as e:
+    # TODO: TEMPORAL
+    traceback.print_exc()
     return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()
