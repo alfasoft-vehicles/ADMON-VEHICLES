@@ -59,6 +59,7 @@ import { VehiclesResumeComponent } from '../tasks/vehicles-old/vehicles-resume/v
 import { VehiclesAddnewComponent } from '../tasks/vehicles-old/vehicles-addnew/vehicles-addnew.component';
 import { InspectionsTableComponent } from '../tasks/inspections/inspections-table/inspections-table.component';
 import { inspectionsGuard } from 'src/app/guards/inspections.guard';
+import { vehicleRepairGuard } from 'src/app/guards/vehicle-repair.guard';
 
 const routes: Routes = [
   {
@@ -137,7 +138,15 @@ const routes: Routes = [
           import('../tasks/vehicle-repair/vehicle-repair.module').then(
             (m) => m.VehicleRepairModule,
           ),
+        canActivate: [vehicleRepairGuard],
       },
+      {
+        path: 'cash-register',
+        loadChildren: () =>
+          import('../options/users/cash-register/cash-register.module').then(
+            (m) => m.CashRegisterModule,
+          ),
+      }
     ],
   },
 ];

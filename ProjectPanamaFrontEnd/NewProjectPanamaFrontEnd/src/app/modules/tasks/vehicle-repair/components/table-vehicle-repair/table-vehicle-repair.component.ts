@@ -14,6 +14,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FinishImagesRepairDialogComponent } from '../dialogs/finish-images-repair-dialog/finish-images-repair-dialog.component';
 import { VehiclesRepairInfoComponent } from '../dialogs/vehicles-repair-info/vehicles-repair-info.component';
+import { ConfirmActionDialogComponent } from 'src/app/modules/shared/components/confirm-action-dialog/confirm-action-dialog.component';
+import { FinishRepairNoteDialogComponent } from '../dialogs/finish-repair-note-dialog/finish-repair-note-dialog.component';
 
 interface owners {
   id: string;
@@ -478,6 +480,8 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
         return '<strong>SUSPENDIDO</strong>';
       case 'FIN':
         return 'FINALIZADO';
+      case 'TER':
+        return 'RETIRADO';
       default:
         return 'DESCONOCIDO';
     }
@@ -507,6 +511,22 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
     });
   }
 
+  getTableInfoFilters() {
+    const formValues = this.vehicleRepairForm.value;
+    const hasFilter =
+      formValues.propietario ||
+      formValues.vehiculo ||
+      formValues.patio ||
+      formValues.fechaInicial ||
+      formValues.fechaFinal ||
+      this.idVehicleNumber;
+    if (hasFilter) {
+      this.getTableData();
+    } else {
+      this.getTableInitialData();
+    }
+  }
+
   openAddVehicleRepairDialog(): void {
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
     const dialogWidth = isSmallScreen ? '95vw' : '70%';
@@ -524,19 +544,7 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result === 'refresh') {
-        const formValues = this.vehicleRepairForm.value;
-        const hasFilter =
-          formValues.propietario ||
-          formValues.vehiculo ||
-          formValues.patio ||
-          formValues.fechaInicial ||
-          formValues.fechaFinal ||
-          this.idVehicleNumber;
-        if (hasFilter) {
-          this.getTableData();
-        } else {
-          this.getTableInitialData();
-        }
+        this.getTableInfoFilters();
       }
     });
   }
@@ -554,7 +562,7 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result === 'refresh') {
-        this.getTableData();
+        this.getTableInfoFilters();
       }
     });
   }
@@ -603,17 +611,65 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
   }
 
   openDocumentPDF(entryId: number) {
-    this.apiService.getData(`vehicles_to_repair/get_pdf_url/${entryId}`).subscribe({
-      next: (response: any) => {
-        if (response.url) {
-          window.open(response.url, '_blank');
-        } else {
-          this.openSnackbar('No se encontró la URL del documento.');
-        }
+    this.apiService
+      .getData(`vehicles_to_repair/get_pdf_url/${entryId}`)
+      .subscribe({
+        next: (response: any) => {
+          if (response.url) {
+            window.open(response.url, '_blank');
+          } else {
+            this.openSnackbar('No se encontró la URL del documento.');
+          }
+        },
+        error: (error) => {
+          console.error('Error fetching PDF URL:', error);
+          this.openSnackbar('Error al obtener el documento.');
+        },
+      });
+  }
+
+  openRemoveVehicleDialog(row: VehicleRepairData) {
+    const dialogRef = this.dialog.open(ConfirmActionDialogComponent, {
+      width: '400px',
+      data: {
+        documentName: 'Retirar Vehículo',
+        message: `¿Está seguro de que desea confirmar la retirada del vehículo con unidad ${row.Unidad} y placa ${row.Placa}?`,
       },
-      error: (error) => {
-        console.error('Error fetching PDF URL:', error);
-        this.openSnackbar('Error al obtener el documento.');
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        const noteDialogRef = this.dialog.open(
+          FinishRepairNoteDialogComponent,
+          {
+            width: '400px',
+            disableClose: true,
+          },
+        );
+
+        noteDialogRef.afterClosed().subscribe((noteResult) => {
+          if (noteResult) {
+            const payload = {
+              entry_id: row.id,
+              notes: noteResult,
+              user: this.getUserId(),
+            };
+
+            this.apiService
+              .postData('vehicles_to_repair/finish_repair', payload)
+              .subscribe({
+                next: () => {
+                  this.openSnackbar('Vehículo retirado exitosamente.');
+                  this.getTableInfoFilters();
+                },
+                error: (error) => {
+                  console.error('Error finishing repair:', error);
+                  this.openSnackbar('Error al retirar el vehículo.');
+                },
+              });
+          }
+        });
       }
     });
   }

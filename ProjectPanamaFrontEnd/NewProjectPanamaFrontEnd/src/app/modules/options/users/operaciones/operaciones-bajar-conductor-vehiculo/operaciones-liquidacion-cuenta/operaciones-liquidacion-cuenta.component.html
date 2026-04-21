@@ -7,63 +7,67 @@
 
 <mat-dialog-content class="scrollable-content" *ngIf="!isLoading">
   <div class="info-section">
-    <table class="info-table">
-      <tbody>
-        <tr>
-          <td colspan="2" class="section-header text-green first-header">
-            FONDOS
-          </td>
-        </tr>
-        <tr>
-          <td class="info-header">Inscripción</td>
-          <td class="info-data">$ {{ data.registration | number: "1.2-2" }}</td>
-        </tr>
-        <tr class="total-row">
-          <td class="info-header">Total Fondos</td>
-          <td class="info-data text-green">
-            $ {{ data.registration | number: "1.2-2" }}
-          </td>
-        </tr>
+    <!-- TARJETA FONDOS -->
+    <div class="section-card">
+      <div class="section-card-header header-green">
+        <mat-icon>account_balance_wallet</mat-icon>
+        <span>Fondos</span>
+      </div>
+      <table class="info-table">
+        <tbody>
+          <tr>
+            <td class="info-header">Inscripción</td>
+            <td class="info-data">$ {{ data.registration | number: "1.2-2" }}</td>
+          </tr>
+          <tr class="total-row-style">
+            <td class="info-header">Total Fondos</td>
+            <td class="info-data text-green">
+              $ {{ data.registration | number: "1.2-2" }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-        <tr class="spacer-row">
-          <td colspan="2"></td>
-        </tr>
-
-        <tr>
-          <td colspan="2" class="section-header text-red">DEUDAS</td>
-        </tr>
-        <tr>
-          <td class="info-header">Renta Diaria</td>
-          <td class="info-data">$ {{ data.daily_rent | number: "1.2-2" }}</td>
-        </tr>
-        <tr>
-          <td class="info-header">Siniestros</td>
-          <td class="info-data">$ {{ data.accidents | number: "1.2-2" }}</td>
-        </tr>
-        <tr>
-          <td class="info-header">Otras Deudas</td>
-          <td class="info-data">$ {{ data.other_debts | number: "1.2-2" }}</td>
-        </tr>
-        <tr>
-          <td class="info-header">Panapass</td>
-          <td class="info-data">$ {{ data.panapass | number: "1.2-2" }}</td>
-        </tr>
-        <tr class="total-row">
-          <td class="info-header">Total Deudas</td>
-          <td class="info-data text-red">
-            $ {{ data.total_debt | number: "1.2-2" }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- TARJETA DEUDAS -->
+    <div class="section-card">
+      <div class="section-card-header header-red">
+        <mat-icon>assignment_late</mat-icon>
+        <span>Deudas</span>
+      </div>
+      <table class="info-table">
+        <tbody>
+          <tr>
+            <td class="info-header">Renta Diaria</td>
+            <td class="info-data">$ {{ data.daily_rent | number: "1.2-2" }}</td>
+          </tr>
+          <tr>
+            <td class="info-header">Siniestros</td>
+            <td class="info-data">$ {{ data.accidents | number: "1.2-2" }}</td>
+          </tr>
+          <tr>
+            <td class="info-header">Otras Deudas</td>
+            <td class="info-data">$ {{ data.other_debts | number: "1.2-2" }}</td>
+          </tr>
+          <tr>
+            <td class="info-header">Panapass</td>
+            <td class="info-data">$ {{ data.panapass | number: "1.2-2" }}</td>
+          </tr>
+          <tr class="total-row-style">
+            <td class="info-header">Total Deudas</td>
+            <td class="info-data text-red">
+              $ {{ data.total_debt | number: "1.2-2" }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <mat-divider class="mobile"></mat-divider>
-
   <div class="summary-section">
-    <div class="summary-card top-card">
+    <div class="summary-card">
       <div class="action-field-container">
-        <mat-form-field class="full-width no-subscript">
+        <mat-form-field class="full-width no-subscript" appearance="fill">
           <mat-label>Otros Gastos</mat-label>
           <span matPrefix class="currency-prefix">$</span>
           <input
@@ -74,48 +78,53 @@
         </mat-form-field>
 
         <button
-          mat-mini-fab
-          class="action-button"
-          aria-label="Ver Otros Gastos"
-          matTooltip="Detalle de Otros Gastos"
+          mat-button
+          class="custom-action-button"
           (click)="openOtherExpenses()"
         >
           <mat-icon>request_quote</mat-icon>
+          Ver Detalles
         </button>
       </div>
-    </div>
 
-    <mat-divider class="spacer-divider"></mat-divider>
+      <mat-divider></mat-divider>
 
-    <div class="summary-card">
-      <mat-form-field
-        class="form-field full-width result-field green-theme no-subscript"
-      >
-        <mat-label>Monto a Devolver</mat-label>
-        <span matPrefix class="currency-prefix">$</span>
-        <input
-          matInput
-          [value]="data.owed_to_driver | number: '1.2-2'"
-          readonly
-        />
-      </mat-form-field>
+      <div class="results-container">
+        <mat-form-field
+          class="full-width result-field green-theme no-subscript"
+          appearance="fill"
+        >
+          <mat-label>Monto a Devolver</mat-label>
+          <span matPrefix class="currency-prefix">$</span>
+          <input
+            matInput
+            [value]="data.owed_to_driver | number: '1.2-2'"
+            readonly
+          />
+        </mat-form-field>
 
-      <mat-form-field
-        class="form-field full-width result-field red-theme no-subscript"
-      >
-        <mat-label>Monto a Deudar</mat-label>
-        <span matPrefix class="currency-prefix">$</span>
-        <input
-          matInput
-          [value]="data.owed_by_driver | number: '1.2-2'"
-          readonly
-        />
-      </mat-form-field>
+        <mat-form-field
+          class="full-width result-field red-theme no-subscript"
+          appearance="fill"
+          style="margin-top: 16px;"
+        >
+          <mat-label>Monto a Deudar</mat-label>
+          <span matPrefix class="currency-prefix">$</span>
+          <input
+            matInput
+            [value]="data.owed_by_driver | number: '1.2-2'"
+            readonly
+          />
+        </mat-form-field>
+      </div>
     </div>
   </div>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
+  <button mat-button (click)="close()">
+    <mat-icon>cancel</mat-icon> Cancelar
+  </button>
   <button mat-button (click)="print()">
     <mat-icon>print</mat-icon> Imprimir
   </button>

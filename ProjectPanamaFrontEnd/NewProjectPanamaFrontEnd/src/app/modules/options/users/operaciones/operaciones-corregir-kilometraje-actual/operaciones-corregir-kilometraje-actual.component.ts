@@ -180,7 +180,7 @@ export class OperacionesCorregirKilometrajeActualComponent {
     if (vehicleValue !== '') {
       this.isLoadingVehicleInfo = true;
       this.apiService
-        .getData(`operations/deliveryvehicledriver/vehicle/${vehicleValue}`)
+        .getData(`operations/deliveryvehicledriver/vehicle/${this.getCompany()}/${vehicleValue}`)
         .subscribe({
           next: (data: vehicleInfo) => {
             this.vehicleData = data;
@@ -206,7 +206,7 @@ export class OperacionesCorregirKilometrajeActualComponent {
   driverSearch(driverValue: string) {
     if (driverValue !== '') {
       this.apiService
-        .getData(`operations/deliveryvehicledriver/driver/${driverValue}`)
+        .getData(`operations/deliveryvehicledriver/driver/${this.getCompany()}/${driverValue}`)
         .subscribe({
           next: (data: driverInfo) => {
             this.driverData = data;

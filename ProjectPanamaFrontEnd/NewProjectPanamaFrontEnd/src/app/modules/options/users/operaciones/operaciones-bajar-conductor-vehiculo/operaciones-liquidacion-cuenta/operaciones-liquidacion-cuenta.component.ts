@@ -41,8 +41,8 @@ interface dialogData {
 })
 export class OperacionesLiquidacionCuentaComponent implements OnInit {
   isLoading: boolean = true;
-
   otherExpensesItems: OtherExpensesItem[] = [];
+  hasPrinted: boolean = false;
 
   data: LiquidationDetail = {
     registration: 0,
@@ -203,7 +203,7 @@ export class OperacionesLiquidacionCuentaComponent implements OnInit {
     localStorage.setItem('pdfData', JSON.stringify(data));
 
     window.open('/pdf', '_blank');
-    this.accept();
+    this.hasPrinted = true;
   }
 
   get itemsModified(): OtherExpensesItem[] {
@@ -213,6 +213,10 @@ export class OperacionesLiquidacionCuentaComponent implements OnInit {
   }
 
   accept(): void {
+    if (!this.hasPrinted) {
+      this.openSnackbar('Debes imprimir la liquidación de cuenta primero para continuar.');
+      return;
+    }
     this.dialogRef.close({
       accepted: true,
       data: this.data,

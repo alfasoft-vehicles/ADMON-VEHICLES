@@ -1,0 +1,89 @@
+h2 {
+  margin-bottom: 0;
+}
+
+.dialog-content {
+  padding: 16px;
+  min-width: 350px;
+}
+
+/* --- INFO DEL GASTO --- */
+.gasto-info {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.info-item .label {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 60px;
+}
+
+.info-item .value {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+/* --- DIVIDER --- */
+.divider-spacing {
+  margin: 16px 0;
+}
+
+/* --- FORM --- */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.currency-prefix {
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.6);
+  padding-right: 4px;
+}
+
+/* Textarea styling */
+textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* Remove spinner from number input */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 450px) {
+  .dialog-content {
+    min-width: auto;
+    padding: 12px;
+  }
+}

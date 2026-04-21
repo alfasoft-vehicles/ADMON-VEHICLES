@@ -52,7 +52,11 @@
     </button>
   </div>
 
-  <form [formGroup]="vehicleRepairForm" *ngIf="!isLoadingData" [class.unit-mode-form]="idVehicleNumber">
+  <form
+    [formGroup]="vehicleRepairForm"
+    *ngIf="!isLoadingData"
+    [class.unit-mode-form]="idVehicleNumber"
+  >
     <div class="inputs-container" *ngIf="!idVehicleNumber">
       <mat-form-field class="field-input">
         <mat-label>Propietarios</mat-label>
@@ -126,7 +130,11 @@
     </div>
 
     <div class="inputs-container">
-      <mat-form-field class="field-input" (click)="datepicker.open()" *ngIf="!idVehicleNumber">
+      <mat-form-field
+        class="field-input"
+        (click)="datepicker.open()"
+        *ngIf="!idVehicleNumber"
+      >
         <input
           matInput
           placeholder="Selecciona una fecha inicial"
@@ -148,7 +156,11 @@
         </mat-error>
       </mat-form-field>
 
-      <mat-form-field class="field-input" (click)="datepicker2.open()" *ngIf="!idVehicleNumber">
+      <mat-form-field
+        class="field-input"
+        (click)="datepicker2.open()"
+        *ngIf="!idVehicleNumber"
+      >
         <input
           matInput
           placeholder="Selecciona una fecha final"
@@ -170,7 +182,10 @@
         </mat-error>
       </mat-form-field>
 
-      <div class="field-input buttons-container" [class.vehicle-mode]="idVehicleNumber">
+      <div
+        class="field-input buttons-container"
+        [class.vehicle-mode]="idVehicleNumber"
+      >
         <button
           mat-raised-button
           class="button btn-buscar"
@@ -228,10 +243,7 @@
     *ngIf="isLoadingData"
   ></mat-progress-bar>
 
-  <div
-    class="mat-elevation-z8"
-    *ngIf="!isLoadingData && dataSource.data.length > 0"
-  >
+  <div class="mat-elevation-z8" *ngIf="!isLoadingData">
     <div class="table-scroll-container">
       <table mat-table [dataSource]="dataSource" matSort>
         <!-- Fecha Column -->
@@ -266,16 +278,22 @@
 
         <!-- Justificacion Column -->
         <ng-container matColumnDef="Justificacion">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Justificación</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>
+            Justificación
+          </th>
           <td mat-cell *matCellDef="let row">
             <div class="justification-wrapper">
               <div class="justification-text" [class.expanded]="row.expanded">
                 {{ row.Justificacion }}
               </div>
-              <button mat-button color="primary" class="toggle-btn" 
-                      *ngIf="isLongText(row.Justificacion)"
-                      (click)="row.expanded = !row.expanded">
-                {{ row.expanded ? 'Ver menos' : 'Ver más' }}
+              <button
+                mat-button
+                color="primary"
+                class="toggle-btn"
+                *ngIf="isLongText(row.Justificacion)"
+                (click)="row.expanded = !row.expanded"
+              >
+                {{ row.expanded ? "Ver menos" : "Ver más" }}
               </button>
             </div>
           </td>
@@ -308,41 +326,52 @@
             <div class="actions-container">
               <button
                 mat-icon-button
-                color="primary"
-                matTooltip="Editar registro"
-                *ngIf="row.PuedeEditar === 1"
-                (click)="openEditVehicleRepairDialog(row.id)"
+                [matMenuTriggerFor]="menu"
+                aria-label="Opciones de registro"
               >
-                <mat-icon>edit</mat-icon>
+                <mat-icon>more_vert</mat-icon>
               </button>
-
-              <button
-                mat-icon-button
-                color="warn"
-                matTooltip="Ver formulario"
-                (click)="openInfoVehicleRepairDialog(row.id)"
-              >
-                <mat-icon>assignment</mat-icon>
-              </button>
-
-              <button
-                mat-icon-button
-                color="accent"
-                matTooltip="Ver imagen"
-                *ngIf="row.Estado == 'FIN'"
-                (click)="openImgDialog(row)"
-              >
-                <mat-icon>image</mat-icon>
-              </button>
-
-              <button
-                mat-icon-button
-                matTooltip="Ver documento"
-                *ngIf="row.Estado == 'FIN'"
-                (click)="openDocumentPDF(row.id)"
-              >
-                <mat-icon>description</mat-icon>
-              </button>
+              <mat-menu #menu="matMenu">
+                <button
+                  mat-menu-item
+                  *ngIf="row.PuedeEditar === 1"
+                  (click)="openEditVehicleRepairDialog(row.id)"
+                >
+                  <mat-icon color="primary">edit</mat-icon>
+                  <span>Editar registro</span>
+                </button>
+                <button
+                  mat-menu-item
+                  (click)="openInfoVehicleRepairDialog(row.id)"
+                >
+                  <mat-icon color="warn">assignment</mat-icon>
+                  <span>Ver formulario</span>
+                </button>
+                <button
+                  mat-menu-item
+                  *ngIf="row.Estado == 'FIN' || row.Estado == 'TER'"
+                  (click)="openImgDialog(row)"
+                >
+                  <mat-icon color="accent">image</mat-icon>
+                  <span>Ver imagen</span>
+                </button>
+                <button
+                  mat-menu-item
+                  *ngIf="row.Estado == 'FIN' || row.Estado == 'TER'"
+                  (click)="openDocumentPDF(row.id)"
+                >
+                  <mat-icon>description</mat-icon>
+                  <span>Ver documento</span>
+                </button>
+                <button
+                  mat-menu-item
+                  *ngIf="row.Estado == 'FIN'"
+                  (click)="openRemoveVehicleDialog(row)"
+                >
+                  <mat-icon>directions_car</mat-icon>
+                  <span>Retirar vehículo</span>
+                </button>
+              </mat-menu>
             </div>
           </td>
         </ng-container>
@@ -354,12 +383,17 @@
           [ngClass]="{
             'row-suspended': row.Estado === 'SUS',
             'row-pending': row.Estado === 'PEN',
+            'row-terminated': row.Estado === 'TER',
           }"
         ></tr>
 
         <!-- Row shown when there is no matching data. -->
         <tr class="mat-row" *matNoDataRow>
-          <td class="mat-cell" colspan="10"></td>
+          <td class="mat-cell" colspan="10">
+            <div class="no-data-message">
+              No han ingresado vehículos a patios recientemente.
+            </div>
+          </td>
         </tr>
       </table>
     </div>

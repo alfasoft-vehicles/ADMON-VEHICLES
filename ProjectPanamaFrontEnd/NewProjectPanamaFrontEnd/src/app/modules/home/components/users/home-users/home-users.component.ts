@@ -68,10 +68,10 @@ export class HomeUsersComponent {
       {
         name: 'Caja',
         icon: '../../../../assets/icons/caja.svg',
-        url: 'hoalalalal',
+        url: '/cash-register',
         click: () => null,
         enabled: this.permisos.opcion01,
-        disabled: true,
+        disabled: false,
       },
       {
         name: 'Operaciones',

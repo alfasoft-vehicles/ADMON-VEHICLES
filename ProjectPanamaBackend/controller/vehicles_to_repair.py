@@ -9,10 +9,10 @@ from models.estados import Estados
 from models.permisosusuario import PermisosUsuario
 from models.vehiculosreparacion import VehiculosReparacion
 from models.infoempresas import InfoEmpresas
-from schemas.vehicles_to_repair import NewVehicleEntry, VehicleToRepairInfo, UpdateVehicleRepair
+from schemas.vehicles_to_repair import NewVehicleEntry, VehicleToRepairInfo, UpdateVehicleRepair, FinishRepairRequest
 from utils.vehicles_to_repair import update_expired_entries
 from fastapi.encoders import jsonable_encoder
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 from dotenv import load_dotenv
 from typing import List
@@ -383,7 +383,8 @@ async def report_repairs(data: VehicleToRepairInfo, company_code: str):
   db = session()
   try:
     filters = [
-      VehiculosReparacion.EMPRESA == company_code
+      VehiculosReparacion.EMPRESA == company_code,
+      VehiculosReparacion.ESTADO == 'FIN'
     ]
 
     if data.fechaInicial and data.fechaInicial.strip() and data.fechaFinal and data.fechaFinal.strip():
@@ -605,11 +606,12 @@ async def repair_details(entry_id: int):
       "placa": entry.PLACA,
       "cupo": vehicle.NRO_CUPO if vehicle else entry.NRO_CUPO,
       "descripcion": entry.JUSTIFICACION,
-      "patio": entry.NOMPATIO,
+      "patio": entry.PATIO + ' - ' + entry.NOMPATIO,
       "usuario": user.NOMBRE if user else entry.NOMUSUARIO,
       "estado": entry.ESTADO,
       "fotos": fotos,
-      "qr": 1 if entry.DOCQR and entry.DOCQR.strip() else 0
+      "qr": 1 if entry.DOCQR and entry.DOCQR.strip() else 0,
+      "notasfin": getattr(entry, 'NOTAFIN', "") or ""
     }
 
     return JSONResponse(content=jsonable_encoder(repair_data), status_code=200)
@@ -626,6 +628,19 @@ async def vehicles_info(data: VehicleToRepairInfo, company_code: str):
       VehiculosReparacion.EMPRESA == company_code
     ]
 
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    today = now_in_panama.date()
+    yesterday = today - timedelta(days=1)
+
+    has_filters = any([
+      data.fechaInicial and data.fechaInicial.strip(),
+      data.fechaFinal and data.fechaFinal.strip(),
+      data.propietario and data.propietario.strip(),
+      data.patio and data.patio.strip(),
+      data.vehiculo and data.vehiculo.strip()
+    ])
+
     if data.fechaInicial and data.fechaInicial.strip() and data.fechaFinal and data.fechaFinal.strip():
         filters.append(VehiculosReparacion.FECHA >= data.fechaInicial)
         filters.append(VehiculosReparacion.FECHA <= data.fechaFinal)
@@ -638,6 +653,9 @@ async def vehicles_info(data: VehicleToRepairInfo, company_code: str):
     
     if data.vehiculo and data.vehiculo.strip():
         filters.append(VehiculosReparacion.UNIDAD == data.vehiculo)
+
+    if not has_filters:
+        filters.append(VehiculosReparacion.FECHA >= yesterday)
 
     entries = db.query(VehiculosReparacion).filter(*filters).order_by(VehiculosReparacion.FECHA.desc(), VehiculosReparacion.HORA.desc()).all()
 
@@ -695,6 +713,31 @@ async def vehicles_info(data: VehicleToRepairInfo, company_code: str):
       })
 
     return JSONResponse(content=jsonable_encoder(entries_data), status_code=200)
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
+async def finish_repair(data: FinishRepairRequest):
+  db = session()
+  try:
+    entry = db.query(VehiculosReparacion).filter(VehiculosReparacion.ID == data.entry_id).first()
+    if not entry:
+      return JSONResponse(content={"message": "Record not found"}, status_code=404)
+
+    if entry.ESTADO != 'FIN':
+      return JSONResponse(content={"message": "The record must be in 'FIN' state to be finished"}, status_code=400)
+
+    entry.ESTADO = 'TER'
+    entry.NOTAFIN = data.notes
+    entry.USUARIOFIN = data.user
+
+    db.commit()
+
+    return JSONResponse(content={"message": "Record finished successfully"}, status_code=200)
   except Exception as e:
     db.rollback()
     return JSONResponse(content={"message": str(e)}, status_code=500)

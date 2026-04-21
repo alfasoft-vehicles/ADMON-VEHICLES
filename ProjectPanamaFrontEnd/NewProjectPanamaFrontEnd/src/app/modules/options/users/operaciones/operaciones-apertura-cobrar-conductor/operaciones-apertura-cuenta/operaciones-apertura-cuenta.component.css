@@ -1,0 +1,160 @@
+h2 { margin-bottom: 0; }
+
+.scrollable-content {
+  display: flex;
+  overflow-y: auto;
+  padding: 24px 16px;
+  gap: 32px;
+  background-color: #fcfcfc;
+}
+
+.info-section {
+  flex: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.summary-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* --- TARJETAS DE SECCIÓN --- */
+.section-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  flex-shrink: 0; /* Evita que la tarjeta se encoja cuando el contenido es extenso */
+}
+
+.section-card-header {
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-green { background-color: #f1f8e9; color: #2e7d32; border-bottom: 1px solid #dcedc8; }
+.header-red { background-color: #ffebee; color: #c62828; border-bottom: 1px solid #ffcdd2; }
+
+/* --- TABLA DENTRO DE TARJETA --- */
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.info-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.info-table tr:last-child td { border-bottom: none; }
+
+.info-header {
+  font-weight: 500;
+  color: #616161;
+  text-align: left;
+  font-size: 13px;
+}
+
+.info-data {
+  color: #212121;
+  text-align: right;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.total-row-style {
+  background-color: #fafafa;
+}
+
+.total-row-style td {
+  border-top: 1px solid #eeeeee;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* --- TARJETA DE RESUMEN (DERECHA) --- */
+.summary-card {
+  background: white;
+  border: 2px solid #3f51b5; /* Borde de color primario para destacar */
+  padding: 32px 24px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 4px 12px rgba(63, 81, 181, 0.1);
+  position: relative;
+  flex-shrink: 0; /* Evita que la tarjeta se encoja */
+}
+
+.summary-card::before {
+  content: "RESUMEN";
+  position: absolute;
+  top: -10px;
+  left: 20px;
+  background: #3f51b5;
+  color: white;
+  padding: 2px 12px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.action-field-container {
+  display: flex;
+  flex-direction: column; /* Cambiado a columna para mejor stack */
+  gap: 16px;
+  align-items: center;
+}
+
+.full-width { width: 100%; }
+
+.result-field ::ng-deep .mdc-text-field--filled:not(.mdc-text-field--disabled) {
+  background-color: transparent !important;
+}
+
+.result-field input {
+  font-size: 24px !important; 
+  font-weight: 800 !important;
+  text-align: center;
+  color: #3f51b5 !important;
+}
+
+.currency-prefix { font-size: 18px; font-weight: 700; color: #3f51b5; margin-right: 4px; }
+
+.action-button-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.custom-action-button {
+  width: 100%;
+  height: 48px;
+  border-radius: 8px;
+  background-color: #f5f5f5;
+  color: #3f51b5;
+  font-weight: 600;
+}
+
+/* UTILIDADES */
+::ng-deep .no-subscript .mat-mdc-form-field-subscript-wrapper {
+  display: none !important;
+}
+
+/* Responsive */
+@media (max-width: 599px) {
+  .scrollable-content { flex-direction: column; gap: 24px; padding: 16px; }
+  .info-section, .summary-section { flex: none; width: 100%; }
+  .summary-card { padding: 24px 16px; }
+}

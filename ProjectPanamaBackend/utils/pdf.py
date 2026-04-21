@@ -11,6 +11,9 @@ from io import BytesIO
 from qrcode.image.styledpil import StyledPilImage
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet
+from docxtpl import DocxTemplate, InlineImage
+from docx.shared import Inches
+import shutil
 
 def html2pdf(titulo, html_path, pdf_path, header_path, footer_path, orientation='Portrait'):
     """
@@ -150,3 +153,26 @@ def qr_pdf(route_app, qr_path, data, pdf_path):
     doc.build(story)
 
     os.remove(qr_path_temp)
+
+def generate_contract_pdf(current_docx_path, temp_docx_path, data, final_signature_path, final_signature_path_representative, base_path, vehicle):
+    doc = DocxTemplate(current_docx_path)
+
+    data['Firma'] = InlineImage(doc, final_signature_path, width=Inches(2))
+    data['FirmaRepresenta'] = InlineImage(doc, final_signature_path_representative, width=Inches(2))
+
+    doc.render(data)
+    doc.save(temp_docx_path)
+
+    docx2pdf(temp_docx_path)
+
+    temp_pdf_path = temp_docx_path.replace('.docx', '.pdf')
+
+    if not os.path.exists(temp_pdf_path):
+        raise FileNotFoundError(f"El archivo PDF no se generó correctamente: {temp_pdf_path}")
+
+    final_pdf_path = os.path.join(base_path, "docu07.pdf").replace('\\', '/')
+    shutil.copy(temp_pdf_path, final_pdf_path)
+
+    os.remove(temp_docx_path)
+
+    return temp_pdf_path

@@ -348,7 +348,6 @@ export class AddVehicleRepairDialogComponent implements OnInit {
             fecha: data.date,
             hora: data.time,
           };
-          console.log(this.vehicleInfo);
           this.loadingVehicleInfo = false;
           this.selectedVehicle = true;
         },
@@ -424,8 +423,6 @@ export class AddVehicleRepairDialogComponent implements OnInit {
         time: this.vehicleInfo.hora,
       };
 
-      console.log(newVehicleRepairData);
-
       this.isLoading = true;
 
       this.apiService
@@ -476,7 +473,7 @@ export class AddVehicleRepairDialogComponent implements OnInit {
     const QRPdfEndpoint = 'vehicles_to_repair/generate_qr/' + this.vehicleRepairId;
     localStorage.setItem('pdfEndpoint', QRPdfEndpoint);
     window.open(`/pdf`, '_blank')
-    this.closeDialog();
+    this.dialogRef.close('refresh');
   }
 
   finishAndUpload() {

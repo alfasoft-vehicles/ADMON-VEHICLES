@@ -2,13 +2,13 @@ from pydantic import BaseModel
 from typing import Optional
 
 class NewVehicleEntry(BaseModel):
-  user: str
-  company_code: str
-  vehicle_number: str
-  yard: str
-  justify: str
-  date: str
-  time: str
+    user: str
+    company_code: str
+    vehicle_number: str
+    yard: str
+    justify: str
+    date: str
+    time: str
 
 class VehicleToRepairInfo(BaseModel):
     usuario: str
@@ -25,3 +25,8 @@ class UpdateVehicleRepair(BaseModel):
 
 class DownloadImageRequest(BaseModel):
     image_url: str
+
+class FinishRepairRequest(BaseModel):
+    entry_id: int
+    notes: str
+    user: str
