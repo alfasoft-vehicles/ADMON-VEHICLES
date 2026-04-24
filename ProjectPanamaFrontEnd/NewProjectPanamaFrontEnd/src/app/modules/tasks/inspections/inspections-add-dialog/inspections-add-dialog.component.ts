@@ -308,9 +308,6 @@ export class InspectionsAddDialogComponent implements OnInit {
               case 'caratula_radio':
                 value = data.caratradio;
                 break;
-              case 'copas':
-                value = false; // No existe en el modelo
-                break;
               case 'copas_rines':
                 value = data.copasrines;
                 break;
@@ -585,9 +582,6 @@ export class InspectionsAddDialogComponent implements OnInit {
           : 0,
         gato: checklistItems.find((item) => item.id === 'gato')?.value ? 1 : 0,
         pipa: checklistItems.find((item) => item.id === 'pipa')?.value ? 1 : 0,
-        copas: checklistItems.find((item) => item.id === 'copas')?.value
-          ? 1
-          : 0,
         llanta_repuesto: checklistItems.find(
           (item) => item.id === 'llanta_repuesto',
         )?.value
@@ -714,9 +708,6 @@ export class InspectionsAddDialogComponent implements OnInit {
           : 0,
         gato: checklistItems.find((item) => item.id === 'gato')?.value ? 1 : 0,
         pipa: checklistItems.find((item) => item.id === 'pipa')?.value ? 1 : 0,
-        copas: checklistItems.find((item) => item.id === 'copas')?.value
-          ? 1
-          : 0,
         llanta_repuesto: checklistItems.find(
           (item) => item.id === 'llanta_repuesto',
         )?.value

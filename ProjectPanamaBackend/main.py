@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from config.dbconnection import Base, engine
 from fastapi.staticfiles import StaticFiles
@@ -44,6 +46,14 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+  print(f"Error de validación en {request.url}: {exc.errors()}")
+  return JSONResponse(
+      status_code=422,
+      content={"message": "Error de validación", "details": exc.errors()},
+  )
 
 Base.metadata.create_all(bind=engine)
 

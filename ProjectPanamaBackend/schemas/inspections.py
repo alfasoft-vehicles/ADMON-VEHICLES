@@ -29,7 +29,6 @@ class NewInspection(BaseModel):
   triangulo: int
   gato: int
   pipa: int
-  copas: int
   llanta_repuesto: int
   placa_municipal: int
   caratula_radio: int
@@ -67,7 +66,6 @@ class UpdateInspection(BaseModel):
   triangulo: int
   gato: int
   pipa: int
-  copas: int
   llanta_repuesto: int
   placa_municipal: int
   caratula_radio: int

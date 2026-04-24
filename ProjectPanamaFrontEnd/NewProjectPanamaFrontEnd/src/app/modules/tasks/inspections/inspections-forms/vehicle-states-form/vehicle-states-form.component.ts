@@ -27,7 +27,6 @@ export class VehicleStatesFormComponent {
     { id: 'alfombra', label: 'Alfombra' },
     { id: 'antena', label: 'Antena' },
     { id: 'caratula_radio', label: 'Carátula de Radio' },
-    { id: 'copas', label: 'Copas' },
     { id: 'copas_rines', label: 'Copas/Rines' },
     { id: 'extinguidor', label: 'Extinguidor' },
     {
