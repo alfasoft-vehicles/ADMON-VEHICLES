@@ -119,6 +119,12 @@ export class VehicleStatesFormComponent {
     return this.vehicleForm.get('checklistItems') as FormArray;
   }
 
+  setAllChecklistItems(value: boolean): void {
+    this.checklistItemsArray.controls.forEach((control) => {
+      (control as FormGroup).get('value')?.setValue(value);
+    });
+  }
+
   openGetPanapassDialog() {
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
     const dialogWidth = isSmallScreen ? '90vw' : '60%';

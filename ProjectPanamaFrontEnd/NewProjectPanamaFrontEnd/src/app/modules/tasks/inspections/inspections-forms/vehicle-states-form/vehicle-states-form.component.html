@@ -9,8 +9,8 @@
         <div class="checklist-options-container">
           <span class="options-title">OPCIONES</span>
           <div class="checklist-options-header">
-            <mat-icon class="icon-green" matTooltip="Sí">check_circle</mat-icon>
-            <mat-icon class="icon-red" matTooltip="No">cancel</mat-icon>
+            <mat-icon class="icon-green" matTooltip="Sí" (click)="setAllChecklistItems(true)">check_circle</mat-icon>
+            <mat-icon class="icon-red" matTooltip="No" (click)="setAllChecklistItems(false)">cancel</mat-icon>
           </div>
         </div>
       </div>
