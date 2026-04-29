@@ -31,6 +31,7 @@ from routes.yards import yards_router
 from routes.driver_data import driver_data_router
 from routes.mechanics import mechanics_router
 from routes.vehicles_to_repair import vehicles_to_repair_router
+from routes.wallet import wallet_router
 import os
 
 load_dotenv()
@@ -83,6 +84,7 @@ app.include_router(yards_router)
 app.include_router(driver_data_router)
 app.include_router(mechanics_router)
 app.include_router(vehicles_to_repair_router)
+app.include_router(wallet_router)
 
 app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 
