@@ -2,7 +2,14 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from config.dbconnection import session
 from models.cartera import Cartera
+from models.conductores import Conductores
+from models.vehiculos import Vehiculos
+from models.propietarios import Propietarios
+from models.marcas import Marcas
+from models.estados import Estados
+from models.centrales import Centrales
 from sqlalchemy import func
+from utils.panapass import get_txt_file, search_value_in_txt
 
 async def vehicle_wallet_info(company_code: str, vehicle_number: str, driver_number: str):
   db = session()
@@ -38,5 +45,69 @@ async def vehicle_wallet_info(company_code: str, vehicle_number: str, driver_num
     return JSONResponse(content=jsonable_encoder(response), status_code=200)
   except Exception as e:
     return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
+async def vehicle_and_driver_info(company_code: str, vehicle_number: str):
+  db = session()
+  try:
+    information = db.query(
+      Marcas.NOMBRE.label('MARCA'), Centrales.NOMBRE.label('CENTRAL'), Estados.NOMBRE.label('NOMBRE_ESTADO'), 
+      Propietarios.NOMBRE.label('NOMBRE_PROPI'), Vehiculos.PLACA, Vehiculos.NRO_CUPO, Vehiculos.NROENTREGA, 
+      Vehiculos.CUO_DIARIA, Vehiculos.ESTADO, Vehiculos.MODELO, Vehiculos.PROPI_IDEN, Vehiculos.CONDUCTOR,
+      Vehiculos.CON_CUPO, Vehiculos.FEC_ESTADO, Vehiculos.EMPRESA, Vehiculos.KILOMETRAJ, Vehiculos.PANAPASSNU,
+      Vehiculos.FORMAPAGO, Conductores.NOMBRE.label('NOMBRE_CONDUCTOR'), Conductores.CEDULA, Conductores.TELEFONO, 
+      Conductores.DIRECCION, Conductores.NROENTREGA, Conductores.NROENTPAGO, Conductores.NROENTSDO, Conductores.FEC_INICIO)\
+    .join(Marcas, Vehiculos.MARCA == Marcas.CODIGO)\
+    .join(Centrales, Vehiculos.CENTRAL == Centrales.CODIGO)\
+    .join(Estados, Vehiculos.ESTADO == Estados.CODIGO)\
+    .join(Propietarios, Vehiculos.PROPI_IDEN == Propietarios.CODIGO)\
+    .outerjoin(Conductores, Vehiculos.CONDUCTOR == Conductores.CODIGO
+    ).filter(
+      Vehiculos.EMPRESA == company_code,
+      Vehiculos.NUMERO == vehicle_number
+    ).first()
+
+    if not information:
+      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+    
+    txt_file_path = get_txt_file(company_code)
+    if txt_file_path:
+      panapass_value = search_value_in_txt('Unidad', vehicle_number, 'Saldo Cuenta PanaPass', txt_file_path)
+    else:
+      panapass_value = ''
+
+    payment_form = 'Diario' if information.FORMAPAGO == '1' else 'Semanal' if information.FORMAPAGO == '2' else 'Quincenal' if information.FORMAPAGO == '3' else 'Mensual' if information.FORMAPAGO == '4' else ''
+    
+    response = {
+      'driver_code': information.CONDUCTOR,
+      'driver_id_card': information.CEDULA,
+      'driver_name': information.NOMBRE_CONDUCTOR,
+      'driver_phone': information.TELEFONO,
+      'start_date': information.FEC_INICIO,
+      'driver_address': information.DIRECCION,
+      'central': information.CENTRAL,
+      'owner': f"{information.PROPI_IDEN} - {information.NOMBRE_PROPI}",
+      'license_plate': information.PLACA,
+      'vehicle_state': information.NOMBRE_ESTADO,
+      'accounts': {
+        'total_accounts': information.NROENTREGA,
+        'delivered_accounts': information.NROENTPAGO,
+        'pending_accounts': information.NROENTSDO
+      },
+      'panapass_number': information.PANAPASSNU,
+      'panapass_balance': panapass_value,
+      'mileage': information.KILOMETRAJ,
+      'vehicle': f"{information.MARCA} - {information.MODELO}",
+      'payment_form': payment_form
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  
   finally:
     db.close()
