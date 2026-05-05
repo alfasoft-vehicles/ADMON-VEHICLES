@@ -208,14 +208,18 @@
         <div class="cr-card-header">
           <span class="cr-card-title">CARGA DE RECAUDO</span>
         </div>
-        <div class="cr-p-5">
+        <div class="cr-p-5 cr-flex-grow cr-flex-column">
           <div class="cr-payment-methods-row">
-            <mat-radio-group color="primary" class="cr-radio-group" [(ngModel)]="formaPago">
-              <mat-radio-button value="efectivo">Efectivo</mat-radio-button>
-              <mat-radio-button value="ach">ACH</mat-radio-button>
-              <mat-radio-button value="yappy">Yappy</mat-radio-button>
-              <mat-radio-button value="nequi">Nequi</mat-radio-button>
-            </mat-radio-group>
+            <div class="cr-payment-method-container">
+              <span class="cr-payment-method-label">Forma de Pago</span>
+              <mat-radio-group color="primary" class="cr-radio-group" [(ngModel)]="formaPago">
+                <mat-radio-button value="efectivo">Efectivo</mat-radio-button>
+                <mat-radio-button value="ach">ACH (Trans)</mat-radio-button>
+                <mat-radio-button value="arp">ARP</mat-radio-button>
+                <mat-radio-button value="nequi">Nequi</mat-radio-button>
+                <mat-radio-button value="yappy">Yappy</mat-radio-button>
+              </mat-radio-group>
+            </div>
             <mat-form-field class="cr-field-input cr-input-km-custom">
               <mat-label>Km Actual</mat-label>
               <input matInput type="number" value="0.00" />
@@ -255,9 +259,19 @@
             <textarea matInput rows="1" placeholder="Observaciones opcionales..."></textarea>
           </mat-form-field>
 
-          <div class="cr-total-box">
-            <span class="cr-total-label">Valor Recibido</span>
-            <span class="cr-total-value">$ {{ totalRecibido | number: "1.2-2" }}</span>
+          <div class="cr-form-footer">
+            <div class="cr-total-box">
+              <span class="cr-total-label">Valor Recibido</span>
+              <span class="cr-total-value">$ {{ totalRecibido | number: "1.2-2" }}</span>
+            </div>
+            <div class="cr-action-buttons-inline">
+              <button mat-flat-button class="cr-button cr-btn-pastel-green">
+                <mat-icon>check_circle</mat-icon> Aceptar
+              </button>
+              <button mat-flat-button class="cr-button cr-btn-pastel-orange">
+                <mat-icon>save</mat-icon> Recaudar
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -265,16 +279,18 @@
 
     <!-- COLUMNA DERECHA -->
     <div class="cr-col-right">
-      <div class="mat-elevation-z8 cr-card-container cr-p-4 cr-actions-card">
-        <button mat-flat-button class="cr-button cr-btn-pastel-green cr-btn-large-custom">
-          <mat-icon>check_circle</mat-icon> Aceptar
-        </button>
-        <button mat-flat-button class="cr-button cr-btn-pastel-orange cr-btn-large-custom">
-          <mat-icon>save</mat-icon> Recaudar
-        </button>
+      <div class="mat-elevation-z8 cr-card-container cr-no-padding cr-messages-card">
+        <div class="cr-card-header">
+          <span class="cr-card-title">MENSAJES</span>
+        </div>
+        <div class="cr-messages-list cr-p-4">
+          <div *ngFor="let msg of mensajes" class="cr-message-item">
+            {{ msg }}
+          </div>
+        </div>
       </div>
 
-      <div class="mat-elevation-z8 cr-card-container cr-no-padding cr-flex-grow">
+      <div class="mat-elevation-z8 cr-card-container cr-no-padding cr-flex-grow cr-consult-card">
         <div class="cr-card-header">
           <span class="cr-card-title">CONSULTAS</span>
         </div>
@@ -290,7 +306,8 @@
             <button class="cr-consult-btn" matRipple><mat-icon class="cr-text-blue-400">sync_alt</mat-icon><span>Transferencias</span></button>
             <button class="cr-consult-btn" matRipple><mat-icon class="cr-text-red-500">lock_clock</mat-icon><span>Resumen Cierre</span></button>
             <button class="cr-consult-btn" matRipple><mat-icon class="cr-text-green-500">account_balance</mat-icon><span>Cuadre Caja</span></button>
-            <button class="cr-consult-btn cr-col-span-2" matRipple><mat-icon class="cr-text-gray-700">calendar_today</mat-icon><span>Resumen Diario</span></button>
+            <button class="cr-consult-btn" matRipple><mat-icon class="cr-text-orange-500">cloud_upload</mat-icon><span>Carga Masiva</span></button>
+            <button class="cr-consult-btn" matRipple><mat-icon class="cr-text-gray-700">calendar_today</mat-icon><span>Resumen Diario</span></button>
           </div>
         </div>
       </div>

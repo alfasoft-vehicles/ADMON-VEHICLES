@@ -20,6 +20,15 @@ export class CashRegisterViewComponent {
   pagoAhorros: number = 0;
   totalRecibido: number = 0;
 
+  // Mensajes destacados
+  mensajes: string[] = [
+    'Conductor con revisión técnica pendiente para el próximo lunes.',
+    'Alerta: Saldo en mora por siniestro desde hace más de 15 días.',
+    'Recordatorio: El vehículo requiere rotación de neumáticos pronto.',
+    'Documentación de seguro actualizada exitosamente hoy.',
+    'Convenio de pago activo: restan 3 cuotas de $50.00.',
+  ];
+
   buscar() {
     if (this.searchCodigo || this.searchUnidad === '0363') {
       this.hasData = true;

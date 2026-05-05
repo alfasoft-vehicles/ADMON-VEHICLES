@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from config.dbconnection import Base, engine
 from fastapi.staticfiles import StaticFiles
@@ -29,6 +31,7 @@ from routes.yards import yards_router
 from routes.driver_data import driver_data_router
 from routes.mechanics import mechanics_router
 from routes.vehicles_to_repair import vehicles_to_repair_router
+from routes.wallet import wallet_router
 import os
 
 load_dotenv()
@@ -44,6 +47,14 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+  print(f"Error de validación en {request.url}: {exc.errors()}")
+  return JSONResponse(
+      status_code=422,
+      content={"message": "Error de validación", "details": exc.errors()},
+  )
 
 Base.metadata.create_all(bind=engine)
 
@@ -73,6 +84,7 @@ app.include_router(yards_router)
 app.include_router(driver_data_router)
 app.include_router(mechanics_router)
 app.include_router(vehicles_to_repair_router)
+app.include_router(wallet_router)
 
 app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 

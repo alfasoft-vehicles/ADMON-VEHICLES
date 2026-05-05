@@ -299,16 +299,71 @@
   justify-content: space-between; 
   align-items: center; 
   border: 1px solid #c8e6c9;
+  flex-grow: 1;
+}
+
+.cr-form-footer {
+  display: flex;
+  gap: 16px;
+  align-items: center;
   margin-top: auto;
 }
+
+.cr-action-buttons-inline {
+  display: flex;
+  gap: 8px;
+}
+
+.cr-action-buttons-inline .cr-button {
+  height: 60px;
+  min-width: 120px;
+}
+
+.cr-payment-method-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cr-payment-method-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #3f51b5;
+  text-transform: uppercase;
+}
+
 .cr-total-label { font-size: 1.1rem; font-weight: 700; color: #1b5e20; text-transform: uppercase; }
 .cr-total-value { font-size: 2rem; font-weight: 800; color: #2e7d32; }
 
 /* ==========================================================================
-   RIGHT COLUMN (ACTIONS & CONSULTAS)
+   RIGHT COLUMN (MESSAGES & CONSULTAS)
    ========================================================================== */
+.cr-messages-card {
+  max-height: 250px;
+}
+
+.cr-messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.cr-message-item {
+  padding: 8px 12px;
+  background-color: #f5f5f5;
+  border-left: 3px solid #3f51b5;
+  font-size: 0.85rem;
+  color: #444;
+  border-radius: 0 4px 4px 0;
+}
+
 .cr-actions-card { display: flex; flex-direction: column; gap: 12px; }
 .cr-btn-large-custom { height: 50px; font-size: 1rem; width: 100%; border-radius: 6px; }
+
+.cr-consult-card {
+  /* Remove max-height to prevent cutting off content */
+}
 
 .cr-consult-grid { 
   display: grid; 

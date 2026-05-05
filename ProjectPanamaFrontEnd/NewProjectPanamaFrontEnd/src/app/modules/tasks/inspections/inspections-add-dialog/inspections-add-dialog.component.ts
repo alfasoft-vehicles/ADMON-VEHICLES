@@ -308,9 +308,6 @@ export class InspectionsAddDialogComponent implements OnInit {
               case 'caratula_radio':
                 value = data.caratradio;
                 break;
-              case 'copas':
-                value = false; // No existe en el modelo
-                break;
               case 'copas_rines':
                 value = data.copasrines;
                 break;
@@ -559,7 +556,13 @@ export class InspectionsAddDialogComponent implements OnInit {
       const updateInspectionData = {
         inspection_id: parseInt(this.inspectionCreateID),
         user: this.jwtService.getUserData()?.id,
-        mileage: this.mainInspectionForm.value.vehicleState.kilometraje || 0,
+        mileage:
+          parseInt(
+            String(
+              this.mainInspectionForm.value.vehicleState.kilometraje || 0,
+            ).replace(/[,.]/g, ''),
+            10,
+          ) || 0,
         inspection_type:
           this.mainInspectionForm.value.inspectionInfo.tipo_inspeccion.id,
         mechanic_code: this.mainInspectionForm.value.vehicleState.mecanico.code,
@@ -585,9 +588,6 @@ export class InspectionsAddDialogComponent implements OnInit {
           : 0,
         gato: checklistItems.find((item) => item.id === 'gato')?.value ? 1 : 0,
         pipa: checklistItems.find((item) => item.id === 'pipa')?.value ? 1 : 0,
-        copas: checklistItems.find((item) => item.id === 'copas')?.value
-          ? 1
-          : 0,
         llanta_repuesto: checklistItems.find(
           (item) => item.id === 'llanta_repuesto',
         )?.value
@@ -687,7 +687,13 @@ export class InspectionsAddDialogComponent implements OnInit {
         vehicle_number: this.vehicleInfo.numero,
         mechanic_code:
           this.mainInspectionForm.value.vehicleState.mecanico.code || '',
-        mileage: this.mainInspectionForm.value.vehicleState.kilometraje || 0,
+        mileage:
+          parseInt(
+            String(
+              this.mainInspectionForm.value.vehicleState.kilometraje || 0,
+            ).replace(/[,.]/g, ''),
+            10,
+          ) || 0,
         inspection_type:
           this.mainInspectionForm.value.inspectionInfo.tipo_inspeccion.id,
         inspection_date: this.vehicleInfo.fecha_inspeccion,
@@ -714,9 +720,6 @@ export class InspectionsAddDialogComponent implements OnInit {
           : 0,
         gato: checklistItems.find((item) => item.id === 'gato')?.value ? 1 : 0,
         pipa: checklistItems.find((item) => item.id === 'pipa')?.value ? 1 : 0,
-        copas: checklistItems.find((item) => item.id === 'copas')?.value
-          ? 1
-          : 0,
         llanta_repuesto: checklistItems.find(
           (item) => item.id === 'llanta_repuesto',
         )?.value

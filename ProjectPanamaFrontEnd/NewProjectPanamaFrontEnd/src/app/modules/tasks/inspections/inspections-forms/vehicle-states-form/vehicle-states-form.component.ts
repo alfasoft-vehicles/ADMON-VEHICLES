@@ -27,7 +27,6 @@ export class VehicleStatesFormComponent {
     { id: 'alfombra', label: 'Alfombra' },
     { id: 'antena', label: 'Antena' },
     { id: 'caratula_radio', label: 'Carátula de Radio' },
-    { id: 'copas', label: 'Copas' },
     { id: 'copas_rines', label: 'Copas/Rines' },
     { id: 'extinguidor', label: 'Extinguidor' },
     {
@@ -118,6 +117,12 @@ export class VehicleStatesFormComponent {
 
   get checklistItemsArray(): FormArray {
     return this.vehicleForm.get('checklistItems') as FormArray;
+  }
+
+  setAllChecklistItems(value: boolean): void {
+    this.checklistItemsArray.controls.forEach((control) => {
+      (control as FormGroup).get('value')?.setValue(value);
+    });
   }
 
   openGetPanapassDialog() {
