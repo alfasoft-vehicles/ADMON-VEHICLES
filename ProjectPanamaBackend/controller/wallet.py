@@ -111,3 +111,51 @@ async def vehicle_and_driver_info(company_code: str, vehicle_number: str):
   
   finally:
     db.close()
+
+#-----------------------------------------------------------------------------------------------
+
+async def receipts_list(company_code: str, vehicle_number: str, driver_number: str):
+  db = session()
+  try:
+    receipts = db.query(
+        Cartera.FECHA,
+        Cartera.TIPO,
+        Cartera.FACTURA,
+        Cartera.SALDO
+      ).filter( Cartera.EMPRESA == company_code, Cartera.UNIDAD == vehicle_number,
+                Cartera.CLIENTE == driver_number, Cartera.TIPO == '10',  Cartera.SALDO != None,
+                Cartera.SALDO != 0
+      ).order_by(Cartera.FECHA.desc()).all()
+    
+    if not receipts:
+      return JSONResponse(content={
+        "total_balance": 0,
+        "receipts": []
+      }, status_code=200)
+    
+    list = []
+    total_balance = 0
+
+    for receipt in receipts:
+      balance = receipt.SALDO or 0
+      total_balance += balance
+      
+      list.append({
+        "date": receipt.FECHA,
+        "type": "10 - RtaDiaria",
+        "invoice": receipt.FACTURA,
+        "amount": balance
+      })
+
+    response = {
+      "total_balance": total_balance,
+      "receipts": list
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  
+  finally:
+    db.close()
