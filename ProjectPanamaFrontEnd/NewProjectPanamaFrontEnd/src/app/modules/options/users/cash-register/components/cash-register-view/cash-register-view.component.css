@@ -1,6 +1,3 @@
-/* ==========================================================================
-   GLOBAL LAYOUT (Scoped with cr- prefix)
-   ========================================================================== */
 .cr-main-container {
   min-height: 92vh;
   padding: 2vh 20px 20px;
@@ -20,6 +17,7 @@
   font-size: 2rem;
   margin: 0;
   color: #333;
+  margin-bottom: 16px;
 }
 
 .cr-subtitle {
@@ -28,9 +26,6 @@
   color: #666;
 }
 
-/* ==========================================================================
-   SEARCH SECTION
-   ========================================================================== */
 .cr-search-section-wrapper {
   display: flex;
   justify-content: space-between;
@@ -45,11 +40,37 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  flex-grow: 1;
+  transition: all 0.3s ease;
 }
 
 .cr-search-field-custom {
   width: 250px;
+  transition: all 0.3s ease;
+}
+
+.cr-search-full-width {
+  width: 400px !important;
+}
+
+.cr-field-input {
+  height: 49px;
+}
+
+::ng-deep .cr-field-input .mat-mdc-form-field-flex {
+  height: 49px !important;
+  align-items: center !important;
+}
+
+::ng-deep .cr-field-input .mat-mdc-text-field-wrapper {
+  height: 49px !important;
+}
+
+::ng-deep .cr-field-input .mat-mdc-icon-button {
+  transform: scale(1);
+}
+
+::ng-deep .cr-field-input .mat-mdc-form-field-subscript-wrapper {
+  display: none !important;
 }
 
 .cr-button-group {
@@ -66,7 +87,6 @@
   gap: 4px;
 }
 
-/* Pastel Button Styles */
 .cr-btn-pastel-blue {
   background-color: #e3f2fd !important;
   color: #1e88e5 !important;
@@ -96,9 +116,6 @@
   border: 1px solid #e0e0e0;
 }
 
-/* ==========================================================================
-   ALERT SECTION
-   ========================================================================== */
 .cr-alert-warning {
   background-color: #fff5f5;
   border-left: 4px solid #f44336;
@@ -159,9 +176,6 @@
   height: 40px;
 }
 
-/* ==========================================================================
-   EMPTY STATE
-   ========================================================================== */
 .cr-empty-state {
   display: flex;
   flex-direction: column;
@@ -195,9 +209,6 @@
   font-size: 0.85rem;
 }
 
-/* ==========================================================================
-   MAIN GRID SYSTEM
-   ========================================================================== */
 .cr-main-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -253,7 +264,6 @@
   padding: 0;
 }
 
-/* Standard Card Header */
 .cr-card-header {
   padding: 10px 16px;
   background-color: #fff;
@@ -270,9 +280,6 @@
   text-transform: uppercase;
 }
 
-/* ==========================================================================
-   TABLES & INFO (Left Column)
-   ========================================================================== */
 .cr-info-table {
   width: 100%;
   border-collapse: collapse;
@@ -370,9 +377,6 @@
   font-weight: 600 !important;
 }
 
-/* ==========================================================================
-   CENTER COLUMN (OPERATOR & FORM)
-   ========================================================================== */
 .cr-info-card-wrapper {
   position: relative;
 }
@@ -547,9 +551,6 @@
   color: #2e7d32;
 }
 
-/* ==========================================================================
-   RIGHT COLUMN (MESSAGES & CONSULTAS)
-   ========================================================================== */
 .cr-messages-card {
   max-height: 160px;
 }
@@ -580,10 +581,6 @@
   font-size: 1rem;
   width: 100%;
   border-radius: 6px;
-}
-
-.cr-consult-card {
-  /* Remove max-height to prevent cutting off content */
 }
 
 .cr-consult-grid {
@@ -621,7 +618,6 @@
   line-height: 1.2;
 }
 
-/* Header Actions */
 .cr-header-actions {
   display: flex;
   gap: 4px;
@@ -644,9 +640,6 @@
   margin: 0 !important;
 }
 
-/* ==========================================================================
-   UTILITARIOS
-   ========================================================================== */
 .cr-text-bold {
   font-weight: 700;
 }
@@ -696,11 +689,6 @@
   color: #42a5f5;
 }
 
-::ng-deep .cr-field-input .mat-mdc-form-field-subscript-wrapper {
-  display: none !important;
-}
-
-/* Responsive Adjustments */
 @media (max-width: 1199px) {
   .cr-main-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -711,7 +699,7 @@
   .cr-col-center {
     grid-column: span 2;
     order: -1;
-  } /* Center column (form) first on tablets */
+  }
   .cr-col-right {
     grid-column: span 1;
   }

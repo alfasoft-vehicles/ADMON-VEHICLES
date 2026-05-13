@@ -1,44 +1,95 @@
 <div class="cr-main-container">
-  <!-- HEADER -->
   <div class="cr-title-container">
-    <h1 class="cr-title">CAJA</h1>
-    <!-- <p class="cr-subtitle">Gestión de pagos y saldos de conductores</p> -->
+    <h1 class="cr-title">Caja</h1>
   </div>
 
-  <!-- BARRA DE BÚSQUEDA Y RECIBO -->
-  <div class="cr-inputs-container cr-search-section-wrapper">
-    <div class="cr-search-controls">
-      <mat-form-field class="cr-field-input cr-search-field-custom">
+  <div class="cr-search-section-wrapper" [formGroup]="searchForm">
+    <mat-progress-bar
+      mode="indeterminate"
+      *ngIf="isLoadingAutocompletes"
+    ></mat-progress-bar>
+
+    <div
+      *ngIf="!isLoadingAutocompletes"
+      class="cr-search-controls"
+      [class.cr-search-controls-full]="!hasData"
+    >
+      <mat-form-field
+        class="cr-field-input cr-search-field-custom"
+        [class.cr-search-full-width]="!hasData"
+      >
         <mat-label>Cédula / Código</mat-label>
+        <mat-icon matPrefix>badge</mat-icon>
         <input
+          type="text"
           matInput
-          [(ngModel)]="searchCodigo"
+          formControlName="conductor"
+          [matAutocomplete]="autoConductor"
+          #triggerConductor="matAutocompleteTrigger"
           placeholder="Ej. 3720237"
-          (keyup.enter)="buscar()"
+          (click)="hasData ? limpiar(triggerConductor) : null"
         />
-        <mat-icon matSuffix>badge</mat-icon>
+        <button
+          *ngIf="searchForm.get('conductor')?.value && !hasData"
+          matSuffix
+          mat-icon-button
+          aria-label="Clear"
+          (click)="searchForm.get('conductor')?.setValue('')"
+        >
+          <mat-icon>clear</mat-icon>
+        </button>
+        <mat-autocomplete
+          #autoConductor="matAutocomplete"
+          [displayWith]="displayDriver"
+        >
+          <mat-option
+            *ngFor="let option of optionsDrivers | async"
+            [value]="option"
+          >
+            {{ option.cedula }} - {{ option.nombre_conductor }}
+          </mat-option>
+        </mat-autocomplete>
       </mat-form-field>
 
-      <mat-form-field class="cr-field-input cr-search-field-custom">
+      <mat-form-field
+        class="cr-field-input cr-search-field-custom"
+        [class.cr-search-full-width]="!hasData"
+      >
         <mat-label>Unidad</mat-label>
+        <mat-icon matPrefix>directions_car</mat-icon>
         <input
+          type="text"
           matInput
-          [(ngModel)]="searchUnidad"
+          formControlName="vehiculo"
+          [matAutocomplete]="autoVehiculo"
+          #triggerVehiculo="matAutocompleteTrigger"
           placeholder="Ej. 0363"
-          (keyup.enter)="buscar()"
+          (click)="hasData ? limpiar(triggerVehiculo) : null"
         />
-        <mat-icon matSuffix>directions_car</mat-icon>
+        <button
+          *ngIf="searchForm.get('vehiculo')?.value && !hasData"
+          matSuffix
+          mat-icon-button
+          aria-label="Clear"
+          (click)="searchForm.get('vehiculo')?.setValue('')"
+        >
+          <mat-icon>clear</mat-icon>
+        </button>
+        <mat-autocomplete
+          #autoVehiculo="matAutocomplete"
+          [displayWith]="displayVehicle"
+        >
+          <mat-option
+            *ngFor="let option of optionsVehicles | async"
+            [value]="option"
+          >
+            {{ option.unidad }} - {{ option.placa }} - {{ option.nro_cupo }} -
+            {{ option.propietario }}
+          </mat-option>
+        </mat-autocomplete>
       </mat-form-field>
 
       <div class="cr-button-group">
-        <button
-          mat-flat-button
-          class="cr-button cr-btn-pastel-blue"
-          (click)="buscar()"
-        >
-          <mat-icon>search</mat-icon> Buscar
-        </button>
-
         <button
           *ngIf="hasData"
           mat-flat-button
@@ -50,7 +101,6 @@
       </div>
     </div>
 
-    <!-- Alerta de Mantenimiento -->
     <div *ngIf="hasData" class="cr-alert-warning mat-elevation-z2">
       <mat-icon class="cr-icon-warning">warning</mat-icon>
       <div class="cr-alert-content">
@@ -59,8 +109,7 @@
       </div>
     </div>
 
-    <!-- Info de Recibo -->
-    <div *ngIf="hasData" class="cr-receipt-info mat-elevation-z2">
+    <div *ngIf="hasData && detailInfo" class="cr-receipt-info mat-elevation-z2">
       <div class="cr-receipt-col">
         <p class="cr-receipt-label">Nº Recibo</p>
         <p class="cr-receipt-value-lg">94827</p>
@@ -74,30 +123,26 @@
     </div>
   </div>
 
-  <!-- ESTADO VACÍO -->
-  <div *ngIf="!hasData" class="cr-empty-state mat-elevation-z1">
+  <div class="cr-search-section-wrapper" *ngIf="isLoading">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  </div>
+
+  <div
+    *ngIf="!hasData && !isLoading && !isLoadingAutocompletes"
+    class="cr-empty-state mat-elevation-z1"
+  >
     <mat-icon class="cr-empty-icon">manage_search</mat-icon>
     <h2 class="cr-empty-title">No hay unidad seleccionada</h2>
     <p class="cr-empty-subtitle">
-      Ingrese un código o número de unidad para cargar los datos del recaudo.
+      Seleccione un código o número de unidad para cargar los datos del recaudo.
     </p>
-    <button
-      mat-button
-      color="primary"
-      class="cr-empty-tip"
-      (click)="searchUnidad = '0363'; buscar()"
-    >
-      (Tip: Escribe 0363 y haz clic en Buscar para ver el diseño)
-    </button>
   </div>
 
-  <!-- GRID PRINCIPAL -->
-  <div *ngIf="hasData" class="cr-main-grid">
-    <!-- COLUMNA IZQ -->
+  <div *ngIf="hasData && !isLoading" class="cr-main-grid">
     <div class="cr-col-left">
       <div class="mat-elevation-z8 cr-card-container cr-p-4">
         <table class="cr-info-table">
-          <tbody>
+          <tbody *ngIf="walletInfo">
             <tr>
               <th
                 colspan="2"
@@ -109,13 +154,13 @@
             <tr>
               <td class="cr-info-header">Inscripción</td>
               <td class="cr-info-data cr-text-bold cr-text-green-600">
-                $ 200.00
+                $ {{ walletInfo.funds.registration | number: "1.2-2" }}
               </td>
             </tr>
             <tr>
               <td class="cr-info-header">Ahorros</td>
               <td class="cr-info-data cr-text-bold cr-text-green-600">
-                $ 0.00
+                $ {{ walletInfo.funds.savings | number: "1.2-2" }}
               </td>
             </tr>
             <tr class="cr-spacer-row">
@@ -127,18 +172,20 @@
             <tr>
               <td class="cr-info-header">Renta Diaria</td>
               <td class="cr-info-data cr-text-bold cr-text-red-600">
-                $ 105.79
+                $ {{ walletInfo.debts.daily_rent | number: "1.2-2" }}
               </td>
             </tr>
             <tr>
               <td class="cr-info-header">Siniestros</td>
               <td class="cr-info-data cr-text-bold cr-text-red-600">
-                $ 116.85
+                $ {{ walletInfo.debts.accidents | number: "1.2-2" }}
               </td>
             </tr>
             <tr>
               <td class="cr-info-header">Recargos/Vtas</td>
-              <td class="cr-info-data cr-text-bold cr-text-red-600">$ 0.00</td>
+              <td class="cr-info-data cr-text-bold cr-text-red-600">
+                $ {{ walletInfo.debts.other_debts | number: "1.2-2" }}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -160,30 +207,19 @@
                 <th class="cr-text-right">SALDO</th>
               </tr>
             </thead>
-            <tbody>
-              <tr class="cr-row-highlight">
-                <td>06/04/2026</td>
-                <td>RtaDiaria</td>
-                <td>260406-10</td>
-                <td class="cr-text-right cr-text-bold">0.79</td>
+            <tbody *ngIf="receiptsInfo">
+              <tr *ngFor="let receipt of receiptsInfo.receipts">
+                <td>{{ receipt.date }}</td>
+                <td>{{ receipt.type }}</td>
+                <td>{{ receipt.invoice }}</td>
+                <td class="cr-text-right cr-text-bold">
+                  {{ receipt.amount | number: "1.2-2" }}
+                </td>
               </tr>
-              <tr>
-                <td>07/04/2026</td>
-                <td>RtaDiaria</td>
-                <td>260407-10</td>
-                <td class="cr-text-right cr-text-bold">35.00</td>
-              </tr>
-              <tr>
-                <td>08/04/2026</td>
-                <td>RtaDiaria</td>
-                <td>260408-10</td>
-                <td class="cr-text-right cr-text-bold">35.00</td>
-              </tr>
-              <tr>
-                <td>09/04/2026</td>
-                <td>RtaDiaria</td>
-                <td>260409-10</td>
-                <td class="cr-text-right cr-text-bold">35.00</td>
+              <tr *ngIf="receiptsInfo.receipts.length === 0">
+                <td colspan="4" class="cr-text-center cr-p-5 cr-italic">
+                  No hay deudas pendientes
+                </td>
               </tr>
             </tbody>
           </table>
@@ -200,20 +236,22 @@
       </div>
     </div>
 
-    <!-- COLUMNA CENTRO -->
     <div class="cr-col-center">
       <div
         class="mat-elevation-z8 cr-card-container cr-p-5 cr-info-card-wrapper"
+        *ngIf="detailInfo"
       >
         <div class="cr-info-accent-line"></div>
         <div class="cr-info-card-header">
           <div>
-            <h3 class="cr-operator-name">ANTOLINO MENDEZ MORA</h3>
-            <p class="cr-operator-code">Operador: <span>10748</span></p>
+            <h3 class="cr-operator-name">{{ detailInfo.driver_name }}</h3>
+            <p class="cr-operator-code">
+              Operador: <span>{{ detailInfo.driver_code }}</span>
+            </p>
           </div>
           <div class="cr-text-right">
             <p class="cr-info-label-sm">Fecha Inicio</p>
-            <p class="cr-info-value-md">24/10/2025</p>
+            <p class="cr-info-value-md">{{ detailInfo.start_date }}</p>
           </div>
         </div>
 
@@ -221,37 +259,46 @@
           <tbody>
             <tr>
               <td class="cr-info-header cr-w-25">Tel / Cel:</td>
-              <td class="cr-info-data-left">69452302</td>
+              <td class="cr-info-data-left">{{ detailInfo.driver_phone }}</td>
               <td class="cr-info-header cr-w-25">Central:</td>
-              <td class="cr-info-data-left">CIUDAD DE PANAMA</td>
+              <td class="cr-info-data-left">{{ detailInfo.central }}</td>
             </tr>
             <tr>
               <td class="cr-info-header">Dirección:</td>
               <td class="cr-info-data-left" colspan="3">
-                El 20 De Colon Subiendo Por La Garita Policial
+                {{ detailInfo.driver_address }}
               </td>
             </tr>
             <tr>
               <td class="cr-info-header">Propietario:</td>
-              <td class="cr-info-data-left">43 - UNBATTP S.A</td>
+              <td class="cr-info-data-left">{{ detailInfo.owner }}</td>
               <td class="cr-info-header">F. Pago:</td>
               <td class="cr-info-data-left cr-text-bold cr-text-blue-600">
-                Diario
+                {{ detailInfo.payment_form }}
               </td>
             </tr>
             <tr>
               <td class="cr-info-header">Vehículo:</td>
-              <td class="cr-info-data-left cr-text-bold">Kia SOLUTO 2025</td>
+              <td class="cr-info-data-left cr-text-bold">
+                {{ detailInfo.vehicle }}
+              </td>
               <td class="cr-info-header">Placa:</td>
               <td class="cr-info-data-left">
-                EG6842 <span class="cr-badge-active">Activo</span>
+                {{ detailInfo.license_plate }}
+                <span class="cr-badge-active">{{
+                  detailInfo.vehicle_state
+                }}</span>
               </td>
             </tr>
             <tr>
               <td class="cr-info-header">Saldo Panapass:</td>
-              <td class="cr-info-data-left">-</td>
+              <td class="cr-info-data-left">
+                {{ detailInfo.panapass_balance || "-" }}
+              </td>
               <td class="cr-info-header">Kilometraje:</td>
-              <td class="cr-info-data-left">0.00</td>
+              <td class="cr-info-data-left">
+                {{ detailInfo.mileage | number: "1.2-2" }}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -259,15 +306,21 @@
         <div class="cr-stats-bar">
           <div class="cr-stat-item">
             <span class="cr-stat-label">Cuentas:</span>
-            <span class="cr-stat-value">975</span>
+            <span class="cr-stat-value">{{
+              detailInfo.accounts.total_accounts
+            }}</span>
           </div>
           <div class="cr-stat-item">
             <span class="cr-stat-label">Pagas:</span>
-            <span class="cr-stat-value cr-text-green-600">134</span>
+            <span class="cr-stat-value cr-text-green-600">{{
+              detailInfo.accounts.delivered_accounts
+            }}</span>
           </div>
           <div class="cr-stat-item">
             <span class="cr-stat-label">Faltan:</span>
-            <span class="cr-stat-value cr-text-red-500">840</span>
+            <span class="cr-stat-value cr-text-red-500">{{
+              detailInfo.accounts.pending_accounts
+            }}</span>
           </div>
         </div>
       </div>
@@ -408,7 +461,6 @@
       </div>
     </div>
 
-    <!-- COLUMNA DERECHA -->
     <div class="cr-col-right">
       <div
         class="mat-elevation-z8 cr-card-container cr-no-padding cr-messages-card"
