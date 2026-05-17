@@ -25,16 +25,19 @@ async def upload_signature(data: DriverData):
     if not driver:
       return JSONResponse(content={"message": "Driver not found"}, status_code=404)
     
-    base_path = os.path.join(upload_directory, "conductores", data.company_code, driver.CODIGO, "firmas")
+    # base_path = os.path.join(upload_directory, "conductores", data.company_code, driver.CODIGO, "firmas")
+    base_path = os.path.join(upload_directory, "conductores", data.company_code, driver.CODIGO)
     os.makedirs(base_path, exist_ok=True)
 
-    existing_signatures = [f for f in os.listdir(base_path) if f.startswith(f"{driver.CODIGO}_firma")]
+    # existing_signatures = [f for f in os.listdir(base_path) if f.startswith(f"{driver.CODIGO}_firma")]
 
-    next_index = len(existing_signatures) + 1
+    # next_index = len(existing_signatures) + 1
 
-    final_signature_path = os.path.join(base_path, f"{driver.CODIGO}_firma_{next_index}.png")
+    # final_signature_path = os.path.join(base_path, f"{driver.CODIGO}_firma_{next_index}.png")
+    final_signature_path = os.path.join(base_path, f"{driver.CODIGO}_firma.png")
     
-    signature_url = f"{route_api}uploads/conductores/{data.company_code}/{driver.CODIGO}/firmas/{driver.CODIGO}_firma_{next_index}.png"
+    # signature_url = f"{route_api}uploads/conductores/{data.company_code}/{driver.CODIGO}/firmas/{driver.CODIGO}_firma_{next_index}.png"
+    signature_url = f"{route_api}uploads/conductores/{data.company_code}/{driver.CODIGO}/{driver.CODIGO}_firma.png"
 
     image_data = decode_image(data.base64)
     
@@ -62,12 +65,14 @@ async def upload_picture(data: DriverData):
     base_path = os.path.join(upload_directory, "conductores", data.company_code, driver.CODIGO)
     os.makedirs(base_path, exist_ok=True)
 
-    existing_pictures = [f for f in os.listdir(base_path) if f.startswith(f"{driver.CODIGO}_foto")]
-    next_index = len(existing_pictures) + 1
+    # existing_pictures = [f for f in os.listdir(base_path) if f.startswith(f"{driver.CODIGO}_foto")]
+    # next_index = len(existing_pictures) + 1
 
-    final_picture_path = os.path.join(base_path, f"{driver.CODIGO}_foto_{next_index}.png")
+    # final_picture_path = os.path.join(base_path, f"{driver.CODIGO}_foto_{next_index}.png")
+    final_picture_path = os.path.join(base_path, f"{driver.CODIGO}_foto.png")
 
-    picture_url = f"{route_api}uploads/conductores/{data.company_code}/{driver.CODIGO}/{driver.CODIGO}_foto_{next_index}.png"
+    # picture_url = f"{route_api}uploads/conductores/{data.company_code}/{driver.CODIGO}/{driver.CODIGO}_foto_{next_index}.png"
+    picture_url = f"{route_api}uploads/conductores/{data.company_code}/{driver.CODIGO}/{driver.CODIGO}_foto.png"
 
     image_data = decode_image(data.base64)
 
@@ -95,12 +100,14 @@ async def upload_vehicle_photo(data: DriverData):
     base_path = os.path.join(upload_directory, "vehiculos", data.company_code, vehicle.NUMERO)
     os.makedirs(base_path, exist_ok=True)
 
-    existing_pictures = [f for f in os.listdir(base_path) if f.startswith(f"{vehicle.NUMERO}_foto")]
-    next_index = len(existing_pictures) + 1
+    # existing_pictures = [f for f in os.listdir(base_path) if f.startswith(f"{vehicle.NUMERO}_foto")]
+    # next_index = len(existing_pictures) + 1
 
-    final_picture_path = os.path.join(base_path, f"{vehicle.NUMERO}_foto_{next_index}.png")
+    # final_picture_path = os.path.join(base_path, f"{vehicle.NUMERO}_foto_{next_index}.png")
+    final_picture_path = os.path.join(base_path, f"{vehicle.NUMERO}_foto.png")
 
-    picture_url = f"{route_api}uploads/vehiculos/{data.company_code}/{vehicle.NUMERO}/{vehicle.NUMERO}_foto_{next_index}.png"
+    # picture_url = f"{route_api}uploads/vehiculos/{data.company_code}/{vehicle.NUMERO}/{vehicle.NUMERO}_foto_{next_index}.png"
+    picture_url = f"{route_api}uploads/vehiculos/{data.company_code}/{vehicle.NUMERO}/{vehicle.NUMERO}_foto.png"
 
     image_data = decode_image(data.base64)
 
