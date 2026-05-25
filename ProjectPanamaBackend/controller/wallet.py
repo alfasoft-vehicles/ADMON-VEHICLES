@@ -1,3 +1,4 @@
+from anyio import current_time
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from config.dbconnection import session
@@ -8,8 +9,11 @@ from models.propietarios import Propietarios
 from models.marcas import Marcas
 from models.estados import Estados
 from models.centrales import Centrales
+from models.parametros import Parametros
 from sqlalchemy import func
 from utils.panapass import get_txt_file, search_value_in_txt
+from datetime import datetime
+import pytz
 
 async def vehicle_wallet_info(company_code: str, vehicle_number: str, driver_number: str):
   db = session()
@@ -153,9 +157,32 @@ async def receipts_list(company_code: str, vehicle_number: str, driver_number: s
     }
 
     return JSONResponse(content=jsonable_encoder(response), status_code=200)
-  
   except Exception as e:
     return JSONResponse(content={"message": str(e)}, status_code=500)
-  
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def closing_date(company_code: str):
+  db = session()
+  try:
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    current_time = now_in_panama.strftime("%H:%M:%S")
+
+    date = db.query(Parametros.FEC_CIERRE).filter(Parametros.EMPRESA == company_code).first()
+
+    if not date or not date.FEC_CIERRE:
+      return JSONResponse(content={"message": "No closing date found"}, status_code=404)
+
+    response = {
+      "date": date.FEC_CIERRE,
+      "time": current_time
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()
