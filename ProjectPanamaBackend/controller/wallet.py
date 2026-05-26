@@ -10,6 +10,7 @@ from models.marcas import Marcas
 from models.estados import Estados
 from models.centrales import Centrales
 from models.parametros import Parametros
+from models.condullamadas import Condullamadas
 from sqlalchemy import func
 from utils.panapass import get_txt_file, search_value_in_txt
 from datetime import datetime
@@ -179,6 +180,32 @@ async def closing_date(company_code: str):
     response = {
       "date": date.FEC_CIERRE,
       "time": current_time
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def wallet_messages(company_code: str, vehicle_number: str):
+  db = session()
+  try:
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    current_date = now_in_panama.date()
+
+    messages = db.query(Condullamadas.DETALLE).distinct().filter(
+      Condullamadas.EMPRESA == company_code,
+      Condullamadas.UNIDAD == vehicle_number,
+      Condullamadas.DESDE <= current_date,
+      Condullamadas.HASTA >= current_date
+    ).all()
+
+    response = {
+      "messages": [message.DETALLE for message in messages]
     }
 
     return JSONResponse(content=jsonable_encoder(response), status_code=200)
