@@ -19,10 +19,10 @@ async def get_receipts_list(company_code: str, vehicle_number: str, driver_numbe
 async def get_closing_date(company_code: str):
   return await closing_date(company_code)
 
-@wallet_router.get("/wallet/messages/{company_code}/{vehicle_number}", tags=["Wallet"])
+@wallet_router.get("/wallet/messages/{company_code}/{vehicle_number}/", tags=["Wallet"])
 async def get_messages(company_code: str, vehicle_number: str):
   return await wallet_messages(company_code, vehicle_number)
 
-@wallet_router.get("/wallet/notifications/{company_code}/{vehicle_number}", tags=["Wallet"])
+@wallet_router.get("/wallet/notifications/{company_code}/{vehicle_number}/", tags=["Wallet"])
 async def get_notifications(company_code: str, vehicle_number: str):
   return await wallet_notifications(company_code, vehicle_number)
