@@ -5,6 +5,7 @@ import { ApiService } from 'src/app/services/api.service';
 import { JwtService } from 'src/app/services/jwt.service';
 import { MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 
 export interface drivers {
   codigo_conductor: string;
@@ -76,10 +77,10 @@ export interface VehicleDriverDetail {
 export class CashRegisterViewComponent implements OnInit {
   searchForm!: FormGroup;
 
-  @ViewChild('triggerConductor', { read: MatAutocompleteTrigger })
-  triggerConductor!: MatAutocompleteTrigger;
-  @ViewChild('triggerVehiculo', { read: MatAutocompleteTrigger })
-  triggerVehiculo!: MatAutocompleteTrigger;
+  @ViewChild('triggerDriver', { read: MatAutocompleteTrigger })
+  triggerDriver!: MatAutocompleteTrigger;
+  @ViewChild('triggerVehicle', { read: MatAutocompleteTrigger })
+  triggerVehicle!: MatAutocompleteTrigger;
 
   allDrivers: drivers[] = [];
   allVehicles: vehicles[] = [];
@@ -91,37 +92,35 @@ export class CashRegisterViewComponent implements OnInit {
   receiptsInfo: ReceiptsInfo | null = null;
   detailInfo: VehicleDriverDetail | null = null;
 
+  closingDateInfo: { date: string; time: string } | null = null;
+  notificationMessage: string | null = null;
+
   hasData: boolean = false;
   isLoading: boolean = false;
   isLoadingAutocompletes: boolean = true;
 
-  formaPago: string = 'efectivo';
-  pagoRenta: number = 0;
-  pagoSiniestros: number = 0;
-  pagoRecargos: number = 0;
-  pagoInscripcion: number = 0;
-  pagoAhorros: number = 0;
-  totalRecibido: number = 0;
+  paymentMethod: string = 'efectivo';
+  rentPayment: number = 0;
+  accidentsPayment: number = 0;
+  surchargesPayment: number = 0;
+  registrationPayment: number = 0;
+  savingsPayment: number = 0;
+  totalReceived: number = 0;
 
-  mensajes: string[] = [
-    'Conductor con revisión técnica pendiente para el próximo lunes.',
-    'Alerta: Saldo en mora por siniestro desde hace más de 15 días.',
-    'Recordatorio: El vehículo requiere rotación de neumáticos pronto.',
-    'Documentación de seguro actualizada exitosamente hoy.',
-    'Convenio de pago activo: restan 3 cuotas de $50.00.',
-  ];
+  messages: string[] = [];
 
   constructor(
     private fb: FormBuilder,
     private apiService: ApiService,
     private jwtService: JwtService,
     private snackBar: MatSnackBar,
+    private router: Router,
   ) {}
 
   ngOnInit() {
     this.searchForm = this.fb.group({
-      conductor: [''],
-      vehiculo: [''],
+      driver: [''],
+      vehicle: [''],
     });
 
     this.getDataAutoCompletes();
@@ -134,32 +133,39 @@ export class CashRegisterViewComponent implements OnInit {
 
     const driversObs = this.apiService.getData('drivers_data/' + company);
     const vehiclesObs = this.apiService.getData('vehicles/' + company);
+    const closingDateObs = this.apiService.getData(
+      `wallet/closing-date/${company}`,
+    );
 
-    forkJoin([driversObs, vehiclesObs]).subscribe({
-      next: ([driversData, vehiclesData]: [drivers[], vehicles[]]) => {
+    forkJoin([driversObs, vehiclesObs, closingDateObs]).subscribe({
+      next: ([driversData, vehiclesData, closingDateData]: [
+        drivers[],
+        vehicles[],
+        any,
+      ]) => {
         this.allDrivers = driversData;
-        this.optionsDrivers = this.searchForm
-          .get('conductor')!
-          .valueChanges.pipe(
-            startWith(''),
-            map((value) => this._filterDrivers(value || '')),
-          );
+        this.optionsDrivers = this.searchForm.get('driver')!.valueChanges.pipe(
+          startWith(''),
+          map((value) => this._filterDrivers(value || '')),
+        );
 
         this.allVehicles = vehiclesData;
         this.optionsVehicles = this.searchForm
-          .get('vehiculo')!
+          .get('vehicle')!
           .valueChanges.pipe(
             startWith(''),
             map((value) => this._filterVehicles(value || '')),
           );
 
+        this.closingDateInfo = closingDateData;
         this.isLoadingAutocompletes = false;
       },
       error: (error) => {
         this.openSnackbar(
-          'Error al cargar conductores y vehículos. Intente de nuevo más tarde.',
+          'Error al cargar la información. Vuelve a intentarlo.',
         );
         this.isLoadingAutocompletes = false;
+        this.router.navigate(['']);
       },
     });
   }
@@ -211,7 +217,7 @@ export class CashRegisterViewComponent implements OnInit {
   }
 
   setupListeners() {
-    this.searchForm.get('conductor')?.valueChanges.subscribe((value) => {
+    this.searchForm.get('driver')?.valueChanges.subscribe((value) => {
       if (typeof value === 'object' && value !== null) {
         const selectedDriver = value as drivers;
         const linkedVehicle = this.allVehicles.find(
@@ -219,21 +225,21 @@ export class CashRegisterViewComponent implements OnInit {
         );
         if (linkedVehicle) {
           this.searchForm.patchValue(
-            { vehiculo: linkedVehicle },
+            { vehicle: linkedVehicle },
             { emitEvent: false },
           );
-          this.buscar();
+          this.search();
         }
       } else if (typeof value === 'string') {
         if (this.hasData) {
-          this.limpiar();
+          this.clearForm();
         } else {
-          this.searchForm.patchValue({ vehiculo: '' }, { emitEvent: false });
+          this.searchForm.patchValue({ vehicle: '' }, { emitEvent: false });
         }
       }
     });
 
-    this.searchForm.get('vehiculo')?.valueChanges.subscribe((value) => {
+    this.searchForm.get('vehicle')?.valueChanges.subscribe((value) => {
       if (typeof value === 'object' && value !== null) {
         const selectedVehicle = value as vehicles;
         const linkedDriver = this.allDrivers.find(
@@ -241,32 +247,32 @@ export class CashRegisterViewComponent implements OnInit {
         );
         if (linkedDriver) {
           this.searchForm.patchValue(
-            { conductor: linkedDriver },
+            { driver: linkedDriver },
             { emitEvent: false },
           );
-          this.buscar();
+          this.search();
         }
       } else if (typeof value === 'string') {
         if (this.hasData) {
-          this.limpiar();
+          this.clearForm();
         } else {
-          this.searchForm.patchValue({ conductor: '' }, { emitEvent: false });
+          this.searchForm.patchValue({ driver: '' }, { emitEvent: false });
         }
       }
     });
   }
 
-  buscar() {
-    const conductor = this.searchForm.get('conductor')?.value;
-    const vehiculo = this.searchForm.get('vehiculo')?.value;
+  search() {
+    const driver = this.searchForm.get('driver')?.value;
+    const vehicle = this.searchForm.get('vehicle')?.value;
 
     if (
-      conductor &&
-      typeof conductor === 'object' &&
-      vehiculo &&
-      typeof vehiculo === 'object'
+      driver &&
+      typeof driver === 'object' &&
+      vehicle &&
+      typeof vehicle === 'object'
     ) {
-      this.fetchWalletData(vehiculo.unidad, conductor.codigo_conductor);
+      this.fetchWalletData(vehicle.unidad, driver.codigo_conductor);
     }
   }
 
@@ -283,18 +289,38 @@ export class CashRegisterViewComponent implements OnInit {
     const receiptsObs = this.apiService.getData(
       `wallet/receipts/${company}/${vehicleNumber}/${driverCode}`,
     );
+    const messagesObs = this.apiService.getData(
+      `wallet/messages/${company}/${vehicleNumber}`,
+    );
+    const notificationsObs = this.apiService.getData(
+      `wallet/notifications/${company}/${vehicleNumber}`,
+    );
 
-    forkJoin([walletObs, detailObs, receiptsObs]).subscribe({
-      next: ([wallet, detail, receipts]) => {
+    forkJoin([
+      walletObs,
+      detailObs,
+      receiptsObs,
+      messagesObs,
+      notificationsObs,
+    ]).subscribe({
+      next: ([wallet, detail, receipts, messages, notifications]: [
+        any,
+        any,
+        any,
+        any,
+        any,
+      ]) => {
         this.walletInfo = wallet;
         this.detailInfo = detail;
         this.receiptsInfo = receipts;
+        this.messages = messages.messages || [];
+        this.notificationMessage = notifications.maintenance_message;
         this.hasData = true;
         this.isLoading = false;
 
         if (this.walletInfo && this.walletInfo.debts.daily_rent > 0) {
-          this.pagoRenta = this.walletInfo.debts.daily_rent;
-          this.calcularTotal();
+          this.rentPayment = this.walletInfo.debts.daily_rent;
+          this.calculateTotal();
         }
       },
       error: (err) => {
@@ -302,6 +328,7 @@ export class CashRegisterViewComponent implements OnInit {
           'Error al cargar la información de la unidad. Intente de nuevo.',
         );
         this.isLoading = false;
+        this.router.navigate(['']);
       },
     });
   }
@@ -314,23 +341,25 @@ export class CashRegisterViewComponent implements OnInit {
     });
   }
 
-  limpiar(triggerToOpen?: MatAutocompleteTrigger) {
+  clearForm(triggerToOpen?: MatAutocompleteTrigger) {
     this.hasData = false;
     this.walletInfo = null;
     this.receiptsInfo = null;
     this.detailInfo = null;
+    this.messages = [];
+    this.notificationMessage = null;
 
     this.searchForm.patchValue({
-      conductor: '',
-      vehiculo: '',
+      driver: '',
+      vehicle: '',
     });
 
-    this.pagoRenta = 0;
-    this.pagoSiniestros = 0;
-    this.pagoRecargos = 0;
-    this.pagoInscripcion = 0;
-    this.pagoAhorros = 0;
-    this.calcularTotal();
+    this.rentPayment = 0;
+    this.accidentsPayment = 0;
+    this.surchargesPayment = 0;
+    this.registrationPayment = 0;
+    this.savingsPayment = 0;
+    this.calculateTotal();
 
     if (triggerToOpen) {
       setTimeout(() => {
@@ -339,12 +368,12 @@ export class CashRegisterViewComponent implements OnInit {
     }
   }
 
-  calcularTotal() {
-    this.totalRecibido =
-      (this.pagoRenta || 0) +
-      (this.pagoSiniestros || 0) +
-      (this.pagoRecargos || 0) +
-      (this.pagoInscripcion || 0) +
-      (this.pagoAhorros || 0);
+  calculateTotal() {
+    this.totalReceived =
+      (this.rentPayment || 0) +
+      (this.accidentsPayment || 0) +
+      (this.surchargesPayment || 0) +
+      (this.registrationPayment || 0) +
+      (this.savingsPayment || 0);
   }
 }
