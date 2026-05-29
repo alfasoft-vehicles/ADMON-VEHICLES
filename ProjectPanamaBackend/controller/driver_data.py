@@ -1,7 +1,7 @@
 from fastapi.responses import JSONResponse
 from config.dbconnection import session
 from fastapi.encoders import jsonable_encoder
-from schemas.driver_data import DriverData
+from schemas.driver_data import DriverData, FingerprintData
 from models.conductores import Conductores
 from models.vehiculos import Vehiculos
 from models.propietarios import Propietarios
@@ -125,6 +125,49 @@ async def upload_vehicle_photo(data: DriverData):
 
 #-----------------------------------------------------------------------------------------------
 
+async def upload_fingerprint(data: FingerprintData):
+  db = session()
+  try:
+    driver = db.query(Conductores).filter(
+      Conductores.EMPRESA == data.company_code,
+      Conductores.CEDULA == data.cedula
+    ).first()
+    if not driver:
+      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+
+    base_path = os.path.join(upload_directory, "conductores", data.company_code, driver.CODIGO)
+    os.makedirs(base_path, exist_ok=True)
+
+    # ======================================================================
+    # GUARDADO DOBLE: se guarda la misma imagen en formato PNG y BMP
+    # ======================================================================
+    final_fingerprint_png = os.path.join(base_path, f"{driver.CODIGO}_huella.png")
+    final_fingerprint_bmp = os.path.join(base_path, f"{driver.CODIGO}_huella.bmp")
+
+    fingerprint_url = f"{route_api}uploads/conductores/{data.company_code}/{driver.CODIGO}/{driver.CODIGO}_huella.png"
+
+    image_data = decode_image(data.base64)
+
+    # Guardar copia en PNG
+    with open(final_fingerprint_png, "wb") as f:
+      f.write(image_data)
+
+    # Guardar copia en BMP
+    with open(final_fingerprint_bmp, "wb") as f:
+      f.write(image_data)
+
+    # TODO: Descomentar cuando exista el campo HUELLA en la tabla CONDUCTORES
+    # driver.HUELLA = fingerprint_url
+    # db.commit()
+
+    return JSONResponse(content={"message": "Fingerprint uploaded successfully"}, status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
 async def vehicle_driver_data(company_code: str, vehicle_number: str):
   db = session()
   try:
@@ -165,6 +208,9 @@ async def vehicle_driver_data(company_code: str, vehicle_number: str):
     vehicle_photo_path = ''
     has_vehicle_photo = 0
 
+    fingerprint_path = ''
+    has_fingerprint = 0
+
     signature_dir = os.path.join(upload_directory, "conductores", company_code, vehicle.driver_code, "firmas")
     if os.path.exists(signature_dir):
       signatures = [f for f in os.listdir(signature_dir) if f.startswith(f"{vehicle.driver_code}_firma")]
@@ -178,6 +224,11 @@ async def vehicle_driver_data(company_code: str, vehicle_number: str):
       if pictures:
         picture_path = os.path.join(driver_dir, pictures[-1])
         has_picture = 1
+
+      fingerprints = [f for f in os.listdir(driver_dir) if f.startswith(f"{vehicle.driver_code}_huella")]
+      if fingerprints:
+        fingerprint_path = os.path.join(driver_dir, fingerprints[-1])
+        has_fingerprint = 1
 
     vehicle_dir = os.path.join(upload_directory, "vehiculos", company_code, vehicle.NUMERO)
     if os.path.exists(vehicle_dir):
@@ -206,6 +257,7 @@ async def vehicle_driver_data(company_code: str, vehicle_number: str):
       'has_signature': has_signature,
       'has_picture': has_picture,
       'has_vehicle_photo': has_vehicle_photo,
+      'has_fingerprint': has_fingerprint,
     }
 
     return JSONResponse(content=jsonable_encoder(info), status_code=200)
