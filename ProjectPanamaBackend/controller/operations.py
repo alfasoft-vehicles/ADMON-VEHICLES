@@ -220,8 +220,14 @@ async def vehicle_delivery_info(vehicle_number: str):
       return JSONResponse(content={"message": "Central not found"}, status_code=404)
     
     state = db.query(Estados).filter(Estados.CODIGO == vehicle.ESTADO, Estados.EMPRESA == vehicle.EMPRESA).first()
+
+    pdf_path = os.path.join(driver_documents_path, vehicle.EMPRESA, driver.CODIGO, "docu07.pdf")
     
     wReg = 0
+    #Verificar existencia del contrato
+    if os.path.exists(pdf_path):
+      wReg = 1
+      message = 'Ya se ha generado anteriormente un contrato'
     # Verificar datos del vehiculo
     if vehicle.FEC_CONTRA is None or vehicle.FEC_CONTRA == '' or vehicle.FEC_CONTRA == '0000-00-00':
       wReg = 1
@@ -397,8 +403,13 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
       return JSONResponse(content={"message": "Civil status not found"}, status_code=404)
     
     base_path = os.path.join(driver_documents_path, vehicle.EMPRESA, driver.CODIGO)
+    contract_path = os.path.join(base_path, "docu07.pdf")
     
     wReg = 0
+    #Verificar existencia del contrato
+    if os.path.exists(contract_path):
+      wReg = 1
+      message = 'Ya se ha generado anteriormente un contrato'
     # Verificar datos del vehiculo
     if float(vehicle.NROENTREGA) == 0:
       wReg = 1
