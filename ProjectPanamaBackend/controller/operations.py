@@ -554,9 +554,9 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
 
     representative_signature_path = os.path.join(images_path, "empresas", vehicle.EMPRESA, f"Firma_{owner.REP_NUMERO}.png")
 
-    driver_photo_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, "Foto.png")
+    driver_photo_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_foto.png")
 
-    fingerprint_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, "Huella.png")
+    fingerprint_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_huella.png")
 
     current_docx_path = docx_template_path
     temp_docx_fd, temp_docx_path = tempfile.mkstemp(suffix=".docx")
