@@ -49,6 +49,7 @@ from concurrent.futures import ThreadPoolExecutor
 load_dotenv()
 
 driver_documents_path = os.getenv('DRIVER_DOCS_PATH')
+images_path = os.getenv('DIRECTORY_IMG')
 path_10  = os.getenv('DROPBOX_INTEGRATION_PATH_10')
 path_58  = os.getenv('DROPBOX_INTEGRATION_PATH_58')
 PDF_THREAD_POOL = ThreadPoolExecutor(max_workers=2)
@@ -551,7 +552,11 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
     with open(final_signature_path, "wb") as f:
       f.write(image_data)
 
-    representative_signature_path = os.path.join(base_dir, 'assets', 'img', 'firma_blanco.png')
+    representative_signature_path = os.path.join(images_path, "empresas", vehicle.EMPRESA, f"Firma_{owner.REP_NUMERO}.png")
+
+    driver_photo_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, "Foto.png")
+
+    fingerprint_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, "Huella.png")
 
     current_docx_path = docx_template_path
     temp_docx_fd, temp_docx_path = tempfile.mkstemp(suffix=".docx")
@@ -596,6 +601,8 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
       'nDia': n_day,
       'Firma': InlineImage(doc, final_signature_path, width=Inches(2)),
       'FirmaRepresenta': InlineImage(doc, representative_signature_path, width=Inches(2)),
+      'Foto': InlineImage(doc, driver_photo_path, width=Inches(3)),
+      'Huella': InlineImage(doc, fingerprint_path, width=Inches(1))
     }
     
     doc.render(data)
