@@ -223,6 +223,24 @@ async def vehicle_delivery_info(vehicle_number: str):
     state = db.query(Estados).filter(Estados.CODIGO == vehicle.ESTADO, Estados.EMPRESA == vehicle.EMPRESA).first()
 
     pdf_path = os.path.join(driver_documents_path, vehicle.EMPRESA, driver.CODIGO, "docu07.pdf")
+
+    base_images_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO)
+    photo_path = os.path.join(base_images_path, f"{driver.CODIGO}_foto.png")
+    fingerprint_path = os.path.join(base_images_path, f"{driver.CODIGO}_huella.png")
+    signature_path = os.path.join(base_images_path, f"{driver.CODIGO}_firma.png")
+
+    photo_exists = 1
+    signature_exists = 1
+    # Verificar existencia de la foto del conductor
+    if not os.path.exists(photo_path):
+      photo_exists = 0
+      message = 'No se ha encontrado la foto del conductor'
+    # Verificar existencia de la huella del conductor
+    if not os.path.exists(fingerprint_path):
+      message = 'No se ha encontrado la huella del conductor'
+    if not os.path.exists(signature_path):
+      signature_exists = 0
+      message = 'No se ha encontrado la firma del conductor'
     
     wReg = 0
     #Verificar existencia del contrato
@@ -230,7 +248,7 @@ async def vehicle_delivery_info(vehicle_number: str):
       wReg = 1
       message = 'Ya se ha generado anteriormente un contrato'
     # Verificar datos del vehiculo
-    if vehicle.FEC_CONTRA is None or vehicle.FEC_CONTRA == '' or vehicle.FEC_CONTRA == '0000-00-00':
+    elif vehicle.FEC_CONTRA is None or vehicle.FEC_CONTRA == '' or vehicle.FEC_CONTRA == '0000-00-00':
       wReg = 1
       message = 'VEHICULO no Tiene Fecha de Contrato'
     elif float(vehicle.NROENTREGA) == 0:
@@ -361,6 +379,8 @@ async def vehicle_delivery_info(vehicle_number: str):
       'conductor_direccion': driver.DIRECCION,
       'fecha_contrato': vehicle.FEC_CONTRA.strftime('%d/%m/%Y') if vehicle.FEC_CONTRA and hasattr(vehicle.FEC_CONTRA, 'strftime') else None,
       'permitido': wReg,
+      'foto_conductor': photo_exists,
+      'firma_conductor': signature_exists,
       'mensaje': message if wReg == 1 else '',
     }
 
@@ -412,7 +432,7 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
       wReg = 1
       message = 'Ya se ha generado anteriormente un contrato'
     # Verificar datos del vehiculo
-    if float(vehicle.NROENTREGA) == 0:
+    elif float(vehicle.NROENTREGA) == 0:
       wReg = 1
       message = 'VEHICULO no Tiene Nº de Cuotas'
     elif Vehiculos.VLR_DEPOSI == 0:
