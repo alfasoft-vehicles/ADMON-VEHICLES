@@ -1,3 +1,5 @@
+from tkinter import PhotoImage
+
 from pydantic import BaseModel
 from typing import Optional
 from datetime import date
@@ -58,7 +60,8 @@ class ReturnVehicle(BaseModel):
 
 class GenerateContractData(BaseModel):
   company_code: str
-  signature_base64: str
+  signature_base64: Optional[str]
+  photo_base64: Optional[str]
 
 class DriverSettlement(BaseModel):
   company_code: str

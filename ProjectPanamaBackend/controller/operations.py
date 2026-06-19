@@ -566,15 +566,23 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
 
     os.makedirs(base_path, exist_ok=True)
 
-    image_data = decode_image(data.signature_base64)
+    if not data.signature_base64:
+      signature_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_firma.png")
+    else:
+      signature_image_data = decode_image(data.signature_base64)
+      signature_path = os.path.join(base_path, f"{vehicle.NUMERO}_{vehicle.CONDUCTOR}_firma_contrato.png")
+      with open(signature_path, "wb") as f:
+        f.write(signature_image_data)
 
-    final_signature_path = os.path.join(base_path, f"{vehicle.NUMERO}_{vehicle.CONDUCTOR}_firma_contrato.png")
-    with open(final_signature_path, "wb") as f:
-      f.write(image_data)
+    if not data.photo_base64:
+      photo_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_foto.png")
+    else:
+      photo_image_data = decode_image(data.photo_base64)
+      photo_path = os.path.join(base_path, f"{vehicle.NUMERO}_{vehicle.CONDUCTOR}_foto.png")
+      with open(photo_path, "wb") as f:
+        f.write(photo_image_data)
 
     representative_signature_path = os.path.join(images_path, "empresas", vehicle.EMPRESA, f"Firma_{owner.REP_NUMERO}.png")
-
-    driver_photo_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_foto.png")
 
     fingerprint_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_huella.png")
 
@@ -619,10 +627,10 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
       'nAno': n_year,
       'nMes': n_month,
       'nDia': n_day,
-      'Firma': InlineImage(doc, final_signature_path, width=Inches(2)),
-      'FirmaRepresenta': InlineImage(doc, representative_signature_path, width=Inches(2)),
-      'Foto': InlineImage(doc, driver_photo_path, width=Inches(3)),
-      'Huella': InlineImage(doc, fingerprint_path, width=Inches(1))
+      'Firma': InlineImage(doc, signature_path, width=Inches(2)) if os.path.exists(signature_path) else '',
+      'FirmaRepresenta': InlineImage(doc, representative_signature_path, width=Inches(2)) if os.path.exists(representative_signature_path) else '',
+      'Foto': InlineImage(doc, photo_path, width=Inches(3)) if os.path.exists(photo_path) else '',
+      'Huella': InlineImage(doc, fingerprint_path, width=Inches(1)) if os.path.exists(fingerprint_path) else '',
     }
     
     doc.render(data)
