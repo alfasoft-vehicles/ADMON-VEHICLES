@@ -61,6 +61,9 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
   isLoadingVehicles = true;
   isLoadingContractInfo = false;
   signatureDriver = false;
+  photoDriver = false;
+  photoBase64 = '';
+  signatureBase64 = '';
 
   contractInfo: contractInfo = {
     numero: '',
@@ -178,6 +181,10 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
     this.selectedDate.setValue(this.maxDate);
     this.selectedDate.markAsUntouched();
     this.selectedDate.markAsPristine();
+    this.photoDriver = false;
+    this.signatureDriver = false;
+    this.photoBase64 = '';
+    this.signatureBase64 = '';
   }
 
   resetVehicleAutocomplete() {
@@ -243,10 +250,37 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
     );
   }
 
+  onPhotosChange(photos: string[]) {
+    if (photos && photos.length > 0) {
+      this.photoBase64 = photos[0];
+    } else {
+      this.photoBase64 = '';
+    }
+  }
+
+  savePhoto() {
+    if (!this.photoBase64) {
+      this.openSnackbar('Debes tomar una foto.');
+      return;
+    }
+
+    this.photoDriver = false;
+    if (this.contractInfo.firma_conductor === 0) {
+      this.signatureDriver = true;
+    } else {
+      this.openExternalLink('');
+    }
+  }
+
   saveSignature() {
     if (this.signaturePadComponent) {
       this.signaturePadComponent.saveSignature();
     }
+  }
+
+  handleSignatureSubmit(signatureBase64: string) {
+    this.signatureBase64 = signatureBase64;
+    this.openExternalLink(this.signatureBase64);
   }
 
   openExternalLink(signatureBase64: string) {
@@ -255,6 +289,7 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
     const data = {
       company_code: this.getCompany(),
       signature_base64: signatureBase64,
+      photo_base64: this.photoBase64,
     };
 
     localStorage.setItem('pdfEndpoint', endpoint);
@@ -276,7 +311,15 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
       return;
     }
 
-    this.signatureDriver = true;
+    if (this.contractInfo.foto_conductor === 0) {
+      this.photoDriver = true;
+      this.signatureDriver = false;
+    } else if (this.contractInfo.firma_conductor === 0) {
+      this.signatureDriver = true;
+      this.photoDriver = false;
+    } else {
+      this.openExternalLink('');
+    }
   }
 
   closeDialog() {

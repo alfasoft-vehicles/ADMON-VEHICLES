@@ -231,16 +231,17 @@ async def vehicle_delivery_info(vehicle_number: str):
 
     photo_exists = 1
     signature_exists = 1
+    adverte = []
     # Verificar existencia de la foto del conductor
     if not os.path.exists(photo_path):
       photo_exists = 0
-      message = 'No se ha encontrado la foto del conductor'
+      adverte.append('No se ha encontrado la foto del conductor')
     # Verificar existencia de la huella del conductor
     if not os.path.exists(fingerprint_path):
-      message = 'No se ha encontrado la huella del conductor'
+      adverte.append('No se ha encontrado la huella del conductor')
     if not os.path.exists(signature_path):
       signature_exists = 0
-      message = 'No se ha encontrado la firma del conductor'
+      adverte.append('No se ha encontrado la firma del conductor')
     
     wReg = 0
     #Verificar existencia del contrato
@@ -382,6 +383,7 @@ async def vehicle_delivery_info(vehicle_number: str):
       'foto_conductor': photo_exists,
       'firma_conductor': signature_exists,
       'mensaje': message if wReg == 1 else '',
+      'advertencia': adverte
     }
 
     return JSONResponse(content=jsonable_encoder(delivery_info), status_code=200)

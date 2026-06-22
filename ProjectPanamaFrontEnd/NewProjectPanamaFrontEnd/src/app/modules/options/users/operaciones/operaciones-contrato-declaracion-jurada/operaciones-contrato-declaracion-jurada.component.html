@@ -8,7 +8,7 @@
 </mat-dialog-content>
 <mat-dialog-content
   class="scrollable-content"
-  *ngIf="!isLoadingVehicles && !signatureDriver"
+  *ngIf="!isLoadingVehicles && !signatureDriver && !photoDriver"
 >
   <div class="vehicle-info">
     <mat-form-field class="form-field">
@@ -176,9 +176,15 @@
     </div>
   </div>
 </mat-dialog-content>
+<mat-dialog-content *ngIf="photoDriver">
+  <app-camera
+    [maxPhotos]="1"
+    (photosChange)="onPhotosChange($event)"
+  ></app-camera>
+</mat-dialog-content>
 <mat-dialog-content *ngIf="signatureDriver">
   <app-signature-pad
-    (signatureSubmit)="openExternalLink($event)"
+    (signatureSubmit)="handleSignatureSubmit($event)"
   ></app-signature-pad>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
@@ -192,10 +198,13 @@
       contractInfo.permitido === undefined ||
       selectedDate.invalid
     "
-    *ngIf="!signatureDriver"
+    *ngIf="!signatureDriver && !photoDriver"
     (click)="generateContract()"
   >
     Confirmar
+  </button>
+  <button mat-button cdkFocusInitial *ngIf="photoDriver" (click)="savePhoto()">
+    Siguiente
   </button>
   <button
     mat-button
