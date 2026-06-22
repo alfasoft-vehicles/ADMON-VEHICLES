@@ -34,6 +34,9 @@ interface contractInfo {
   fecha_contrato: string;
   permitido: number | null | undefined;
   mensaje: string;
+  advertencia: [];
+  firma_conductor: number;
+  foto_conductor: number;
 }
 
 @Component({
@@ -49,7 +52,7 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
   drivers = new FormControl({ value: '', disabled: true });
   selectedDate = new FormControl<Date | null>(
     { value: null, disabled: true },
-    { validators: [Validators.required] }
+    { validators: [Validators.required] },
   );
   options: vehicle[] = [];
   filteredOptions!: Observable<vehicle[]>;
@@ -79,13 +82,16 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
     fecha_contrato: '',
     permitido: null,
     mensaje: '',
+    advertencia: [],
+    firma_conductor: 0,
+    foto_conductor: 0,
   };
 
   constructor(
     private apiService: ApiService,
     private jwtService: JwtService,
     private snackBar: MatSnackBar,
-    private dialogRef: MatDialogRef<OperacionesContratoDeclaracionJuradaComponent>
+    private dialogRef: MatDialogRef<OperacionesContratoDeclaracionJuradaComponent>,
   ) {}
 
   ngOnInit() {
@@ -100,12 +106,12 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
         this.maxDate = new Date(
           parseInt(dateParts[0]),
           parseInt(dateParts[1]) - 1,
-          parseInt(dateParts[2])
+          parseInt(dateParts[2]),
         );
       },
       (error) => {
         this.maxDate = new Date();
-      }
+      },
     );
   }
 
@@ -121,17 +127,17 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
         this.options = response;
         this.filteredOptions = this.vehicles.valueChanges.pipe(
           startWith(''),
-          map((value) => this._filter(value || ''))
+          map((value) => this._filter(value || '')),
         );
         this.isLoadingVehicles = false;
       },
       (error) => {
         console.error('Error fetching vehicles:', error);
         this.openSnackbar(
-          'Error al obtener las unidades. Inténtalo de nuevo más tarde.'
+          'Error al obtener las unidades. Inténtalo de nuevo más tarde.',
         );
         this.closeDialog();
-      }
+      },
     );
   }
 
@@ -164,6 +170,9 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
       fecha_contrato: '',
       permitido: null,
       mensaje: '',
+      advertencia: [],
+      firma_conductor: 0,
+      foto_conductor: 0,
     };
     this.drivers.setValue('');
     this.selectedDate.setValue(this.maxDate);
@@ -179,7 +188,7 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
     // Opcional: Forzar la actualización del filtro
     this.filteredOptions = this.vehicles.valueChanges.pipe(
       startWith(''),
-      map((value) => this._filter(value || ''))
+      map((value) => this._filter(value || '')),
     );
   }
 
@@ -199,7 +208,6 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
         .getData('operations/generate-contract/info/' + selectedVehicle)
         .subscribe(
           (response: contractInfo) => {
-
             this.isLoadingContractInfo = false;
             this.contractInfo = response;
             this.drivers.setValue(response.conductor_codigo);
@@ -213,12 +221,12 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
           (error) => {
             console.error('Error fetching contract info:', error);
             this.openSnackbar(
-              'Error al obtener la información. Inténtalo de nuevo con otra unidad.'
+              'Error al obtener la información. Inténtalo de nuevo con otra unidad.',
             );
             this.isLoadingContractInfo = false;
             this.resetInfo();
             this.resetVehicleAutocomplete();
-          }
+          },
         );
     }
   }
@@ -231,7 +239,7 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
         option.placa.toLowerCase().includes(filterValue) ||
         option.unidad.toLowerCase().includes(filterValue) ||
         option.propietario.toLowerCase().includes(filterValue) ||
-        option.nro_cupo.toLowerCase().includes(filterValue)
+        option.nro_cupo.toLowerCase().includes(filterValue),
     );
   }
 

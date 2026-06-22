@@ -157,6 +157,22 @@
       <mat-error *ngIf="selectedDate.invalid && selectedDate.touched">
         Debes seleccionar una fecha.
       </mat-error>
+
+      <p
+        class="adverte"
+        *ngIf="
+          contractInfo.permitido === 0 &&
+          contractInfo.advertencia &&
+          contractInfo.advertencia.length > 0
+        "
+      >
+        <strong class="adverte-strong">ADVERTENCIA:</strong>
+        <mat-list>
+          <mat-list-item *ngFor="let warning of contractInfo.advertencia">
+            {{ warning }}
+          </mat-list-item>
+        </mat-list>
+      </p>
     </div>
   </div>
 </mat-dialog-content>
