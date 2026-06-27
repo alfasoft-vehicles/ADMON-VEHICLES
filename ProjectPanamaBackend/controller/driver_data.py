@@ -15,8 +15,6 @@ load_dotenv()
 
 upload_directory = os.getenv('DIRECTORY_IMG')
 route_api = os.getenv('ROUTE_API')
-driver_documents_path = os.getenv('DRIVER_DOCS_PATH')
-vehicle_documents_path = os.getenv('VEHICLE_DOCS_PATH')
 
 async def upload_signature(data: DriverData):
   db = session()
