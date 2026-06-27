@@ -568,19 +568,16 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
 
     os.makedirs(base_path, exist_ok=True)
 
-    if not data.signature_base64:
-      signature_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_firma.png")
-    else:
+    signature_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_firma.png")
+    photo_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_foto.png")
+
+    if data.signature_base64:
       signature_image_data = decode_image(data.signature_base64)
-      signature_path = os.path.join(base_path, f"{vehicle.NUMERO}_{vehicle.CONDUCTOR}_firma_contrato.png")
       with open(signature_path, "wb") as f:
         f.write(signature_image_data)
 
-    if not data.photo_base64:
-      photo_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_foto.png")
-    else:
+    if data.photo_base64:
       photo_image_data = decode_image(data.photo_base64)
-      photo_path = os.path.join(base_path, f"{vehicle.NUMERO}_{vehicle.CONDUCTOR}_foto.png")
       with open(photo_path, "wb") as f:
         f.write(photo_image_data)
 
