@@ -396,9 +396,8 @@ async def vehicle_delivery_info(vehicle_number: str):
 
 #-----------------------------------------------------------------------------------------------
 
-base_dir = os.path.dirname(os.path.dirname(__file__))
-docx_template_path_con_cupo = os.path.join(base_dir, 'documents', 'ContratoOriginal_ConCupo_0010.docx')
-docx_template_path_sin_cupo = os.path.join(base_dir, 'documents', 'ContratoOriginal_SinCupo_0010.docx')
+docx_template_path_con_cupo = os.path.join(docs_path, 'contratos', 'ContratoOriginal_ConCupo_0010.docx')
+docx_template_path_sin_cupo = os.path.join(docs_path, 'contratos', 'ContratoOriginal_SinCupo_0010.docx')
 
 locale.setlocale(locale.LC_TIME, "es_ES.utf8")
 
