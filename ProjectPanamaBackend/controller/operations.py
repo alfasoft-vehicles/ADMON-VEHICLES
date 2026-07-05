@@ -48,7 +48,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 load_dotenv()
 
-driver_documents_path = os.getenv('DRIVER_DOCS_PATH')
+docs_path = os.getenv('DOCS_PATH')
+images_path = os.getenv('DIRECTORY_IMG')
 path_10  = os.getenv('DROPBOX_INTEGRATION_PATH_10')
 path_58  = os.getenv('DROPBOX_INTEGRATION_PATH_58')
 PDF_THREAD_POOL = ThreadPoolExecutor(max_workers=2)
@@ -220,10 +221,35 @@ async def vehicle_delivery_info(vehicle_number: str):
       return JSONResponse(content={"message": "Central not found"}, status_code=404)
     
     state = db.query(Estados).filter(Estados.CODIGO == vehicle.ESTADO, Estados.EMPRESA == vehicle.EMPRESA).first()
+
+    pdf_path = os.path.join(docs_path, 'conductores', vehicle.EMPRESA, driver.CODIGO, "docu07.pdf")
+
+    base_images_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO)
+    photo_path = os.path.join(base_images_path, f"{driver.CODIGO}_foto.png")
+    fingerprint_path = os.path.join(base_images_path, f"{driver.CODIGO}_huella.png")
+    signature_path = os.path.join(base_images_path, f"{driver.CODIGO}_firma.png")
+
+    photo_exists = 1
+    signature_exists = 1
+    adverte = []
+    # Verificar existencia de la foto del conductor
+    if not os.path.exists(photo_path):
+      photo_exists = 0
+      adverte.append('No se ha encontrado la foto del conductor')
+    # Verificar existencia de la huella del conductor
+    if not os.path.exists(fingerprint_path):
+      adverte.append('No se ha encontrado la huella del conductor')
+    if not os.path.exists(signature_path):
+      signature_exists = 0
+      adverte.append('No se ha encontrado la firma del conductor')
     
     wReg = 0
+    #Verificar existencia del contrato
+    if os.path.exists(pdf_path):
+      wReg = 1
+      message = 'Ya se ha generado anteriormente un contrato'
     # Verificar datos del vehiculo
-    if vehicle.FEC_CONTRA is None or vehicle.FEC_CONTRA == '' or vehicle.FEC_CONTRA == '0000-00-00':
+    elif vehicle.FEC_CONTRA is None or vehicle.FEC_CONTRA == '' or vehicle.FEC_CONTRA == '0000-00-00':
       wReg = 1
       message = 'VEHICULO no Tiene Fecha de Contrato'
     elif float(vehicle.NROENTREGA) == 0:
@@ -354,7 +380,10 @@ async def vehicle_delivery_info(vehicle_number: str):
       'conductor_direccion': driver.DIRECCION,
       'fecha_contrato': vehicle.FEC_CONTRA.strftime('%d/%m/%Y') if vehicle.FEC_CONTRA and hasattr(vehicle.FEC_CONTRA, 'strftime') else None,
       'permitido': wReg,
+      'foto_conductor': photo_exists,
+      'firma_conductor': signature_exists,
       'mensaje': message if wReg == 1 else '',
+      'advertencia': adverte
     }
 
     return JSONResponse(content=jsonable_encoder(delivery_info), status_code=200)
@@ -367,9 +396,8 @@ async def vehicle_delivery_info(vehicle_number: str):
 
 #-----------------------------------------------------------------------------------------------
 
-base_dir = os.path.dirname(os.path.dirname(__file__))
-docx_template_path_con_cupo = os.path.join(base_dir, 'documents', 'ContratoOriginal_ConCupo_0010.docx')
-docx_template_path_sin_cupo = os.path.join(base_dir, 'documents', 'ContratoOriginal_SinCupo_0010.docx')
+docx_template_path_con_cupo = os.path.join(docs_path, 'contratos', 'ContratoOriginal_ConCupo_0010.docx')
+docx_template_path_sin_cupo = os.path.join(docs_path, 'contratos', 'ContratoOriginal_SinCupo_0010.docx')
 
 locale.setlocale(locale.LC_TIME, "es_ES.utf8")
 
@@ -396,11 +424,16 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
     if not civil_status:
       return JSONResponse(content={"message": "Civil status not found"}, status_code=404)
     
-    base_path = os.path.join(driver_documents_path, vehicle.EMPRESA, driver.CODIGO)
+    base_path = os.path.join(docs_path, 'conductores', vehicle.EMPRESA, driver.CODIGO)
+    contract_path = os.path.join(base_path, "docu07.pdf")
     
     wReg = 0
+    #Verificar existencia del contrato
+    if os.path.exists(contract_path):
+      wReg = 1
+      message = 'Ya se ha generado anteriormente un contrato'
     # Verificar datos del vehiculo
-    if float(vehicle.NROENTREGA) == 0:
+    elif float(vehicle.NROENTREGA) == 0:
       wReg = 1
       message = 'VEHICULO no Tiene Nº de Cuotas'
     elif Vehiculos.VLR_DEPOSI == 0:
@@ -534,13 +567,22 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
 
     os.makedirs(base_path, exist_ok=True)
 
-    image_data = decode_image(data.signature_base64)
+    signature_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_firma.png")
+    photo_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_foto.png")
 
-    final_signature_path = os.path.join(base_path, f"{vehicle.NUMERO}_{vehicle.CONDUCTOR}_firma_contrato.png")
-    with open(final_signature_path, "wb") as f:
-      f.write(image_data)
+    if data.signature_base64:
+      signature_image_data = decode_image(data.signature_base64)
+      with open(signature_path, "wb") as f:
+        f.write(signature_image_data)
 
-    representative_signature_path = os.path.join(base_dir, 'assets', 'img', 'firma_blanco.png')
+    if data.photo_base64:
+      photo_image_data = decode_image(data.photo_base64)
+      with open(photo_path, "wb") as f:
+        f.write(photo_image_data)
+
+    representative_signature_path = os.path.join(images_path, "empresas", vehicle.EMPRESA, f"Firma_{owner.REP_NUMERO}.png")
+
+    fingerprint_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_huella.png")
 
     current_docx_path = docx_template_path
     temp_docx_fd, temp_docx_path = tempfile.mkstemp(suffix=".docx")
@@ -583,8 +625,10 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
       'nAno': n_year,
       'nMes': n_month,
       'nDia': n_day,
-      'Firma': InlineImage(doc, final_signature_path, width=Inches(2)),
-      'FirmaRepresenta': InlineImage(doc, representative_signature_path, width=Inches(2)),
+      'Firma': InlineImage(doc, signature_path, width=Inches(2)) if os.path.exists(signature_path) else '',
+      'FirmaRepresenta': InlineImage(doc, representative_signature_path, width=Inches(2)) if os.path.exists(representative_signature_path) else '',
+      'Foto': InlineImage(doc, photo_path, width=Inches(3)) if os.path.exists(photo_path) else '',
+      'Huella': InlineImage(doc, fingerprint_path, width=Inches(1)) if os.path.exists(fingerprint_path) else '',
     }
     
     doc.render(data)

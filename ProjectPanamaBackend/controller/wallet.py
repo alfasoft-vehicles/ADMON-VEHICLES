@@ -1,3 +1,4 @@
+from anyio import current_time
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from config.dbconnection import session
@@ -8,8 +9,13 @@ from models.propietarios import Propietarios
 from models.marcas import Marcas
 from models.estados import Estados
 from models.centrales import Centrales
+from models.parametros import Parametros
+from models.condullamadas import Condullamadas
+from models.movienca import Movienca
 from sqlalchemy import func
 from utils.panapass import get_txt_file, search_value_in_txt
+from datetime import datetime, timedelta
+import pytz
 
 async def vehicle_wallet_info(company_code: str, vehicle_number: str, driver_number: str):
   db = session()
@@ -153,9 +159,93 @@ async def receipts_list(company_code: str, vehicle_number: str, driver_number: s
     }
 
     return JSONResponse(content=jsonable_encoder(response), status_code=200)
-  
   except Exception as e:
     return JSONResponse(content={"message": str(e)}, status_code=500)
-  
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def closing_date(company_code: str):
+  db = session()
+  try:
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    current_time = now_in_panama.strftime("%H:%M:%S")
+
+    date = db.query(Parametros.FEC_CIERRE).filter(Parametros.EMPRESA == company_code).first()
+
+    if not date or not date.FEC_CIERRE:
+      return JSONResponse(content={"message": "No closing date found"}, status_code=404)
+
+    response = {
+      "date": date.FEC_CIERRE,
+      "time": current_time
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def wallet_messages(company_code: str, vehicle_number: str):
+  db = session()
+  try:
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    current_date = now_in_panama.date()
+
+    messages = db.query(Condullamadas.DETALLE).distinct().filter(
+      Condullamadas.EMPRESA == company_code,
+      Condullamadas.UNIDAD == vehicle_number,
+      Condullamadas.DESDE <= current_date,
+      Condullamadas.HASTA >= current_date
+    ).all()
+
+    response = {
+      "messages": [message.DETALLE for message in messages]
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def wallet_notifications(company_code: str, vehicle_number: str):
+  db = session()
+  try:
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    current_date = now_in_panama.date()
+
+    maintenance = db.query(Movienca.FECHA).filter(
+      Movienca.EMPRESA == company_code,
+      Movienca.UNIDAD == vehicle_number,
+      Movienca.TIPO == '022',
+      Movienca.MANTENIMIE == '1',
+    ).order_by(Movienca.FECHA.desc()).first()
+
+    maintenance_message = None
+
+    if maintenance and maintenance.FECHA:
+      next_maintenance_date = maintenance.FECHA + timedelta(days=30) 
+      day_name = next_maintenance_date.strftime('%A').upper()
+      next_maintenance = f"{day_name} {next_maintenance_date.strftime('%d/%m/%Y')}"
+
+      maintenance_message = f"Próximo mantenimiento {next_maintenance}, le faltan {(next_maintenance_date - current_date).days} días"
+
+    response = {
+      "maintenance_message": maintenance_message
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()

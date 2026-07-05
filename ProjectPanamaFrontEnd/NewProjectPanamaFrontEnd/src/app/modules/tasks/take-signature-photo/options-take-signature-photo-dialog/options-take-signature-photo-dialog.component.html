@@ -1,9 +1,18 @@
-<h2 mat-dialog-title *ngIf="!takeSignature && !takePhoto && !takeVehicle">Capturar Firmas y Fotos</h2>
+<h2
+  mat-dialog-title
+  *ngIf="!takeSignature && !takePhoto && !takeVehicle && !takeFingerprint"
+>
+  Capturar Firmas y Fotos
+</h2>
 <h2 mat-dialog-title *ngIf="takeSignature">Capturar Firma</h2>
 <h2 mat-dialog-title *ngIf="takePhoto">Capturar Foto</h2>
 <h2 mat-dialog-title *ngIf="takeVehicle">Capturar Foto Vehículo</h2>
+<h2 mat-dialog-title *ngIf="takeFingerprint">Capturar Huella Conductor</h2>
 <mat-dialog-content>
-  <div class="buttons-container" *ngIf="!takeSignature && !takePhoto && !takeVehicle">
+  <div
+    class="buttons-container"
+    *ngIf="!takeSignature && !takePhoto && !takeVehicle && !takeFingerprint"
+  >
     <button
       mat-raised-button
       class="button"
@@ -12,21 +21,21 @@
       <mat-icon>draw</mat-icon>
       Firma Conductor
     </button>
-    <button
-      mat-raised-button
-      class="button"
-      (click)="openDocuments('photo')"
-    >
+    <button mat-raised-button class="button" (click)="openDocuments('photo')">
       <mat-icon>portrait</mat-icon>
       Foto Conductor
+    </button>
+    <button mat-raised-button class="button" (click)="openDocuments('vehicle')">
+      <mat-icon>drive_eta</mat-icon>
+      Foto Vehículo
     </button>
     <button
       mat-raised-button
       class="button"
-      (click)="openDocuments('vehicle')"
+      (click)="openDocuments('fingerprint')"
     >
-      <mat-icon>drive_eta</mat-icon>
-      Foto Vehículo
+      <mat-icon>fingerprint</mat-icon>
+      Huella Conductor
     </button>
   </div>
 
@@ -41,10 +50,43 @@
   <div *ngIf="takeVehicle">
     <app-take-vehicle-photo></app-take-vehicle-photo>
   </div>
+
+  <div *ngIf="takeFingerprint">
+    <app-take-fingerprint-task></app-take-fingerprint-task>
+  </div>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  <button mat-button *ngIf="takeSignature" [disabled]="isButtonDisabled()" (click)="nextStepSignature()">Siguiente</button>
-  <button mat-button *ngIf="takePhoto" [disabled]="isPhotoButtonDisabled()" (click)="nextStepPhoto()">Siguiente</button>
-  <button mat-button *ngIf="takeVehicle" [disabled]="isVehiclePhotoButtonDisabled()" (click)="nextStepVehiclePhoto()">Siguiente</button>
+  <button
+    mat-button
+    *ngIf="takeSignature"
+    [disabled]="isButtonDisabled()"
+    (click)="nextStepSignature()"
+  >
+    Siguiente
+  </button>
+  <button
+    mat-button
+    *ngIf="takePhoto"
+    [disabled]="isPhotoButtonDisabled()"
+    (click)="nextStepPhoto()"
+  >
+    Siguiente
+  </button>
+  <button
+    mat-button
+    *ngIf="takeVehicle"
+    [disabled]="isVehiclePhotoButtonDisabled()"
+    (click)="nextStepVehiclePhoto()"
+  >
+    Siguiente
+  </button>
+  <button
+    mat-button
+    *ngIf="takeFingerprint"
+    [disabled]="isFingerprintButtonDisabled()"
+    (click)="nextStepFingerprint()"
+  >
+    Siguiente
+  </button>
   <button mat-button mat-dialog-close cdkFocusInitial>Cerrar</button>
 </mat-dialog-actions>
