@@ -21,6 +21,10 @@ async def post_upload_vehicle_photo(data: DriverData):
 async def post_upload_fingerprint(data: FingerprintData):
   return await upload_fingerprint(data)
 
+@driver_data_router.post("/driver/upload-fingerprint-photo/", tags=["Driver Data"])
+async def post_upload_fingerprint_internal(data: FingerprintData):
+  return await upload_fingerprint(data)
+
 @driver_data_router.get("/driver/vehicle-data/{company_code}/{vehicle_number}/", tags=["Driver Data"])
 async def get_vehicle_driver_data(company_code: str, vehicle_number: str):
   return await vehicle_driver_data(company_code, vehicle_number)

@@ -64,6 +64,7 @@ import { TakeSignaturePhotoComponent } from './modules/tasks/take-signature-phot
 import { TakeSignatureComponent } from './modules/tasks/take-signature-photo/take-signature/take-signature.component';
 import { TakePhotoComponent } from './modules/tasks/take-signature-photo/take-photo/take-photo.component';
 import { TakeVehiclePhotoComponent } from './modules/tasks/take-signature-photo/take-vehicle-photo/take-vehicle-photo.component';
+import { TakeFingerprintComponent } from './modules/tasks/take-signature-photo/take-fingerprint/take-fingerprint.component';
 import { InspectionsGenerateQrDialogComponent } from './modules/tasks/inspections/inspections-generate-qr-dialog/inspections-generate-qr-dialog.component';
 import { InspectionsVehicleInfoComponent } from './modules/tasks/inspections/inspections-vehicle-info/inspections-vehicle-info.component';
 import { OperacionesBajarConductorVehiculoComponent } from './modules/options/users/operaciones/operaciones-bajar-conductor-vehiculo/operaciones-bajar-conductor-vehiculo.component';
@@ -136,6 +137,7 @@ import { OperacionesExplicacionCuentasPagarComponent } from './modules/options/u
     TakeSignatureComponent,
     TakePhotoComponent,
     TakeVehiclePhotoComponent,
+    TakeFingerprintComponent,
     InspectionsGenerateQrDialogComponent,
     InspectionsVehicleInfoComponent,
     OperacionesBajarConductorVehiculoComponent,
@@ -154,11 +156,9 @@ import { OperacionesExplicacionCuentasPagarComponent } from './modules/options/u
     HttpClientModule,
     FormsModule,
     SharedModule,
-    MaterialModule
+    MaterialModule,
   ],
-  providers: [
-    { provide: LOCALE_ID, useValue: 'es' },
-  ],
-  bootstrap: [AppComponent]
+  providers: [{ provide: LOCALE_ID, useValue: 'es' }],
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}
