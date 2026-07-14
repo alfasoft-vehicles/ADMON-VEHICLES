@@ -62,12 +62,12 @@ async def vehicle_and_driver_info(company_code: str, vehicle_number: str):
     information = db.query(
       Marcas.NOMBRE.label('MARCA'), Centrales.NOMBRE.label('CENTRAL'), Estados.NOMBRE.label('NOMBRE_ESTADO'), 
       Propietarios.NOMBRE.label('NOMBRE_PROPI'), Vehiculos.PLACA, Vehiculos.NRO_CUPO, Vehiculos.NROENTREGA, 
-      Vehiculos.CUO_DIARIA, Vehiculos.ESTADO, Vehiculos.MODELO, Vehiculos.PROPI_IDEN, Vehiculos.CONDUCTOR,
+      Vehiculos.CUO_DIARIA, Vehiculos.ESTADO, Vehiculos.LINEA, Vehiculos.MODELO, Vehiculos.PROPI_IDEN, Vehiculos.CONDUCTOR,
       Vehiculos.CON_CUPO, Vehiculos.FEC_ESTADO, Vehiculos.EMPRESA, Vehiculos.KILOMETRAJ, Vehiculos.PANAPASSNU,
       Vehiculos.FORMAPAGO, Conductores.NOMBRE.label('NOMBRE_CONDUCTOR'), Conductores.CEDULA, Conductores.TELEFONO, 
-      Conductores.DIRECCION, Conductores.NROENTREGA, Conductores.NROENTPAGO, Conductores.NROENTSDO, Conductores.FEC_INICIO)\
+      Conductores.DIRECCION, Conductores.NROENTREGA, Conductores.NROENTPAGO, Conductores.FEC_INICIO)\
     .join(Marcas, Vehiculos.MARCA == Marcas.CODIGO)\
-    .join(Centrales, Vehiculos.CENTRAL == Centrales.CODIGO)\
+    .join(Centrales, (Vehiculos.CENTRAL == Centrales.CODIGO) & (Centrales.EMPRESA == company_code))\
     .join(Estados, Vehiculos.ESTADO == Estados.CODIGO)\
     .join(Propietarios, Vehiculos.PROPI_IDEN == Propietarios.CODIGO)\
     .outerjoin(Conductores, Vehiculos.CONDUCTOR == Conductores.CODIGO
@@ -99,14 +99,14 @@ async def vehicle_and_driver_info(company_code: str, vehicle_number: str):
       'license_plate': information.PLACA,
       'vehicle_state': information.NOMBRE_ESTADO,
       'accounts': {
-        'total_accounts': information.NROENTREGA,
-        'delivered_accounts': information.NROENTPAGO,
-        'pending_accounts': information.NROENTSDO
+        'total_accounts': int(information.NROENTREGA or 0),
+        'delivered_accounts': int(information.NROENTPAGO or 0),
+        'pending_accounts': int((information.NROENTREGA or 0) - (information.NROENTPAGO or 0))
       },
       'panapass_number': information.PANAPASSNU,
       'panapass_balance': panapass_value,
       'mileage': information.KILOMETRAJ,
-      'vehicle': f"{information.MARCA} - {information.MODELO}",
+      'vehicle': f"{information.MARCA} {information.LINEA} - {information.MODELO}",
       'payment_form': payment_form
     }
 
@@ -131,7 +131,7 @@ async def receipts_list(company_code: str, vehicle_number: str, driver_number: s
       ).filter( Cartera.EMPRESA == company_code, Cartera.UNIDAD == vehicle_number,
                 Cartera.CLIENTE == driver_number, Cartera.TIPO == '10',  Cartera.SALDO != None,
                 Cartera.SALDO != 0
-      ).order_by(Cartera.FECHA.desc()).all()
+      ).order_by(Cartera.FECHA.asc()).all()
     
     if not receipts:
       return JSONResponse(content={

@@ -318,10 +318,7 @@ export class CashRegisterViewComponent implements OnInit {
         this.hasData = true;
         this.isLoading = false;
 
-        if (this.walletInfo && this.walletInfo.debts.daily_rent > 0) {
-          this.rentPayment = this.walletInfo.debts.daily_rent;
-          this.calculateTotal();
-        }
+        this.calculateTotal();
       },
       error: (err) => {
         this.openSnackbar(
