@@ -6,6 +6,8 @@ import { JwtService } from 'src/app/services/jwt.service';
 import { MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { QueriesDialogComponent } from '../../dialogs/queries-dialog/queries-dialog.component';
 
 export interface drivers {
   codigo_conductor: string;
@@ -115,6 +117,7 @@ export class CashRegisterViewComponent implements OnInit {
     private jwtService: JwtService,
     private snackBar: MatSnackBar,
     private router: Router,
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit() {
@@ -372,5 +375,12 @@ export class CashRegisterViewComponent implements OnInit {
       (this.surchargesPayment || 0) +
       (this.registrationPayment || 0) +
       (this.savingsPayment || 0);
+  }
+
+  openQueriesDialog() {
+    this.dialog.open(QueriesDialogComponent, {
+      width: '600px',
+      maxWidth: '90vw',
+    });
   }
 }

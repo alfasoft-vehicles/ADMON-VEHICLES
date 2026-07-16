@@ -805,3 +805,263 @@
     flex-direction: column;
   }
 }
+
+.cr-driver-photo-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.cr-driver-photo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+  background-color: #f5f5f5;
+  min-height: 200px;
+}
+
+.cr-default-avatar {
+  font-size: 100px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+}
+
+.cr-btn-header-small mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  margin: 0 !important;
+}
+
+.cr-text-bold {
+  font-weight: 700;
+}
+.cr-text-right {
+  text-align: right;
+}
+.cr-text-green {
+  color: #2e7d32;
+}
+.cr-text-red {
+  color: #d32f2f;
+}
+.cr-text-red-600 {
+  color: #e53935;
+}
+.cr-text-red-500 {
+  color: #ef4444;
+}
+.cr-text-green-600 {
+  color: #43a047;
+}
+.cr-text-blue-500 {
+  color: #3b82f6;
+}
+.cr-text-blue-600 {
+  color: #1e88e5;
+}
+.cr-text-gray-600 {
+  color: #757575;
+}
+.cr-text-gray-700 {
+  color: #424242;
+}
+.cr-text-orange-600 {
+  color: #f57c00;
+}
+.cr-text-indigo-600 {
+  color: #3f51b5;
+}
+.cr-text-purple-600 {
+  color: #9c27b0;
+}
+.cr-text-teal-600 {
+  color: #009688;
+}
+.cr-text-blue-400 {
+  color: #42a5f5;
+}
+.cr-text-green-500 {
+  color: #4caf50;
+}
+.cr-text-orange-500 {
+  color: #ff9800;
+}
+@media (max-width: 1199px) {
+  .cr-main-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .cr-col-left {
+    grid-column: span 1;
+  }
+  .cr-col-center {
+    grid-column: span 2;
+    order: -1;
+  }
+  .cr-col-right {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .cr-main-container {
+    padding: 10px;
+  }
+  .cr-title {
+    font-size: 1.5rem;
+  }
+
+  .cr-search-section-wrapper {
+    padding: 0;
+    gap: 12px;
+  }
+  .cr-search-controls {
+    flex-direction: column;
+    width: 100%;
+  }
+  .cr-search-field-custom {
+    width: 100% !important;
+  }
+  .cr-button-group {
+    width: 100%;
+  }
+  .cr-button-group button {
+    flex-grow: 1;
+  }
+
+  .cr-alert-warning {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .cr-receipt-info {
+    width: 100%;
+    justify-content: space-around;
+    padding: 8px;
+    gap: 8px;
+  }
+  .cr-receipt-divider {
+    display: none;
+  }
+
+  .cr-main-grid {
+    grid-template-columns: 1fr;
+    padding: 0;
+    gap: 16px;
+  }
+  .cr-col-left,
+  .cr-col-center,
+  .cr-col-right {
+    grid-column: span 1;
+    order: initial;
+  }
+
+  .cr-form-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .cr-action-buttons-inline {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .cr-action-buttons-inline .cr-button {
+    min-width: 0;
+  }
+
+  .cr-total-box {
+    padding: 12px;
+  }
+  .cr-total-value {
+    font-size: 1.5rem;
+  }
+
+  .cr-payment-methods-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .cr-input-km-custom {
+    width: 100%;
+  }
+
+  .cr-info-card-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .cr-operator-name {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .cr-consult-grid {
+    grid-template-columns: 1fr;
+  }
+  .cr-action-buttons-inline {
+    grid-template-columns: 1fr;
+  }
+  .cr-receipt-info {
+    flex-direction: column;
+  }
+}
+
+.cr-driver-photo-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.cr-driver-photo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+  background-color: #f5f5f5;
+  min-height: 200px;
+}
+
+.cr-default-avatar {
+  font-size: 100px;
+  width: 100px;
+  height: 100px;
+  color: #bdbdbd;
+}
+
+.cr-consult-grid-main {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.cr-consult-btn-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cr-consult-btn-main:hover {
+  background: #f0f2f5;
+  border-color: #999;
+  transform: translateY(-1px);
+}
+
+.cr-consult-btn-main span {
+  font-size: 11px;
+  font-weight: 600;
+  color: #444;
+  text-align: center;
+}
+
+.cr-consult-btn-main mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}

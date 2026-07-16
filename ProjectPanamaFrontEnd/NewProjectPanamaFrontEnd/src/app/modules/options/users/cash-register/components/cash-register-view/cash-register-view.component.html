@@ -465,6 +465,17 @@
 
     <div class="cr-col-right">
       <div
+        class="mat-elevation-z8 cr-card-container cr-no-padding cr-driver-photo-card"
+      >
+        <div class="cr-card-header">
+          <span class="cr-card-title">FOTO DEL CONDUCTOR</span>
+        </div>
+        <div class="cr-driver-photo-container">
+          <mat-icon class="cr-default-avatar">person</mat-icon>
+        </div>
+      </div>
+
+      <div
         class="mat-elevation-z8 cr-card-container cr-no-padding cr-messages-card"
       >
         <div class="cr-card-header">
@@ -490,70 +501,42 @@
       </div>
 
       <div
-        class="mat-elevation-z8 cr-card-container cr-no-padding cr-flex-grow cr-consult-card"
+        class="mat-elevation-z8 cr-card-container cr-no-padding cr-consult-card cr-flex-grow"
       >
         <div class="cr-card-header">
           <span class="cr-card-title">CONSULTAS</span>
         </div>
         <div class="cr-p-4">
-          <div class="cr-consult-grid">
-            <button class="cr-consult-btn" matRipple>
-              <mat-icon class="cr-text-green-600">request_quote</mat-icon
-              ><span>Inf. Comisiones</span>
+          <div class="cr-consult-grid-main">
+            <button class="cr-consult-btn-main" matRipple>
+              <mat-icon class="cr-text-green-500">account_balance</mat-icon>
+              <span>Cuadre Caja</span>
             </button>
-            <button class="cr-consult-btn" matRipple>
-              <mat-icon class="cr-text-gray-600">receipt_long</mat-icon
-              ><span>Copia Recibo</span>
-            </button>
-            <button class="cr-consult-btn" matRipple>
-              <mat-icon class="cr-text-blue-600">point_of_sale</mat-icon
-              ><span>Ventas Contado</span>
-            </button>
-            <button class="cr-consult-btn" matRipple>
-              <mat-icon class="cr-text-orange-600"
-                >format_list_numbered</mat-icon
-              ><span>Consecutivo</span>
-            </button>
-            <button class="cr-consult-btn" matRipple>
-              <mat-icon class="cr-text-indigo-600">list_alt</mat-icon
-              ><span>Detalle General</span>
-            </button>
-            <button class="cr-consult-btn" matRipple>
-              <mat-icon class="cr-text-purple-600">business</mat-icon
-              ><span>Resumen Emp.</span>
-            </button>
-            <button class="cr-consult-btn" matRipple>
-              <mat-icon class="cr-text-teal-600">person</mat-icon
-              ><span>Resumen Cajero</span>
-            </button>
-            <button class="cr-consult-btn" matRipple>
-              <mat-icon class="cr-text-blue-500">group</mat-icon
-              ><span>Cajero/Empresa</span>
-            </button>
-            <button class="cr-consult-btn" matRipple>
-              <mat-icon class="cr-text-blue-400">sync_alt</mat-icon
-              ><span>Transferencias</span>
-            </button>
-            <button class="cr-consult-btn" matRipple>
-              <mat-icon class="cr-text-red-500">lock_clock</mat-icon
-              ><span>Resumen Cierre</span>
-            </button>
-            <button class="cr-consult-btn" matRipple>
-              <mat-icon class="cr-text-green-500">account_balance</mat-icon
-              ><span>Cuadre Caja</span>
-            </button>
-            <button class="cr-consult-btn" matRipple>
+            <button class="cr-consult-btn-main" matRipple>
               <mat-icon class="cr-text-orange-600"
                 >assignment_turned_in</mat-icon
-              ><span>Cierre Caja</span>
+              >
+              <span>Cierre Caja</span>
             </button>
-            <button class="cr-consult-btn" matRipple>
-              <mat-icon class="cr-text-gray-700">calendar_today</mat-icon
-              ><span>Resumen Diario</span>
+            <button class="cr-consult-btn-main" matRipple>
+              <mat-icon class="cr-text-gray-700">calendar_today</mat-icon>
+              <span>Resumen Diario</span>
             </button>
-            <button class="cr-consult-btn" matRipple>
-              <mat-icon class="cr-text-orange-500">cloud_upload</mat-icon
-              ><span>Carga Masiva</span>
+            <button class="cr-consult-btn-main" matRipple>
+              <mat-icon class="cr-text-red-500">lock_clock</mat-icon>
+              <span>Resumen Cierre</span>
+            </button>
+            <button class="cr-consult-btn-main" matRipple>
+              <mat-icon class="cr-text-orange-500">cloud_upload</mat-icon>
+              <span>Carga Masiva</span>
+            </button>
+            <button
+              class="cr-consult-btn-main"
+              matRipple
+              (click)="openQueriesDialog()"
+            >
+              <mat-icon class="cr-text-indigo-600">apps</mat-icon>
+              <span>Ver más</span>
             </button>
           </div>
         </div>
