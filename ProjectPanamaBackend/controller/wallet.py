@@ -16,6 +16,14 @@ from sqlalchemy import func
 from utils.panapass import get_txt_file, search_value_in_txt
 from datetime import datetime, timedelta
 import pytz
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+upload_directory = os.getenv('DIRECTORY_IMG')
+route_api = os.getenv('ROUTE_API')
+
 
 async def vehicle_wallet_info(company_code: str, vehicle_number: str, driver_number: str):
   db = session()
@@ -86,7 +94,16 @@ async def vehicle_and_driver_info(company_code: str, vehicle_number: str):
       panapass_value = ''
 
     payment_form = 'Diario' if information.FORMAPAGO == '1' else 'Semanal' if information.FORMAPAGO == '2' else 'Quincenal' if information.FORMAPAGO == '3' else 'Mensual' if information.FORMAPAGO == '4' else ''
-    
+
+    driver_photo_url = ''
+    if information.CONDUCTOR and upload_directory and route_api:
+      driver_dir = os.path.join(upload_directory, "conductores", company_code, information.CONDUCTOR)
+      if os.path.exists(driver_dir):
+        pictures = [f for f in os.listdir(driver_dir) if f.startswith(f"{information.CONDUCTOR}_foto")]
+        if pictures:
+          picture_filename = pictures[-1]
+          driver_photo_url = f"{route_api}uploads/conductores/{company_code}/{information.CONDUCTOR}/{picture_filename}"
+
     response = {
       'driver_code': information.CONDUCTOR,
       'driver_id_card': information.CEDULA,
@@ -94,6 +111,7 @@ async def vehicle_and_driver_info(company_code: str, vehicle_number: str):
       'driver_phone': information.TELEFONO,
       'start_date': information.FEC_INICIO,
       'driver_address': information.DIRECCION,
+      'driver_photo': driver_photo_url,
       'central': information.CENTRAL,
       'owner': f"{information.PROPI_IDEN} - {information.NOMBRE_PROPI}",
       'license_plate': information.PLACA,

@@ -471,7 +471,20 @@
           <span class="cr-card-title">FOTO DEL CONDUCTOR</span>
         </div>
         <div class="cr-driver-photo-container">
-          <mat-icon class="cr-default-avatar">person</mat-icon>
+          <img
+            *ngIf="detailInfo?.driver_photo"
+            [src]="detailInfo?.driver_photo"
+            (load)="isImageLoaded = true"
+            (error)="isImageLoaded = false"
+            [style.display]="isImageLoaded ? 'block' : 'none'"
+            alt="Foto del conductor"
+            class="cr-driver-img"
+          />
+          <mat-icon
+            *ngIf="!detailInfo?.driver_photo || !isImageLoaded"
+            class="cr-default-avatar"
+            >person</mat-icon
+          >
         </div>
       </div>
 

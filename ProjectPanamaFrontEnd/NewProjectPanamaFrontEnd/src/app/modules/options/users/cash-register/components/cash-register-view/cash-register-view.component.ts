@@ -55,6 +55,7 @@ export interface VehicleDriverDetail {
   driver_phone: string;
   start_date: string;
   driver_address: string;
+  driver_photo?: string;
   central: string;
   owner: string;
   license_plate: string;
@@ -93,6 +94,7 @@ export class CashRegisterViewComponent implements OnInit {
   walletInfo: WalletInfo | null = null;
   receiptsInfo: ReceiptsInfo | null = null;
   detailInfo: VehicleDriverDetail | null = null;
+  isImageLoaded: boolean = false;
 
   closingDateInfo: { date: string; time: string } | null = null;
   notificationMessage: string | null = null;
@@ -315,6 +317,7 @@ export class CashRegisterViewComponent implements OnInit {
       ]) => {
         this.walletInfo = wallet;
         this.detailInfo = detail;
+        this.isImageLoaded = false;
         this.receiptsInfo = receipts;
         this.messages = messages.messages || [];
         this.notificationMessage = notifications.maintenance_message;
@@ -346,6 +349,7 @@ export class CashRegisterViewComponent implements OnInit {
     this.walletInfo = null;
     this.receiptsInfo = null;
     this.detailInfo = null;
+    this.isImageLoaded = false;
     this.messages = [];
     this.notificationMessage = null;
 
