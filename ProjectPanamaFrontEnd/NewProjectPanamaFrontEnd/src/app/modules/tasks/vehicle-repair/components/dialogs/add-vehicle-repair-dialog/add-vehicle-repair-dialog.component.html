@@ -44,7 +44,10 @@
         </div>
 
         <!-- Vehicle autocomplete (only in create mode) -->
-        <div class="inputs-container" *ngIf="!isLoading && !isEditMode && !(data && data.vehicleNumber)">
+        <div
+          class="inputs-container"
+          *ngIf="!isLoading && !isEditMode && !(data && data.vehicleNumber)"
+        >
           <mat-form-field class="field-input">
             <mat-label>Vehículo</mat-label>
             <input
@@ -66,7 +69,7 @@
               >
                 {{ option.numero_unidad }} - {{ option.placa_vehiculo }} -
                 {{ option.nro_cupo }} - {{ option.marca }} {{ option.linea }}
-                {{ option.modelo }} - {{ option.propietario }} 
+                {{ option.modelo }} - {{ option.propietario }}
               </mat-option>
             </mat-autocomplete>
           </mat-form-field>
@@ -83,14 +86,27 @@
           <!-- Vehicle info readonly (shown in EDIT mode OR specialized flow at the top) -->
           <div
             class="inputs-container"
-            *ngIf="(isEditMode && selectedVehicleObject) || (data && data.vehicleNumber)"
+            *ngIf="
+              (isEditMode && selectedVehicleObject) ||
+              (data && data.vehicleNumber)
+            "
           >
             <mat-form-field class="field-input">
               <mat-label>Vehículo</mat-label>
               <input
                 matInput
                 readonly
-                [value]="isEditMode && selectedVehicleObject ? displayVehicleData(selectedVehicleObject) : vehicleInfo.numero + ' - ' + vehicleInfo.placa + ' - ' + vehicleInfo.marca + ' ' + vehicleInfo.modelo"
+                [value]="
+                  isEditMode && selectedVehicleObject
+                    ? displayVehicleData(selectedVehicleObject)
+                    : vehicleInfo.numero +
+                      ' - ' +
+                      vehicleInfo.placa +
+                      ' - ' +
+                      vehicleInfo.marca +
+                      ' ' +
+                      vehicleInfo.modelo
+                "
               />
             </mat-form-field>
           </div>
@@ -143,7 +159,7 @@
             </mat-form-field>
           </div>
 
-          <!-- Editable inputs (Patio and Description at the END) -->
+          <!-- Editable inputs (Patio, Tipo de Reparación and Description) -->
           <div class="inputs-container">
             <mat-form-field class="field-input">
               <mat-label>Patio</mat-label>
@@ -151,7 +167,6 @@
                 placeholder="Selecciona un patio"
                 formControlName="patio"
               >
-                <mat-option [value]="null"> - </mat-option>
                 <mat-option *ngFor="let yard of yards" [value]="yard">
                   {{ yard.id }} - {{ yard.name }}
                 </mat-option>
@@ -165,6 +180,30 @@
           </div>
 
           <div class="inputs-container">
+            <mat-form-field class="field-input">
+              <mat-label>Tipo de Reparación</mat-label>
+              <mat-select
+                placeholder="Selecciona un tipo de reparación"
+                formControlName="tipoReparacion"
+              >
+                <mat-option
+                  *ngFor="let repairType of repairTypes"
+                  [value]="repairType"
+                >
+                  {{ repairType.id }} - {{ repairType.name }}
+                </mat-option>
+              </mat-select>
+              <mat-error
+                *ngIf="
+                  vehicleRepairForm.get('tipoReparacion')?.hasError('required')
+                "
+              >
+                El tipo de reparación es obligatorio.
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="inputs-container">
             <mat-form-field class="field-input description-field">
               <mat-label>Descripción</mat-label>
               <textarea
@@ -173,13 +212,6 @@
                 placeholder="Describe el motivo de la reparación"
                 rows="3"
               ></textarea>
-              <mat-error
-                *ngIf="
-                  vehicleRepairForm.get('descripcion')?.hasError('required')
-                "
-              >
-                La descripción es obligatoria.
-              </mat-error>
             </mat-form-field>
           </div>
         </ng-container>

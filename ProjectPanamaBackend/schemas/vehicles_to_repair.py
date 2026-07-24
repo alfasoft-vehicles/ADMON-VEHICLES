@@ -6,7 +6,8 @@ class NewVehicleEntry(BaseModel):
     company_code: str
     vehicle_number: str
     yard: str
-    justify: str
+    repair_type: str
+    justify: Optional[str] = ""
     date: str
     time: str
 
@@ -21,7 +22,8 @@ class VehicleToRepairInfo(BaseModel):
 class UpdateVehicleRepair(BaseModel):
     user: str
     patio_id: str
-    description: str
+    repair_type: str
+    description: Optional[str] = ""
 
 class DownloadImageRequest(BaseModel):
     image_url: str

@@ -125,12 +125,6 @@ def qr_pdf(route_app, qr_path, data, pdf_path):
 
     story.append(Spacer(1, 10))
 
-    justificacion = data['justification'] or "Sin justificación"
-    story.append(Paragraph("Justificación:", styles['Heading2']))
-    story.append(Paragraph(justificacion, styles['Normal']))
-
-    story.append(Spacer(1, 20))
-
     info = f"""
     Unidad: {data['vehicle_number']}<br/>
     Placa: {data['plate']}<br/>
@@ -148,6 +142,18 @@ def qr_pdf(route_app, qr_path, data, pdf_path):
     custom_style.leading = 18
     
     story.append(Paragraph(info, custom_style))
+
+    story.append(Spacer(1, 10))
+
+    repair_type = data.get('repair_type') or "Sin especificar"
+    story.append(Paragraph("Tipo de reparación:", styles['Heading2']))
+    story.append(Paragraph(repair_type, styles['Normal']))
+
+    story.append(Spacer(1, 10))
+
+    justificacion = data['justification'] or "Sin justificación"
+    story.append(Paragraph("Justificación:", styles['Heading2']))
+    story.append(Paragraph(justificacion, styles['Normal']))
 
     doc = SimpleDocTemplate(pdf_path)
     doc.build(story)

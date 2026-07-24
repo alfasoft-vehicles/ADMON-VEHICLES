@@ -128,6 +128,7 @@
         <th>Placa</th>
         <th>Unidad</th>
         <th>Cupo</th>
+        <th>Tipo Reparación</th>
         <th>Fecha</th>
         <th>Patio</th>
         <th>Justificación</th>
@@ -137,14 +138,14 @@
     </thead>
     <tbody>
       <tr class="empty-row-with-line">
-        <td colspan="9"></td>
+        <td colspan="10"></td>
       </tr>
 
       <!-- INICIO SECCIÓN ITERATIVA POR EMPRESA (PROPIETARIO) -->
       {% for propietario in data_view['repairs'] %}
       <!-- Fila para mostrar la sección "EMPRESA..." -->
       <tr class="empresa-row">
-        <td colspan="9" class="empresa-cell">
+        <td colspan="10" class="empresa-cell">
           EMPRESA: {{ propietario['codigo_propietario'] }} - &nbsp; {{ propietario['nombre_propietario'] }}
         </td>
       </tr>
@@ -156,6 +157,7 @@
         <td>{{ repair['placa'] }}</td>
         <td>{{ repair['unidad'] }}</td>
         <td>{{ repair['cupo'] }}</td>
+        <td>{{ repair['tipo_reparacion'] }}</td>
         <td>{{ repair['fecha_hora'] }}</td>
         <td>{{ repair['patio'] }}</td>
         <td>{{ repair['justificacion'] }}</td>
@@ -176,20 +178,20 @@
 
       <!-- Fila con el total de la empresa -->
       <tr class="total-row">
-        <td colspan="9" class="empresa-total">Total Empresa: {{ propietario['cantidad_registros'] }}</td>
+        <td colspan="10" class="empresa-total">Total Empresa: {{ propietario['cantidad_registros'] }}</td>
       </tr>
 
       <tr class="empty-row-with-line">
-        <td colspan="9"></td>
+        <td colspan="10"></td>
       </tr>
       {% endfor %}
       <!-- FIN DE SECCIÓN ITERATIVA POR EMPRESA -->
 
       <tr class="empty-row-with-line">
-        <td colspan="9" style="border-top: 2px dashed #999;"></td>
+        <td colspan="10" style="border-top: 2px dashed #999;"></td>
       </tr>
       <tr class="total-general-row">
-        <td colspan="9" class="total-general-cell"> TOTAL GENERAL DE REGISTROS: {{ data_view['total_registros'] }}</td>
+        <td colspan="10" class="total-general-cell"> TOTAL GENERAL DE REGISTROS: {{ data_view['total_registros'] }}</td>
       </tr>
     </tbody>
   </table>
