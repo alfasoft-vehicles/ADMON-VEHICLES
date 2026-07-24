@@ -1,3 +1,4 @@
+from models.tiposreparaciones import TiposReparaciones
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi import UploadFile, File, BackgroundTasks, HTTPException
 from config.dbconnection import session
@@ -33,6 +34,19 @@ upload_directory = os.getenv('DIRECTORY_IMG')
 route_api = os.getenv('ROUTE_API')
 route_app = os.getenv('ROUTE_APP')
 qr_path = 'vehicle-repair'
+
+async def get_repair_types(company_code: str):
+  db = session()
+  try:
+    repairs_types = db.query(TiposReparaciones).filter(TiposReparaciones.EMPRESA == company_code).all()
+
+    repair_types_dict = {repair.CODIGO: repair.NOMBRE for repair in repairs_types}
+    
+    return JSONResponse(content=jsonable_encoder(repair_types_dict), status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
 
 async def get_repair_edit_data(entry_id: int):
   db = session()
@@ -73,6 +87,7 @@ async def get_repair_edit_data(entry_id: int):
         "id": yard.CODIGO if yard else entry.PATIO,
         "name": yard.NOMBRE if yard else entry.NOMPATIO
       },
+      "tipo_reparacion": entry.TIPOREPAR or "",
       "descripcion": entry.JUSTIFICACION
     }
 
@@ -101,9 +116,15 @@ async def update_repair_entry(entry_id: int, data: UpdateVehicleRepair):
     if not yard:
       return JSONResponse(content={"message": "Yard not found"}, status_code=404)
 
+    repair_type = db.query(TiposReparaciones).filter(TiposReparaciones.CODIGO == data.repair_type, TiposReparaciones.EMPRESA == entry.EMPRESA).first()
+    if not repair_type:
+      return JSONResponse(content={"message": "Repair type not found"}, status_code=404)
+
     entry.PATIO = yard.CODIGO
     entry.NOMPATIO = yard.NOMBRE
-    entry.JUSTIFICACION = data.description
+    entry.TIPOREPAR = repair_type.CODIGO
+    entry.NOMTIPOREPAR = repair_type.NOMBRE
+    entry.JUSTIFICACION = data.description or ""
     entry.ESTADO = "PEN"
 
     db.commit()
@@ -185,6 +206,10 @@ async def create_vehicle_entry(data: NewVehicleEntry):
     if not yard:
       return JSONResponse(content={"message": "Yard not found"}, status_code=404)
     
+    repair_type = db.query(TiposReparaciones).filter(TiposReparaciones.CODIGO == data.repair_type, TiposReparaciones.EMPRESA == data.company_code).first()
+    if not repair_type:
+      return JSONResponse(content={"message": "Repair type not found"}, status_code=404)
+    
     user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user, PermisosUsuario.EMPRESA == data.company_code).first()
     
     panama_timezone = pytz.timezone('America/Panama')
@@ -204,7 +229,9 @@ async def create_vehicle_entry(data: NewVehicleEntry):
       NOMCONDU=driver.NOMBRE,
       PATIO=data.yard,
       NOMPATIO=yard.NOMBRE,
-      JUSTIFICACION=data.justify,
+      TIPOREPAR=repair_type.CODIGO,
+      NOMTIPOREPAR=repair_type.NOMBRE,
+      JUSTIFICACION=data.justify or "",
       FECHA=fecha_obj,
       HORA=data.time,
       ESTADO="PEN",
@@ -328,6 +355,8 @@ async def generate_qr(entry_id: int):
 
       info_empresa = db.query(InfoEmpresas).filter(InfoEmpresas.ID == entry.EMPRESA).first()
 
+      repair_type_str = (entry.TIPOREPAR + ' - ' + entry.NOMTIPOREPAR) if entry.TIPOREPAR else (entry.NOMTIPOREPAR or '')
+
       vehicle_info = {
         'vehicle_number': entry.UNIDAD,
         'brand': vehicle.NOMMARCA + ' ' + vehicle.LINEA,
@@ -339,6 +368,7 @@ async def generate_qr(entry_id: int):
         'driver_name': driver.NOMBRE if driver else '',
         'driver_code': vehicle.CONDUCTOR if vehicle.CONDUCTOR else '',
         'driver_phone': driver.TELEFONO if driver else '',
+        'repair_type': repair_type_str,
         'justification': entry.JUSTIFICACION,
         'company_name': info_empresa.NOMBRE if info_empresa else '',
         'company_logo': info_empresa.LOGO if info_empresa else ''
@@ -427,6 +457,7 @@ async def report_repairs(data: VehicleToRepairInfo, company_code: str):
         "unidad": entry.UNIDAD,
         "placa": entry.PLACA,
         "cupo": entry.NRO_CUPO,
+        "tipo_reparacion": entry.NOMTIPOREPAR or "",
         "patio": entry.NOMPATIO,
         "justificacion": entry.JUSTIFICACION,
         "estado": entry.ESTADO,
@@ -605,6 +636,7 @@ async def repair_details(entry_id: int):
       "unidad": entry.UNIDAD,
       "placa": entry.PLACA,
       "cupo": vehicle.NRO_CUPO if vehicle else entry.NRO_CUPO,
+      "tipo_reparacion": (entry.TIPOREPAR + ' - ' + entry.NOMTIPOREPAR) if entry.TIPOREPAR else (entry.NOMTIPOREPAR or ""),
       "descripcion": entry.JUSTIFICACION,
       "patio": entry.PATIO + ' - ' + entry.NOMPATIO,
       "usuario": user.NOMBRE if user else entry.NOMUSUARIO,

@@ -19,6 +19,7 @@ export interface VehicleRepairDetails {
   unidad: string;
   placa: string;
   cupo: string;
+  tipo_reparacion: string;
   descripcion: string;
   patio: string;
   usuario: string;

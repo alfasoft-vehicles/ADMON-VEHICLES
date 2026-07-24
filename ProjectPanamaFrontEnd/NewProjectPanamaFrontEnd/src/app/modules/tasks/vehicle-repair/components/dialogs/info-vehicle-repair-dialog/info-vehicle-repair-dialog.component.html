@@ -52,7 +52,10 @@
     </mat-card>
 
     <!-- Notas de Retiro -->
-    <mat-card class="info-section" *ngIf="vehicleRepairData.estado === 'TER' && vehicleRepairData.notasfin">
+    <mat-card
+      class="info-section"
+      *ngIf="vehicleRepairData.estado === 'TER' && vehicleRepairData.notasfin"
+    >
       <mat-card-header>
         <mat-card-title class="section-title">
           <mat-icon>note</mat-icon>
@@ -73,7 +76,10 @@
               color="primary"
               class="expand-btn"
               (click)="toggleNotes()"
-              *ngIf="vehicleRepairData.notasfin && vehicleRepairData.notasfin.length > 80"
+              *ngIf="
+                vehicleRepairData.notasfin &&
+                vehicleRepairData.notasfin.length > 80
+              "
             >
               {{ isNotesExpanded ? "Ver menos" : "Ver más" }}
             </button>
@@ -108,25 +114,25 @@
       </mat-card-content>
     </mat-card>
 
-    <!-- Información del Patio -->
+    <!-- Información del Patio y Reparación -->
     <mat-card class="info-section">
       <mat-card-header>
         <mat-card-title class="section-title">
-          <mat-icon>local_parking</mat-icon>
-          Patio
+          <mat-icon>build</mat-icon>
+          Patio y Reparación
         </mat-card-title>
       </mat-card-header>
       <mat-card-content>
         <div class="info-grid">
           <div class="info-item">
-            <span class="label">Código:</span>
-            <span class="value">{{
-              getYardCode(vehicleRepairData.patio)
-            }}</span>
+            <span class="label">Patio:</span>
+            <span class="value">{{ vehicleRepairData.patio || "N/A" }}</span>
           </div>
           <div class="info-item">
-            <span class="label">Nombre:</span>
-            <span class="value">{{ getYardName(vehicleRepairData.patio) }}</span>
+            <span class="label">Tipo de Reparación:</span>
+            <span class="value">{{
+              vehicleRepairData.tipo_reparacion || "N/A"
+            }}</span>
           </div>
           <div class="info-item full-width description-container">
             <span class="label">Descripción:</span>

@@ -15,6 +15,8 @@ class VehiculosReparacion(Base):
     NOMCONDU = Column(CHAR(40), default="")
     PATIO = Column(CHAR(2), nullable=False)
     NOMPATIO = Column(CHAR(40), nullable=False)
+    TIPOREPAR = Column(CHAR(2), nullable=False)
+    NOMTIPOREPAR = Column(VARCHAR(200), nullable=False)
     JUSTIFICACION = Column(Text, nullable=False)
     FECHA = Column(Date, default=None)
     HORA = Column(Time, default=None)
