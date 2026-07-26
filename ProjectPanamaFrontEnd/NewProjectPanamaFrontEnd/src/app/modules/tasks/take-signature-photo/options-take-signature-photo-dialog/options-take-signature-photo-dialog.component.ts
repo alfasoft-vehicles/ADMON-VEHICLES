@@ -2,6 +2,7 @@ import { Component, ViewChild } from '@angular/core';
 import { TakeSignatureComponent } from '../take-signature/take-signature.component';
 import { TakePhotoComponent } from '../take-photo/take-photo.component';
 import { TakeVehiclePhotoComponent } from '../take-vehicle-photo/take-vehicle-photo.component';
+import { TakeFingerprintComponent } from '../take-fingerprint/take-fingerprint.component';
 
 @Component({
   selector: 'app-take-signature-photo',
@@ -18,11 +19,16 @@ export class TakeSignaturePhotoComponent {
   @ViewChild(TakeVehiclePhotoComponent)
   takeVehiclePhotoComponent!: TakeVehiclePhotoComponent;
 
+  @ViewChild(TakeFingerprintComponent)
+  takeFingerprintComponent!: TakeFingerprintComponent;
+
   takeSignature: boolean = false;
   takePhoto: boolean = false;
   takeVehicle: boolean = false;
+  takeFingerprint: boolean = false;
   isSignaturePadVisible: boolean = false;
   isCameraVisible: boolean = false;
+  isFingerprintVisible: boolean = false;
 
   constructor() {}
 
@@ -31,19 +37,27 @@ export class TakeSignaturePhotoComponent {
       this.takeSignature = true;
       this.takePhoto = false;
       this.takeVehicle = false;
+      this.takeFingerprint = false;
     } else if (option === 'photo') {
       this.takeSignature = false;
       this.takePhoto = true;
       this.takeVehicle = false;
+      this.takeFingerprint = false;
     } else if (option === 'vehicle') {
       this.takeSignature = false;
       this.takePhoto = false;
       this.takeVehicle = true;
-    }
-     else if (option === 'close') {
+      this.takeFingerprint = false;
+    } else if (option === 'fingerprint') {
       this.takeSignature = false;
       this.takePhoto = false;
       this.takeVehicle = false;
+      this.takeFingerprint = true;
+    } else if (option === 'close') {
+      this.takeSignature = false;
+      this.takePhoto = false;
+      this.takeVehicle = false;
+      this.takeFingerprint = false;
     }
   }
 
@@ -80,6 +94,17 @@ export class TakeSignaturePhotoComponent {
     }
   }
 
+  nextStepFingerprint() {
+    if (this.takeFingerprintComponent) {
+      if (!this.isFingerprintVisible) {
+        this.takeFingerprintComponent.viewFingerprint();
+        this.isFingerprintVisible = true;
+      } else {
+        this.takeFingerprintComponent.triggerSaveFingerprint();
+      }
+    }
+  }
+
   isButtonDisabled(): boolean {
     if (!this.takeSignatureComponent) {
       return true;
@@ -88,8 +113,7 @@ export class TakeSignaturePhotoComponent {
     const info = this.takeSignatureComponent.vehicleSignatureInfo;
 
     return (
-      info.driver_code === '' ||
-      !this.takeSignatureComponent.selectedVehicle
+      info.driver_code === '' || !this.takeSignatureComponent.selectedVehicle
     );
   }
 
@@ -100,10 +124,7 @@ export class TakeSignaturePhotoComponent {
 
     const info = this.takePhotoComponent.vehiclePhotoInfo;
 
-    return (
-      info.driver_code === '' ||
-      !this.takePhotoComponent.selectedVehicle
-    );
+    return info.driver_code === '' || !this.takePhotoComponent.selectedVehicle;
   }
 
   isVehiclePhotoButtonDisabled(): boolean {
@@ -114,8 +135,23 @@ export class TakeSignaturePhotoComponent {
     const info = this.takeVehiclePhotoComponent.vehiclePhotoInfo;
 
     return (
-      info.driver_code === '' ||
-      !this.takeVehiclePhotoComponent.selectedVehicle
+      info.driver_code === '' || !this.takeVehiclePhotoComponent.selectedVehicle
+    );
+  }
+
+  isFingerprintButtonDisabled(): boolean {
+    if (!this.takeFingerprintComponent) {
+      return true;
+    }
+
+    const info = this.takeFingerprintComponent.vehicleFingerprintInfo;
+
+    if (this.isFingerprintVisible) {
+      return !this.takeFingerprintComponent.tempFingerprintBase64;
+    }
+
+    return (
+      info.driver_code === '' || !this.takeFingerprintComponent.selectedVehicle
     );
   }
 }

@@ -48,7 +48,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 load_dotenv()
 
-driver_documents_path = os.getenv('DRIVER_DOCS_PATH')
+docs_path = os.getenv('DOCS_PATH')
 images_path = os.getenv('DIRECTORY_IMG')
 path_10  = os.getenv('DROPBOX_INTEGRATION_PATH_10')
 path_58  = os.getenv('DROPBOX_INTEGRATION_PATH_58')
@@ -222,7 +222,7 @@ async def vehicle_delivery_info(vehicle_number: str):
     
     state = db.query(Estados).filter(Estados.CODIGO == vehicle.ESTADO, Estados.EMPRESA == vehicle.EMPRESA).first()
 
-    pdf_path = os.path.join(driver_documents_path, vehicle.EMPRESA, driver.CODIGO, "docu07.pdf")
+    pdf_path = os.path.join(docs_path, 'conductores', vehicle.EMPRESA, driver.CODIGO, "docu07.pdf")
 
     base_images_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO)
     photo_path = os.path.join(base_images_path, f"{driver.CODIGO}_foto.png")
@@ -396,9 +396,8 @@ async def vehicle_delivery_info(vehicle_number: str):
 
 #-----------------------------------------------------------------------------------------------
 
-base_dir = os.path.dirname(os.path.dirname(__file__))
-docx_template_path_con_cupo = os.path.join(base_dir, 'documents', 'ContratoOriginal_ConCupo_0010.docx')
-docx_template_path_sin_cupo = os.path.join(base_dir, 'documents', 'ContratoOriginal_SinCupo_0010.docx')
+docx_template_path_con_cupo = os.path.join(docs_path, 'contratos', 'ContratoOriginal_ConCupo_0010.docx')
+docx_template_path_sin_cupo = os.path.join(docs_path, 'contratos', 'ContratoOriginal_SinCupo_0010.docx')
 
 locale.setlocale(locale.LC_TIME, "es_ES.utf8")
 
@@ -425,7 +424,7 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
     if not civil_status:
       return JSONResponse(content={"message": "Civil status not found"}, status_code=404)
     
-    base_path = os.path.join(driver_documents_path, vehicle.EMPRESA, driver.CODIGO)
+    base_path = os.path.join(docs_path, 'conductores', vehicle.EMPRESA, driver.CODIGO)
     contract_path = os.path.join(base_path, "docu07.pdf")
     
     wReg = 0
@@ -568,19 +567,16 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
 
     os.makedirs(base_path, exist_ok=True)
 
-    if not data.signature_base64:
-      signature_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_firma.png")
-    else:
+    signature_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_firma.png")
+    photo_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_foto.png")
+
+    if data.signature_base64:
       signature_image_data = decode_image(data.signature_base64)
-      signature_path = os.path.join(base_path, f"{vehicle.NUMERO}_{vehicle.CONDUCTOR}_firma_contrato.png")
       with open(signature_path, "wb") as f:
         f.write(signature_image_data)
 
-    if not data.photo_base64:
-      photo_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_foto.png")
-    else:
+    if data.photo_base64:
       photo_image_data = decode_image(data.photo_base64)
-      photo_path = os.path.join(base_path, f"{vehicle.NUMERO}_{vehicle.CONDUCTOR}_foto.png")
       with open(photo_path, "wb") as f:
         f.write(photo_image_data)
 

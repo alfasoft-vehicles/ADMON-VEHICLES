@@ -6,6 +6,8 @@ import { JwtService } from 'src/app/services/jwt.service';
 import { MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { QueriesDialogComponent } from '../../dialogs/queries-dialog/queries-dialog.component';
 
 export interface drivers {
   codigo_conductor: string;
@@ -53,6 +55,7 @@ export interface VehicleDriverDetail {
   driver_phone: string;
   start_date: string;
   driver_address: string;
+  driver_photo?: string;
   central: string;
   owner: string;
   license_plate: string;
@@ -91,6 +94,7 @@ export class CashRegisterViewComponent implements OnInit {
   walletInfo: WalletInfo | null = null;
   receiptsInfo: ReceiptsInfo | null = null;
   detailInfo: VehicleDriverDetail | null = null;
+  isImageLoaded: boolean = false;
 
   closingDateInfo: { date: string; time: string } | null = null;
   notificationMessage: string | null = null;
@@ -115,6 +119,7 @@ export class CashRegisterViewComponent implements OnInit {
     private jwtService: JwtService,
     private snackBar: MatSnackBar,
     private router: Router,
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit() {
@@ -312,16 +317,14 @@ export class CashRegisterViewComponent implements OnInit {
       ]) => {
         this.walletInfo = wallet;
         this.detailInfo = detail;
+        this.isImageLoaded = false;
         this.receiptsInfo = receipts;
         this.messages = messages.messages || [];
         this.notificationMessage = notifications.maintenance_message;
         this.hasData = true;
         this.isLoading = false;
 
-        if (this.walletInfo && this.walletInfo.debts.daily_rent > 0) {
-          this.rentPayment = this.walletInfo.debts.daily_rent;
-          this.calculateTotal();
-        }
+        this.calculateTotal();
       },
       error: (err) => {
         this.openSnackbar(
@@ -346,6 +349,7 @@ export class CashRegisterViewComponent implements OnInit {
     this.walletInfo = null;
     this.receiptsInfo = null;
     this.detailInfo = null;
+    this.isImageLoaded = false;
     this.messages = [];
     this.notificationMessage = null;
 
@@ -375,5 +379,12 @@ export class CashRegisterViewComponent implements OnInit {
       (this.surchargesPayment || 0) +
       (this.registrationPayment || 0) +
       (this.savingsPayment || 0);
+  }
+
+  openQueriesDialog() {
+    this.dialog.open(QueriesDialogComponent, {
+      width: '600px',
+      maxWidth: '90vw',
+    });
   }
 }

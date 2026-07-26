@@ -1,0 +1,58 @@
+<mat-card class="fingerprint-card">
+  <mat-card-header>
+    <mat-card-title>Captura de Huella</mat-card-title>
+    <mat-card-subtitle [class.error-text]="hasError">{{
+      statusMessage
+    }}</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <!-- Fingerprint Preview Area -->
+    <div class="fingerprint-preview" [class.capturing]="isCapturing">
+      <img
+        *ngIf="fingerprintBase64"
+        [src]="'data:image/png;base64,' + fingerprintBase64"
+        alt="Huella capturada"
+        class="fingerprint-image"
+      />
+      <mat-icon *ngIf="!fingerprintBase64" class="fingerprint-placeholder">
+        fingerprint
+      </mat-icon>
+    </div>
+
+    <!-- Progress Indicator -->
+    <mat-progress-bar
+      *ngIf="isCapturing"
+      mode="indeterminate"
+      class="capture-progress"
+    ></mat-progress-bar>
+
+    <!-- Error/Warning details when agent is not running -->
+    <div *ngIf="!isConnected && !isCapturing" class="agent-warning">
+      <mat-icon>warning</mat-icon>
+      <span class="warning-msg">El agente local no responde.</span>
+      <button
+        mat-stroked-button
+        color="accent"
+        size="small"
+        (click)="retryConnection()"
+        class="btn-retry"
+      >
+        Reconectar Lector
+      </button>
+    </div>
+
+    <!-- Actions Area -->
+    <div class="fingerprint-actions">
+      <button
+        mat-fab
+        color="primary"
+        (click)="startCapture()"
+        [disabled]="isCapturing || !isConnected"
+        matTooltip="Iniciar Captura"
+      >
+        <mat-icon>fingerprint</mat-icon>
+      </button>
+    </div>
+  </mat-card-content>
+</mat-card>

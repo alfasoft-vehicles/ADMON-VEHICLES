@@ -24,6 +24,11 @@ interface yards {
   name: string;
 }
 
+interface RepairType {
+  id: string;
+  name: string;
+}
+
 interface VehicleRepairData {
   numero: string;
   marca: string;
@@ -75,6 +80,7 @@ export class AddVehicleRepairDialogComponent implements OnInit {
   optionsVehicles!: Observable<Vehicles[]>;
 
   yards: yards[] = [];
+  repairTypes: RepairType[] = [];
 
   loadingVehicleInfo: boolean = false;
   selectedVehicle: boolean = false;
@@ -123,6 +129,7 @@ export class AddVehicleRepairDialogComponent implements OnInit {
   getInputsData() {
     this.getDataVehicles();
     this.getYards().subscribe();
+    this.getRepairTypes().subscribe();
   }
 
   loadVehicleRepairData(vehicleRepairId: string) {
@@ -136,6 +143,7 @@ export class AddVehicleRepairDialogComponent implements OnInit {
     forkJoin({
       vehicles: this.apiService.getData('vehicles_data/' + company),
       yards: this.getYards(),
+      repairTypes: this.getRepairTypes(),
       vehicleRepairData: this.apiService.getData(
         `vehicles_to_repair/get_repair_edit_data/${vehicleRepairId}`,
       ),
@@ -152,6 +160,9 @@ export class AddVehicleRepairDialogComponent implements OnInit {
 
         // Save patios
         this.yards = [...results.yards];
+
+        // Save repair types
+        this.repairTypes = [...results.repairTypes];
 
         // Save vehicle repair data
         this.vehicleRepairDataEdit = results.vehicleRepairData;
@@ -214,6 +225,18 @@ export class AddVehicleRepairDialogComponent implements OnInit {
       }
     }
 
+    // Preselect tipo de reparación
+    if (data.tipo_reparacion) {
+      const repairTypeMatch = this.repairTypes.find(
+        (t) => t.id === data.tipo_reparacion,
+      );
+      if (repairTypeMatch) {
+        this.vehicleRepairForm.patchValue({
+          tipoReparacion: repairTypeMatch,
+        });
+      }
+    }
+
     // Set description
     this.vehicleRepairForm.patchValue({
       descripcion: data.descripcion || '',
@@ -226,8 +249,9 @@ export class AddVehicleRepairDialogComponent implements OnInit {
   initForms(): void {
     this.vehicleRepairForm = this.formBuilder.group({
       vehiculo: ['', Validators.required],
+      tipoReparacion: ['', Validators.required],
       patio: ['', Validators.required],
-      descripcion: ['', Validators.required],
+      descripcion: [''],
     });
   }
 
@@ -256,11 +280,30 @@ export class AddVehicleRepairDialogComponent implements OnInit {
   getYards(): Observable<yards[]> {
     const company = this.getCompany();
     return this.apiService.getData('yards/' + company).pipe(
-      map((data: yards[]) => data.filter((yard) => yard.id && yard.id.trim() !== '')),
+      map((data: yards[]) =>
+        data.filter((yard) => yard.id && yard.id.trim() !== ''),
+      ),
       tap((filteredData: yards[]) => {
         this.yards = filteredData;
       }),
     );
+  }
+
+  getRepairTypes(): Observable<RepairType[]> {
+    const company = this.getCompany();
+    return this.apiService
+      .getData(`vehicles_to_repair/get_repair_types/${company}`)
+      .pipe(
+        map((data: Record<string, string>) =>
+          Object.entries(data || {}).map(([code, name]) => ({
+            id: code,
+            name: name,
+          })),
+        ),
+        tap((filteredData: RepairType[]) => {
+          this.repairTypes = filteredData;
+        }),
+      );
   }
 
   private _filterVehicles(value: string | Vehicles): Vehicles[] {
@@ -381,12 +424,15 @@ export class AddVehicleRepairDialogComponent implements OnInit {
     }
 
     const selectedYard = this.vehicleRepairForm.get('patio')!.value;
+    const selectedRepairType =
+      this.vehicleRepairForm.get('tipoReparacion')!.value;
 
     if (this.isEditMode) {
       // Edit mode - update existing record
       const updateData = {
         user: this.jwtService.getUserData()?.id,
-        patio_id: selectedYard.id,
+        patio_id: selectedYard ? selectedYard.id : '',
+        repair_type: selectedRepairType ? selectedRepairType.id : '',
         description: this.vehicleRepairForm.value.descripcion || '',
       };
 
@@ -417,7 +463,8 @@ export class AddVehicleRepairDialogComponent implements OnInit {
         user: this.jwtService.getUserData()?.id,
         company_code: this.getCompany(),
         vehicle_number: this.vehicleInfo.numero,
-        yard: selectedYard.id,
+        yard: selectedYard ? selectedYard.id : '',
+        repair_type: selectedRepairType ? selectedRepairType.id : '',
         justify: this.vehicleRepairForm.value.descripcion,
         date: this.vehicleInfo.fecha,
         time: this.vehicleInfo.hora,
@@ -470,9 +517,10 @@ export class AddVehicleRepairDialogComponent implements OnInit {
   }
 
   openQRPdf() {
-    const QRPdfEndpoint = 'vehicles_to_repair/generate_qr/' + this.vehicleRepairId;
+    const QRPdfEndpoint =
+      'vehicles_to_repair/generate_qr/' + this.vehicleRepairId;
     localStorage.setItem('pdfEndpoint', QRPdfEndpoint);
-    window.open(`/pdf`, '_blank')
+    window.open(`/pdf`, '_blank');
     this.dialogRef.close('refresh');
   }
 

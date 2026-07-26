@@ -16,12 +16,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-vehicle_documents_path = os.getenv('VEHICLE_DOCS_PATH')
-driver_documents_path = os.getenv('DRIVER_DOCS_PATH')
+docs_path = os.getenv('DOCS_PATH')
 
 async def vehicle_documents(company_code: str, vehicle_number: str):
   try:
-    base_path = os.path.join(vehicle_documents_path, company_code, vehicle_number)
+    base_path = os.path.join(docs_path, 'vehiculos', company_code, vehicle_number)
 
     if not os.path.isdir(base_path):
       return JSONResponse(content={"message": "Directorio del vehículo no encontrado."}, status_code=404)
@@ -114,7 +113,7 @@ async def vehicle_documents(company_code: str, vehicle_number: str):
 
 async def send_vehicle_documents(company_code: str, vehicle_number: str, doc_id: str):
   try:
-    base_path = os.path.join(vehicle_documents_path, company_code, vehicle_number)
+    base_path = os.path.join(docs_path, 'vehiculos', company_code, vehicle_number)
 
     if not os.path.isdir(base_path): 
       return JSONResponse(content={"message": "Directorio del vehículo no encontrado."}, status_code=404)
@@ -195,7 +194,7 @@ async def info(company_code: str, data: Info):
 
 async def driver_documents(company_code: str, driver_number: str):
   try:
-    base_path = os.path.join(driver_documents_path, company_code, driver_number)
+    base_path = os.path.join(docs_path, 'conductores', company_code, driver_number)
 
     if not os.path.isdir(base_path):
       return JSONResponse(content={"message": "Directorio del conductor no encontrado."}, status_code=404)
@@ -249,7 +248,7 @@ async def driver_documents(company_code: str, driver_number: str):
 
 async def send_driver_documents(company_code: str, driver_number: str, doc_id: str):
   try:
-    base_path = os.path.join(driver_documents_path, company_code, driver_number)
+    base_path = os.path.join(docs_path, 'conductores', company_code, driver_number)
 
     if not os.path.isdir(base_path):
       return JSONResponse(content={"message": "Directorio del conductor no encontrado."}, status_code=404)

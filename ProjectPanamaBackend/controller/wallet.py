@@ -16,6 +16,14 @@ from sqlalchemy import func
 from utils.panapass import get_txt_file, search_value_in_txt
 from datetime import datetime, timedelta
 import pytz
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+upload_directory = os.getenv('DIRECTORY_IMG')
+route_api = os.getenv('ROUTE_API')
+
 
 async def vehicle_wallet_info(company_code: str, vehicle_number: str, driver_number: str):
   db = session()
@@ -62,12 +70,12 @@ async def vehicle_and_driver_info(company_code: str, vehicle_number: str):
     information = db.query(
       Marcas.NOMBRE.label('MARCA'), Centrales.NOMBRE.label('CENTRAL'), Estados.NOMBRE.label('NOMBRE_ESTADO'), 
       Propietarios.NOMBRE.label('NOMBRE_PROPI'), Vehiculos.PLACA, Vehiculos.NRO_CUPO, Vehiculos.NROENTREGA, 
-      Vehiculos.CUO_DIARIA, Vehiculos.ESTADO, Vehiculos.MODELO, Vehiculos.PROPI_IDEN, Vehiculos.CONDUCTOR,
+      Vehiculos.CUO_DIARIA, Vehiculos.ESTADO, Vehiculos.LINEA, Vehiculos.MODELO, Vehiculos.PROPI_IDEN, Vehiculos.CONDUCTOR,
       Vehiculos.CON_CUPO, Vehiculos.FEC_ESTADO, Vehiculos.EMPRESA, Vehiculos.KILOMETRAJ, Vehiculos.PANAPASSNU,
       Vehiculos.FORMAPAGO, Conductores.NOMBRE.label('NOMBRE_CONDUCTOR'), Conductores.CEDULA, Conductores.TELEFONO, 
-      Conductores.DIRECCION, Conductores.NROENTREGA, Conductores.NROENTPAGO, Conductores.NROENTSDO, Conductores.FEC_INICIO)\
+      Conductores.DIRECCION, Conductores.NROENTREGA, Conductores.NROENTPAGO, Conductores.FEC_INICIO)\
     .join(Marcas, Vehiculos.MARCA == Marcas.CODIGO)\
-    .join(Centrales, Vehiculos.CENTRAL == Centrales.CODIGO)\
+    .join(Centrales, (Vehiculos.CENTRAL == Centrales.CODIGO) & (Centrales.EMPRESA == company_code))\
     .join(Estados, Vehiculos.ESTADO == Estados.CODIGO)\
     .join(Propietarios, Vehiculos.PROPI_IDEN == Propietarios.CODIGO)\
     .outerjoin(Conductores, Vehiculos.CONDUCTOR == Conductores.CODIGO
@@ -86,7 +94,16 @@ async def vehicle_and_driver_info(company_code: str, vehicle_number: str):
       panapass_value = ''
 
     payment_form = 'Diario' if information.FORMAPAGO == '1' else 'Semanal' if information.FORMAPAGO == '2' else 'Quincenal' if information.FORMAPAGO == '3' else 'Mensual' if information.FORMAPAGO == '4' else ''
-    
+
+    driver_photo_url = ''
+    if information.CONDUCTOR and upload_directory and route_api:
+      driver_dir = os.path.join(upload_directory, "conductores", company_code, information.CONDUCTOR)
+      if os.path.exists(driver_dir):
+        pictures = [f for f in os.listdir(driver_dir) if f.startswith(f"{information.CONDUCTOR}_foto")]
+        if pictures:
+          picture_filename = pictures[-1]
+          driver_photo_url = f"{route_api}uploads/conductores/{company_code}/{information.CONDUCTOR}/{picture_filename}"
+
     response = {
       'driver_code': information.CONDUCTOR,
       'driver_id_card': information.CEDULA,
@@ -94,19 +111,20 @@ async def vehicle_and_driver_info(company_code: str, vehicle_number: str):
       'driver_phone': information.TELEFONO,
       'start_date': information.FEC_INICIO,
       'driver_address': information.DIRECCION,
+      'driver_photo': driver_photo_url,
       'central': information.CENTRAL,
       'owner': f"{information.PROPI_IDEN} - {information.NOMBRE_PROPI}",
       'license_plate': information.PLACA,
       'vehicle_state': information.NOMBRE_ESTADO,
       'accounts': {
-        'total_accounts': information.NROENTREGA,
-        'delivered_accounts': information.NROENTPAGO,
-        'pending_accounts': information.NROENTSDO
+        'total_accounts': int(information.NROENTREGA or 0),
+        'delivered_accounts': int(information.NROENTPAGO or 0),
+        'pending_accounts': int((information.NROENTREGA or 0) - (information.NROENTPAGO or 0))
       },
       'panapass_number': information.PANAPASSNU,
       'panapass_balance': panapass_value,
       'mileage': information.KILOMETRAJ,
-      'vehicle': f"{information.MARCA} - {information.MODELO}",
+      'vehicle': f"{information.MARCA} {information.LINEA} - {information.MODELO}",
       'payment_form': payment_form
     }
 
@@ -131,7 +149,7 @@ async def receipts_list(company_code: str, vehicle_number: str, driver_number: s
       ).filter( Cartera.EMPRESA == company_code, Cartera.UNIDAD == vehicle_number,
                 Cartera.CLIENTE == driver_number, Cartera.TIPO == '10',  Cartera.SALDO != None,
                 Cartera.SALDO != 0
-      ).order_by(Cartera.FECHA.desc()).all()
+      ).order_by(Cartera.FECHA.asc()).all()
     
     if not receipts:
       return JSONResponse(content={
