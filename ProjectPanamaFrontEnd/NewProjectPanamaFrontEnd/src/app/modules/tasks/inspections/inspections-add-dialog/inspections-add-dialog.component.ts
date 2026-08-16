@@ -551,6 +551,14 @@ export class InspectionsAddDialogComponent implements OnInit {
     const checklistItems: ChecklistItem[] =
       this.mainInspectionForm.value.vehicleState.checklistItems;
 
+    const mechanicVal = this.mainInspectionForm.value.vehicleState?.mecanico;
+    const mechanicCode =
+      typeof mechanicVal === 'object' && mechanicVal !== null
+        ? mechanicVal.code || ''
+        : typeof mechanicVal === 'string'
+          ? mechanicVal.split(' - ')[0]?.trim() || ''
+          : '';
+
     if (this.isEditMode) {
       // Modo edición
       const updateInspectionData = {
@@ -565,7 +573,7 @@ export class InspectionsAddDialogComponent implements OnInit {
           ) || 0,
         inspection_type:
           this.mainInspectionForm.value.inspectionInfo.tipo_inspeccion.id,
-        mechanic_code: this.mainInspectionForm.value.vehicleState.mecanico.code,
+        mechanic_code: mechanicCode,
         alfombra: checklistItems.find((item) => item.id === 'alfombra')?.value
           ? 1
           : 0,
@@ -685,8 +693,7 @@ export class InspectionsAddDialogComponent implements OnInit {
         user: this.jwtService.getUserData()?.id,
         company_code: this.getCompany(),
         vehicle_number: this.vehicleInfo.numero,
-        mechanic_code:
-          this.mainInspectionForm.value.vehicleState.mecanico.code || '',
+        mechanic_code: mechanicCode,
         mileage:
           parseInt(
             String(
