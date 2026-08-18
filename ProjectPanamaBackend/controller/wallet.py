@@ -1,4 +1,4 @@
-from anyio import current_time
+from decimal import Decimal
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from config.dbconnection import session
@@ -12,6 +12,9 @@ from models.centrales import Centrales
 from models.parametros import Parametros
 from models.condullamadas import Condullamadas
 from models.movienca import Movienca
+from models.cxctiposrecargos import CXCTiposRecargos
+from models.permisosusuario import PermisosUsuario
+from schemas.wallet import newSurcharge
 from sqlalchemy import func
 from utils.panapass import get_txt_file, search_value_in_txt
 from datetime import datetime, timedelta
@@ -265,5 +268,144 @@ async def wallet_notifications(company_code: str, vehicle_number: str):
     return JSONResponse(content=jsonable_encoder(response), status_code=200)
   except Exception as e:
     return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def create_surcharge(data: newSurcharge):
+  db = session()
+  try:
+    results = []
+
+    id_surcharges = [surcharge.id for surcharge in data.surcharges_list]
+
+    surcharges_types = db.query(CXCTiposRecargos).filter(
+      CXCTiposRecargos.EMPRESA == data.company_code,
+      CXCTiposRecargos.CODIGO.in_(id_surcharges)
+    ).all()
+
+    surcharges_types_map = {surcharge.CODIGO: surcharge.NOMBRE for surcharge in surcharges_types}
+
+    driver = db.query(Conductores).filter(
+      Conductores.EMPRESA == data.company_code,
+      Conductores.CODIGO == data.driver_number
+    ).first()
+
+    if not driver:
+      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+
+    vehicle = db.query(Vehiculos).filter(
+      Vehiculos.EMPRESA == data.company_code,
+      Vehiculos.NUMERO == driver.UND_NRO
+    ).first()
+
+    if not vehicle:
+      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+
+    user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
+    user = user.CODIGO if user else ""
+
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    date = now_in_panama.strftime("%Y-%m-%d")
+    text_date = now_in_panama.strftime("%Y%m%d")
+
+    for surcharge in data.surcharges_list:
+      value = Decimal(surcharge.value)
+
+      current_entry = db.query(Cartera).filter(
+        Cartera.EMPRESA == data.company_code,
+        Cartera.CLIENTE == data.driver_number,
+        Cartera.TIPO == '12',
+        Cartera.TIPRECARGO == surcharge.id,
+        Cartera.FACTURA == '12-' + data.driver_number
+      ).first()
+
+      print(f"Processing surcharge {surcharge.id} for driver {data.driver_number}: current_entry = {current_entry}, value = {value}")
+
+      if current_entry:
+        print(f"Updating existing surcharge entry: current balance = {current_entry.SALDO}, adding value = {value}")
+        current_entry.SALDO = (current_entry.SALDO or 0) + value
+
+        results.append({
+          "id": surcharge.id,
+          "action": 'updated',
+          "new_balance": current_entry.SALDO
+        })
+        print(f"Updated surcharge entry: new balance = {current_entry.SALDO}")
+
+      else:
+        new_entry = Cartera(
+          EMPRESA=data.company_code,
+          FACTURA='12-' + data.driver_number,
+          TIPO='12',
+          # NOMTIPO='',
+          TIPRECARGO=surcharge.id,
+          NOMTIPRECAR=surcharges_types_map.get(surcharge.id, ''),
+          CLIENTE=data.driver_number,
+          CEDULA=driver.CEDULA,
+          PLACA=vehicle.PLACA,
+          UNIDAD=vehicle.NUMERO,
+          PROPI_IDEN=vehicle.PROPI_IDEN,
+          FEC_ENTREG=date,
+          VALOR=value,
+          FECHA=date,
+          FEC_FACTU=date,
+          DOC_FACTU='12-' + data.driver_number,
+          # DETALLE='',
+          SALDO=value,
+          FEC_DOCUM=text_date,
+          FEC_CREADO=date,
+          USU_CREADO=user
+        )
+        db.add(new_entry)
+
+        results.append({
+          "id": surcharge.id,
+          "action": 'added',
+          "new_balance": value
+        })
+    
+    db.commit()
+
+    return JSONResponse(content=jsonable_encoder(results), status_code=201)
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def surcharges_list(company_code: str, driver_number: str):
+  db = session()
+  try:
+    surcharges = db.query(
+      Cartera.TIPRECARGO.label('id'),
+      Cartera.NOMTIPRECAR.label('name'),
+      func.sum(Cartera.SALDO).label('balance')
+    ).filter(
+      Cartera.EMPRESA == company_code,
+      Cartera.CLIENTE == driver_number,
+      Cartera.TIPO == '12',
+      Cartera.TIPRECARGO.isnot(None),
+      Cartera.TIPRECARGO != '',
+      Cartera.SALDO.isnot(None),
+      Cartera.SALDO != 0
+    ).group_by(
+      Cartera.TIPRECARGO,
+      Cartera.NOMTIPRECAR
+    ).all()
+
+    results = [{
+      'id': surcharge.id,
+      'name': surcharge.name,
+      'balance': surcharge.balance or 0
+    } for surcharge in surcharges]
+
+    return JSONResponse(content=jsonable_encoder(results), status_code=200)
+  except Exception as e:
+    return JSONResponse(content=jsonable_encoder({'error': str(e)}), status_code=500)
   finally:
     db.close()
