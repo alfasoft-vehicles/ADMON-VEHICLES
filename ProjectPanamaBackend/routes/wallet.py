@@ -35,3 +35,7 @@ async def post_create_surcharge(surcharge_data: newSurcharge):
 @wallet_router.get("/wallet/surcharges/{company_code}/{driver_number}/", tags=["Wallet"])
 async def get_surcharges(company_code: str, driver_number: str):
   return await surcharges_list(company_code, driver_number)
+
+@wallet_router.post("/wallet/verify-revenue/", tags=["Wallet"])
+async def post_verify_revenue(revenue_data: Revenue):
+  return await verify_revenue_data(revenue_data)

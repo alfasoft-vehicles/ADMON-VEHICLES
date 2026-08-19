@@ -14,9 +14,10 @@ from models.condullamadas import Condullamadas
 from models.movienca import Movienca
 from models.cxctiposrecargos import CXCTiposRecargos
 from models.permisosusuario import PermisosUsuario
-from schemas.wallet import newSurcharge
+from schemas.wallet import newSurcharge, Revenue
 from sqlalchemy import func
 from utils.panapass import get_txt_file, search_value_in_txt
+from utils.verify_values import verify_value
 from datetime import datetime, timedelta
 import pytz
 import os
@@ -407,5 +408,87 @@ async def surcharges_list(company_code: str, driver_number: str):
     return JSONResponse(content=jsonable_encoder(results), status_code=200)
   except Exception as e:
     return JSONResponse(content=jsonable_encoder({'error': str(e)}), status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def verify_revenue_data(data: Revenue):
+  db = session()
+  try:
+    driver = db.query(Conductores).filter(
+      Conductores.EMPRESA == data.company_code,
+      Conductores.CODIGO == data.driver_number
+    ).first()
+
+    if not driver:
+      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+
+    vehicle = db.query(Vehiculos).filter(
+      Vehiculos.EMPRESA == data.company_code,
+      Vehiculos.NUMERO == driver.UND_NRO
+    ).first()
+
+    if not vehicle:
+      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+
+    rent_due = db.query(func.sum(Cartera.SALDO).label('total')).filter(
+      Cartera.EMPRESA == data.company_code,
+      Cartera.UNIDAD == vehicle.NUMERO,
+      Cartera.CLIENTE == driver.CODIGO,
+      Cartera.TIPO == '10',
+      Cartera.SALDO != None,
+      Cartera.SALDO != 0
+    ).all()
+
+    valid = True
+    comments = []
+
+    if not verify_value(data.payment_method):
+      valid = False
+      comments.append("Debe seleccionar un método de pago.")
+    if not verify_value(data.mileage, 0):
+      valid = False
+      comments.append("El kilometraje debe ser mayor que 0.")
+    if not verify_value(data.mileage, vehicle.KILOMETRAJ):
+      print(f"Verifying mileage: new mileage = {data.mileage}, current mileage = {vehicle.KILOMETRAJ}")
+      valid = False
+      comments.append(f"El nuevo kilometraje debe ser mayor que el actual. {vehicle.KILOMETRAJ}")
+      print("Tipo de dato de vehicle.KILOMETRAJ:", type(vehicle.KILOMETRAJ))
+    if data.daily_rent and not verify_value(data.daily_rent, 0):
+      valid = False
+      comments.append("El valor de renta diaria debe ser mayor que 0.")
+    if data.accidents and not verify_value(data.accidents, 0):
+      valid = False
+      comments.append("El valor de siniestros debe ser mayor que 0.")
+    if data.registration and not verify_value(data.registration, 0):
+      valid = False
+      comments.append("El valor de inscripción debe ser mayor que 0.")
+    if data.savings and not verify_value(data.savings, 0):
+      valid = False
+      comments.append("El valor de ahorros debe ser mayor que 0.")
+
+    for surcharge in data.surcharges_list or []:
+      if not verify_value(surcharge.value, 0):
+        valid = False
+        comments.append(f"El recargo con id {surcharge.id} debe tener un valor mayor que 0.")
+
+    valid_rent = True
+    comments_rent = []
+
+    if data.daily_rent and data.daily_rent > rent_due[0].total:
+      valid_rent = False
+      comments_rent.append("¿Crear Cuentas de Diario al Conductor (Anticipo de Cuenta)?")
+
+    response = {
+      "valid": valid,
+      "comments": comments,
+      "valid_rent": valid_rent,
+      "comments_rent": comments_rent
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()
