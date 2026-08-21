@@ -324,18 +324,15 @@ async def create_surcharge(data: newSurcharge):
         Cartera.FACTURA == '12-' + data.driver_number
       ).first()
 
-      print(f"Processing surcharge {surcharge.id} for driver {data.driver_number}: current_entry = {current_entry}, value = {value}")
-
       if current_entry:
-        print(f"Updating existing surcharge entry: current balance = {current_entry.SALDO}, adding value = {value}")
         current_entry.SALDO = (current_entry.SALDO or 0) + value
+        current_entry.VALOR = (current_entry.VALOR or 0) + value
 
         results.append({
           "id": surcharge.id,
           "action": 'updated',
           "new_balance": current_entry.SALDO
         })
-        print(f"Updated surcharge entry: new balance = {current_entry.SALDO}")
 
       else:
         new_entry = Cartera(
@@ -453,10 +450,8 @@ async def verify_revenue_data(data: Revenue):
       valid = False
       comments.append("El kilometraje debe ser mayor que 0.")
     if not verify_value(data.mileage, vehicle.KILOMETRAJ):
-      print(f"Verifying mileage: new mileage = {data.mileage}, current mileage = {vehicle.KILOMETRAJ}")
       valid = False
       comments.append(f"El nuevo kilometraje debe ser mayor que el actual. {vehicle.KILOMETRAJ}")
-      print("Tipo de dato de vehicle.KILOMETRAJ:", type(vehicle.KILOMETRAJ))
     if data.daily_rent and not verify_value(data.daily_rent, 0):
       valid = False
       comments.append("El valor de renta diaria debe ser mayor que 0.")
