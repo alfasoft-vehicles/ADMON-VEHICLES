@@ -39,3 +39,7 @@ async def get_surcharges(company_code: str, driver_number: str):
 @wallet_router.post("/wallet/verify-revenue/", tags=["Wallet"])
 async def post_verify_revenue(revenue_data: Revenue):
   return await verify_revenue_data(revenue_data)
+
+@wallet_router.post("/wallet/create-rent-receipt/", tags=["Wallet"])
+async def post_create_rent_receipt(receipt_data: newRentReceipt):
+  return await create_rent_receipt(receipt_data)

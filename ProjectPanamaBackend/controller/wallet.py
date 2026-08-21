@@ -14,7 +14,7 @@ from models.condullamadas import Condullamadas
 from models.movienca import Movienca
 from models.cxctiposrecargos import CXCTiposRecargos
 from models.permisosusuario import PermisosUsuario
-from schemas.wallet import newSurcharge, Revenue
+from schemas.wallet import newSurcharge, Revenue, newRentReceipt
 from sqlalchemy import func
 from utils.panapass import get_txt_file, search_value_in_txt
 from utils.verify_values import verify_value
@@ -298,7 +298,7 @@ async def create_surcharge(data: newSurcharge):
 
     vehicle = db.query(Vehiculos).filter(
       Vehiculos.EMPRESA == data.company_code,
-      Vehiculos.NUMERO == driver.UND_NRO
+      Vehiculos.NUMERO == data.vehicle_number
     ).first()
 
     if not vehicle:
@@ -318,6 +318,7 @@ async def create_surcharge(data: newSurcharge):
       current_entry = db.query(Cartera).filter(
         Cartera.EMPRESA == data.company_code,
         Cartera.CLIENTE == data.driver_number,
+        Cartera.UNIDAD == data.vehicle_number,
         Cartera.TIPO == '12',
         Cartera.TIPRECARGO == surcharge.id,
         Cartera.FACTURA == '12-' + data.driver_number
@@ -379,7 +380,7 @@ async def create_surcharge(data: newSurcharge):
 
 # -----------------------------------------------------------------------------------------------
 
-async def surcharges_list(company_code: str, driver_number: str):
+async def surcharges_list(company_code: str, vehicle_number: str, driver_number: str):
   db = session()
   try:
     surcharges = db.query(
@@ -388,6 +389,7 @@ async def surcharges_list(company_code: str, driver_number: str):
       func.sum(Cartera.SALDO).label('balance')
     ).filter(
       Cartera.EMPRESA == company_code,
+      Cartera.UNIDAD == vehicle_number,
       Cartera.CLIENTE == driver_number,
       Cartera.TIPO == '12',
       Cartera.TIPRECARGO.isnot(None),
@@ -426,7 +428,7 @@ async def verify_revenue_data(data: Revenue):
 
     vehicle = db.query(Vehiculos).filter(
       Vehiculos.EMPRESA == data.company_code,
-      Vehiculos.NUMERO == driver.UND_NRO
+      Vehiculos.NUMERO == data.vehicle_number
     ).first()
 
     if not vehicle:
@@ -434,8 +436,8 @@ async def verify_revenue_data(data: Revenue):
 
     rent_due = db.query(func.sum(Cartera.SALDO).label('total')).filter(
       Cartera.EMPRESA == data.company_code,
-      Cartera.UNIDAD == vehicle.NUMERO,
-      Cartera.CLIENTE == driver.CODIGO,
+      Cartera.UNIDAD == data.vehicle_number,
+      Cartera.CLIENTE == data.driver_number,
       Cartera.TIPO == '10',
       Cartera.SALDO != None,
       Cartera.SALDO != 0
@@ -489,6 +491,129 @@ async def verify_revenue_data(data: Revenue):
 
     return JSONResponse(content=jsonable_encoder(response), status_code=200)
   except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def create_rent_receipt(data: newRentReceipt):
+  db = session()
+  try:
+    driver = db.query(Conductores).filter(
+      Conductores.EMPRESA == data.company_code,
+      Conductores.CODIGO == data.driver_number
+    ).first()
+
+    if not driver:
+      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+
+    vehicle = db.query(Vehiculos).filter(
+      Vehiculos.EMPRESA == data.company_code,
+      Vehiculos.NUMERO == data.vehicle_number
+    ).first()
+
+    if not vehicle:
+      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+
+    rent_due = db.query(func.coalesce(func.sum(Cartera.SALDO), 0)).filter(
+      Cartera.EMPRESA == data.company_code,
+      Cartera.UNIDAD == data.vehicle_number,
+      Cartera.CLIENTE == data.driver_number,
+      Cartera.TIPO == '10',
+      Cartera.SALDO != None,
+      Cartera.SALDO != 0
+    ).scalar()
+
+    rent_due = rent_due if rent_due is not None else 0
+
+    if data.amount <= rent_due:
+      return JSONResponse(content={"message": "The amount must be greater than the total rent due."}, status_code=400)
+
+    excess_amount = Decimal(data.amount) - rent_due
+
+    daily_rent = vehicle.CUO_DIARIA or 0
+
+    if daily_rent <= 0:
+      return JSONResponse(content={"message": "Daily rent amount is not set for the vehicle."}, status_code=400)
+
+    user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
+    user = user.CODIGO if user else ""
+
+    last_receipt = db.query(Cartera).filter(
+      Cartera.EMPRESA == data.company_code,
+      Cartera.UNIDAD == data.vehicle_number,
+      Cartera.CLIENTE == data.driver_number,
+      Cartera.TIPO == '10'
+    ).order_by(Cartera.FECHA.desc()).first()
+
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    date = now_in_panama.strftime("%Y-%m-%d")
+    text_date = now_in_panama.strftime("%Y%m%d")
+
+    if last_receipt and last_receipt.FECHA:
+      last_receipt_date = last_receipt.FECHA
+      if isinstance(last_receipt_date, str):
+        last_receipt_date = datetime.strptime(last_receipt_date, "%Y-%m-%d").date()
+      receipt_date = last_receipt_date + timedelta(days=1)
+    else:
+      receipt_date = now_in_panama.date()
+
+    receipts = []
+    remaining_amount = excess_amount
+
+    while remaining_amount > 0:
+      receipt_amount = min(daily_rent, remaining_amount)
+      date = receipt_date.strftime("%Y-%m-%d")
+      text_date = receipt_date.strftime("%Y%m%d")
+      bill = f"{text_date[2:]}-{data.driver_number}"
+      new_entry = Cartera(
+        EMPRESA=data.company_code,
+        FACTURA=bill,
+        TIPO='10',
+        CLIENTE=data.driver_number,
+        CEDULA=driver.CEDULA,
+        ZONA=vehicle.PROPI_IDEN,
+        PLACA=vehicle.PLACA,
+        UNIDAD=vehicle.NUMERO,
+        PROPI_IDEN=vehicle.PROPI_IDEN,
+        FEC_ENTREG=date,
+        VALOR=receipt_amount,
+        FECHA=date,
+        FEC_FACTU=date,
+        DOC_FACTU=bill,
+        SALDO=receipt_amount,
+        FEC_CUADRE=date,
+        FEC_DOC=text_date,
+        FEC_DOCUM=text_date,
+        FEC_CREADO=now_in_panama.strftime("%Y-%m-%d"),
+        USU_CREADO=user
+      )
+      db.add(new_entry)
+
+      receipts.append({
+        "date": date,
+        "type": "10 - RtaDiaria",
+        "invoice": bill,
+        "amount": receipt_amount
+      })
+
+      remaining_amount -= receipt_amount
+      receipt_date += timedelta(days=1)
+
+    db.commit()
+
+    response = {
+      "message": "Rent receipts created successfully",
+      "rent_due": rent_due,
+      "excess_amount": excess_amount,
+      "receipts": receipts
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=201)
+  except Exception as e:
+    db.rollback()
     return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()
