@@ -4,14 +4,14 @@ from config.dbconnection import Base
 class Cartera(Base):
     __tablename__ = 'CARTERA'
 
+    EMPRESA = Column(CHAR(2), primary_key=True)
     FACTURA = Column(CHAR(12), primary_key=True)
-    EMPRESA = Column(CHAR(2))
-    TIPO = Column(CHAR(2))
+    TIPO = Column(CHAR(2), primary_key=True)
     NOMTIPO = Column(CHAR(10), default='')
-    TIPRECARGO = Column(CHAR(10), default='')
+    TIPRECARGO = Column(CHAR(10), default='', primary_key=True)
     NOMTIPRECAR = Column(CHAR(25), default='')
     PLAZO = Column(DECIMAL(4, 0), default='')
-    CLIENTE = Column(CHAR(12), default='')
+    CLIENTE = Column(CHAR(12), default='', primary_key=True)
     CEDULA = Column(CHAR(12), default='')
     CLASIFICAC = Column(CHAR(1), default='')
     ZONA = Column(CHAR(2), default='')
