@@ -14,10 +14,12 @@ from models.condullamadas import Condullamadas
 from models.movienca import Movienca
 from models.cxctiposrecargos import CXCTiposRecargos
 from models.permisosusuario import PermisosUsuario
+from models.cajarecaudos import CajaRecaudos
 from schemas.wallet import newSurcharge, Revenue, newRentReceipt
 from sqlalchemy import func
 from utils.panapass import get_txt_file, search_value_in_txt
 from utils.verify_values import verify_value
+from utils.cash_records import create_cash_record
 from datetime import datetime, timedelta
 import pytz
 import os
@@ -327,6 +329,7 @@ async def create_surcharge(data: newSurcharge):
       if current_entry:
         current_entry.SALDO = (current_entry.SALDO or 0) + value
         current_entry.VALOR = (current_entry.VALOR or 0) + value
+        current_entry.CAN_FACTU = (current_entry.CAN_FACTU or 0) + 1
 
         results.append({
           "id": surcharge.id,
@@ -355,6 +358,7 @@ async def create_surcharge(data: newSurcharge):
           # DETALLE='',
           SALDO=value,
           FEC_DOCUM=text_date,
+          CAN_FACTU=1,
           FEC_CREADO=date,
           USU_CREADO=user
         )
@@ -431,14 +435,21 @@ async def verify_revenue_data(data: Revenue):
     if not vehicle:
       return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
 
-    rent_due = db.query(func.sum(Cartera.SALDO).label('total')).filter(
+    debts = (db.query(Cartera.TIPO, func.sum(Cartera.SALDO).label('total_saldo')).filter(
       Cartera.EMPRESA == data.company_code,
       Cartera.UNIDAD == data.vehicle_number,
       Cartera.CLIENTE == data.driver_number,
-      Cartera.TIPO == '10',
-      Cartera.SALDO != None,
-      Cartera.SALDO != 0
-    ).all()
+      Cartera.TIPO.in_(['01', '02', '10', '11', '12'])
+    ).group_by(Cartera.TIPO).all())
+    
+    debt_map = {debt.TIPO: debt.total_saldo or 0 for debt in debts}
+
+    registration = debt_map.get('01', 0)
+    savings = debt_map.get('02', 0)
+
+    daily_rent = debt_map.get('10', 0)
+    accidents = debt_map.get('11', 0)
+    other_debts = debt_map.get('12', 0)
 
     valid = True
     comments = []
@@ -458,22 +469,37 @@ async def verify_revenue_data(data: Revenue):
     if data.accidents and not verify_value(data.accidents, 0):
       valid = False
       comments.append("El valor de siniestros debe ser mayor que 0.")
+    if data.accidents and data.accidents > accidents:
+      valid = False
+      comments.append("El valor de siniestros ingresado es mayor que el total de siniestros pendiente.")
     if data.registration and not verify_value(data.registration, 0):
       valid = False
       comments.append("El valor de inscripción debe ser mayor que 0.")
+    if data.registration and data.registration > registration:
+      valid = False
+      comments.append("El valor de inscripción ingresado es mayor que el total de inscripción pendiente.")
     if data.savings and not verify_value(data.savings, 0):
       valid = False
       comments.append("El valor de ahorros debe ser mayor que 0.")
+    if data.savings and data.savings > savings:
+      valid = False
+      comments.append("El valor de ahorros ingresado es mayor que el total de ahorros pendiente.")
 
+    total_surcharges = 0
     for surcharge in data.surcharges_list or []:
-      if not verify_value(surcharge.value, 0):
+      total_surcharges += Decimal(surcharge.value)
+      if not verify_value(Decimal(surcharge.value), 0):
         valid = False
         comments.append(f"El recargo con id {surcharge.id} debe tener un valor mayor que 0.")
+
+    if total_surcharges > other_debts:
+      valid = False
+      comments.append("El valor total de recargos ingresado es mayor que el total de recargos pendiente.")
 
     valid_rent = True
     comments_rent = []
 
-    if data.daily_rent and data.daily_rent > rent_due[0].total:
+    if data.daily_rent and data.daily_rent > daily_rent:
       valid_rent = False
       comments_rent.append("¿Crear Cuentas de Diario al Conductor (Anticipo de Cuenta)?")
 
@@ -578,6 +604,7 @@ async def create_rent_receipt(data: newRentReceipt):
         FECHA=date,
         FEC_FACTU=date,
         DOC_FACTU=bill,
+        CAN_FACTU=1,
         SALDO=receipt_amount,
         FEC_CUADRE=date,
         FEC_DOC=text_date,
@@ -607,6 +634,251 @@ async def create_rent_receipt(data: newRentReceipt):
     }
 
     return JSONResponse(content=jsonable_encoder(response), status_code=201)
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def collect_revenue(data: Revenue):
+  db = session()
+  try:
+    driver = db.query(Conductores).filter(
+      Conductores.EMPRESA == data.company_code,
+      Conductores.CODIGO == data.driver_number
+    ).first()
+
+    if not driver:
+      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+
+    vehicle = db.query(Vehiculos).filter(
+      Vehiculos.EMPRESA == data.company_code,
+      Vehiculos.NUMERO == data.vehicle_number
+    ).first()
+
+    if not vehicle:
+      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+
+    user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
+    user = user.CODIGO if user else ""
+
+    old_mileage = vehicle.KILOMETRAJ or 0
+
+    debts = (db.query(Cartera.TIPO, func.sum(Cartera.SALDO).label('total_saldo')).filter(
+      Cartera.EMPRESA == data.company_code,
+      Cartera.UNIDAD == data.vehicle_number,
+      Cartera.CLIENTE == data.driver_number,
+      Cartera.TIPO.in_(['01', '02', '10', '11', '12'])
+    ).group_by(Cartera.TIPO).all())
+    
+    debt_map = {debt.TIPO: debt.total_saldo or 0 for debt in debts}
+
+    registration = debt_map.get('01', 0)
+    savings = debt_map.get('02', 0)
+
+    daily_rent = debt_map.get('10', 0)
+    accidents = debt_map.get('11', 0)
+    other_debts = debt_map.get('12', 0)
+
+    response = {
+      "debts": {
+        "other_debts": other_debts,
+      }
+    }
+
+    valid = True
+    comments = []
+
+    if not verify_value(data.payment_method):
+      valid = False
+      comments.append("Debe seleccionar un método de pago.")
+    if not verify_value(data.mileage, 0):
+      valid = False
+      comments.append("El kilometraje debe ser mayor que 0.")
+    if not verify_value(data.mileage, vehicle.KILOMETRAJ):
+      valid = False
+      comments.append(f"El nuevo kilometraje debe ser mayor que el actual. {vehicle.KILOMETRAJ}")
+    if data.daily_rent and not verify_value(data.daily_rent, 0):
+      valid = False
+      comments.append("El valor de renta diaria debe ser mayor que 0.")
+    if data.accidents and not verify_value(data.accidents, 0):
+      valid = False
+      comments.append("El valor de siniestros debe ser mayor que 0.")
+    if data.accidents and data.accidents > accidents:
+      valid = False
+      comments.append("El valor de siniestros ingresado es mayor que el total de siniestros pendiente.")
+    if data.registration and not verify_value(data.registration, 0):
+      valid = False
+      comments.append("El valor de inscripción debe ser mayor que 0.")
+    if data.registration and data.registration > registration:
+      valid = False
+      comments.append("El valor de inscripción ingresado es mayor que el total de inscripción pendiente.")
+    if data.savings and not verify_value(data.savings, 0):
+      valid = False
+      comments.append("El valor de ahorros debe ser mayor que 0.")
+    if data.savings and data.savings > savings:
+      valid = False
+      comments.append("El valor de ahorros ingresado es mayor que el total de ahorros pendiente.")
+
+    total_surcharges = 0
+    for surcharge in data.surcharges_list or []:
+      total_surcharges += Decimal(surcharge.value)
+      if not verify_value(Decimal(surcharge.value), 0):
+        valid = False
+        comments.append(f"El recargo con id {surcharge.id} debe tener un valor mayor que 0.")
+
+    if total_surcharges > other_debts:
+      valid = False
+      comments.append("El valor total de recargos ingresado es mayor que el total de recargos pendiente.")
+
+    valid_rent = True
+    comments_rent = []
+
+    if data.daily_rent and data.daily_rent > daily_rent:
+      valid_rent = False
+      comments_rent.append("El valor de renta ingresado es mayor que el total de renta pendiente.")
+
+    if not valid or not valid_rent:
+      response = {
+        "valid": valid,
+        "comments": comments,
+        "valid_rent": valid_rent,
+        "comments_rent": comments_rent
+      }
+
+      return JSONResponse(content=jsonable_encoder(response), status_code=200)
+
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    date = now_in_panama.strftime("%Y-%m-%d")
+
+    last_record = db.query(CajaRecaudos).filter(CajaRecaudos.EMPRESA == data.company_code).order_by(CajaRecaudos.RECIBO.desc()).first()
+    new_record = str(int(last_record.RECIBO) + 1 if last_record else 1).zfill(8)
+
+    total_collected = 0
+
+    try:
+      rent_entries = db.query(Cartera).filter(
+        Cartera.EMPRESA == data.company_code,
+        Cartera.UNIDAD == data.vehicle_number,
+        Cartera.CLIENTE == data.driver_number,
+        Cartera.TIPO == '10',
+        Cartera.SALDO != None,
+        Cartera.SALDO > 0
+      ).order_by(
+        Cartera.FECHA.asc()
+      ).all()
+
+      remaining_rent = Decimal(data.daily_rent) if data.daily_rent is not None else 0
+
+      for entry in rent_entries:
+        if remaining_rent <= 0:
+          break
+
+        current_balance = entry.SALDO or 0
+        payment = min(current_balance, remaining_rent)
+        entry.SALDO = current_balance - payment
+        entry.ABONOS = payment
+        entry.FEC_ABONO = date
+        entry.DOC_ABONO = new_record
+        entry.CAN_ABONO = (entry.CAN_ABONO or 0) + 1
+
+        create_cash_record(db, data, vehicle, driver, old_mileage, payment, entry, new_record, user)
+
+        remaining_rent -= payment
+        total_collected += payment
+
+    except Exception as e:
+      valid_rent = False
+      comments_rent.append(f"Error al recaudar renta: {str(e)}")
+
+
+    try:
+      other_entries = db.query(Cartera).filter(
+        Cartera.EMPRESA == data.company_code,
+        Cartera.UNIDAD == data.vehicle_number,
+        Cartera.CLIENTE == data.driver_number,
+        Cartera.TIPO.in_(['11', '01', '02'])
+      ).all()
+
+      payments = {
+        '11': data.accidents or 0,
+        '01': data.registration or 0,
+        '02': data.savings or 0
+      }
+
+      for entry in other_entries:
+        payment_available = payments.get(entry.TIPO, 0)
+
+        if payment_available <= 0:
+          continue
+
+        current_balance = entry.SALDO or 0
+
+        if current_balance <= 0:
+          continue
+
+        applied_payment = min(current_balance, payment_available)
+        entry.SALDO = current_balance - applied_payment
+        entry.ABONOS = payment
+        entry.FEC_ABONO = date
+        entry.DOC_ABONO = new_record
+        entry.CAN_ABONO = (entry.CAN_ABONO or 0) + 1
+
+        create_cash_record(db, data, vehicle, driver, old_mileage, applied_payment, entry, new_record, user)
+
+        payments[entry.TIPO] -= applied_payment
+        total_collected += applied_payment
+
+
+      for surcharge in data.surcharges_list or []:
+        surcharge_payment = Decimal(surcharge.value)
+
+        if surcharge_payment <= 0:
+          continue
+
+        surcharge_entry = db.query(Cartera).filter(
+          Cartera.EMPRESA == data.company_code,
+          Cartera.UNIDAD == data.vehicle_number,
+          Cartera.CLIENTE == data.driver_number,
+          Cartera.TIPO == '12',
+          Cartera.TIPRECARGO == surcharge.id
+        ).first()
+
+        if not surcharge_entry:
+          return JSONResponse(content={"message": "Surcharge with ID {surcharge.id} not found"}, status_code=404)
+
+        current_balance = surcharge_entry.SALDO or 0
+        applied_payment = min(current_balance, surcharge_payment)
+        surcharge_entry.SALDO = (current_balance - applied_payment)
+        surcharge_entry.ABONOS = applied_payment
+        surcharge_entry.FEC_ABONO = date
+        surcharge_entry.DOC_ABONO = new_record
+        surcharge_entry.CAN_ABONO = (surcharge_entry.CAN_ABONO or 0) + 1
+
+        create_cash_record(db, data, vehicle, driver, old_mileage, applied_payment, surcharge_entry, new_record, user)
+
+        total_collected += applied_payment
+
+      vehicle.KILOMETRAJ = data.mileage
+    except Exception as e:
+      valid = False
+      comments.append(f"Error al recaudar otros conceptos: {str(e)}")
+
+    if valid and valid_rent:
+      db.commit()
+
+    response = {
+      "valid": valid,
+      "comments": comments,
+      "valid_rent": valid_rent,
+      "comments_rent": comments_rent
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+
   except Exception as e:
     db.rollback()
     return JSONResponse(content={"message": str(e)}, status_code=500)

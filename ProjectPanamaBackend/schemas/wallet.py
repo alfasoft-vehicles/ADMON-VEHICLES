@@ -23,6 +23,7 @@ class Revenue(BaseModel):
   surcharges_list: Optional[list[Surcharge]] = None
   registration: Optional[float] = 0.0
   savings: Optional[float] = 0.0
+  user: Optional[str] = None
 
 class newRentReceipt(BaseModel):
   company_code: str

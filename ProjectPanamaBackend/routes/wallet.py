@@ -43,3 +43,7 @@ async def post_verify_revenue(revenue_data: Revenue):
 @wallet_router.post("/wallet/create-rent-receipt/", tags=["Wallet"])
 async def post_create_rent_receipt(receipt_data: newRentReceipt):
   return await create_rent_receipt(receipt_data)
+
+@wallet_router.post("/wallet/collect-revenue/", tags=["Wallet"])
+async def post_collect_revenue(revenue_data: Revenue):
+  return await collect_revenue(revenue_data)
