@@ -874,7 +874,9 @@ async def collect_revenue(data: Revenue):
       "valid": valid,
       "comments": comments,
       "valid_rent": valid_rent,
-      "comments_rent": comments_rent
+      "comments_rent": comments_rent,
+      "receipt_number": new_record,
+      "total_collected": total_collected
     }
 
     return JSONResponse(content=jsonable_encoder(response), status_code=200)
