@@ -104,13 +104,17 @@ export class CashRegisterViewComponent implements OnInit {
   isLoading: boolean = false;
   isLoadingAutocompletes: boolean = true;
 
-  paymentMethod: string = 'efectivo';
+  paymentMethod: string = '';
   rentPayment: number = 0;
   accidentsPayment: number = 0;
   surchargesPayment: number = 0;
   registrationPayment: number = 0;
   savingsPayment: number = 0;
   totalReceived: number = 0;
+
+  baseMileage: number = 0;
+  currentKm: number | null = 0;
+  isKmInvalid: boolean = false;
 
   messages: string[] = [];
 
@@ -325,6 +329,14 @@ export class CashRegisterViewComponent implements OnInit {
         this.hasData = true;
         this.isLoading = false;
 
+        const km = detail?.mileage;
+        this.baseMileage =
+          km !== null && km !== undefined && !isNaN(km) && Number(km) >= 0
+            ? Number(km)
+            : 0;
+        this.currentKm = this.baseMileage;
+        this.isKmInvalid = false;
+
         this.calculateTotal();
       },
       error: (err) => {
@@ -359,11 +371,15 @@ export class CashRegisterViewComponent implements OnInit {
       vehicle: '',
     });
 
+    this.paymentMethod = '';
     this.rentPayment = 0;
     this.accidentsPayment = 0;
     this.surchargesPayment = 0;
     this.registrationPayment = 0;
     this.savingsPayment = 0;
+    this.baseMileage = 0;
+    this.currentKm = 0;
+    this.isKmInvalid = false;
     this.calculateTotal();
 
     if (triggerToOpen) {
@@ -371,6 +387,78 @@ export class CashRegisterViewComponent implements OnInit {
         triggerToOpen.openPanel();
       }, 0);
     }
+  }
+
+  get isFormDisabled(): boolean {
+    return !this.paymentMethod || this.isKmInvalid;
+  }
+
+  get disabledTooltip(): string {
+    if (!this.paymentMethod && this.isKmInvalid) {
+      return 'Acción deshabilitada: Seleccione una forma de pago e ingrese un kilometraje válido';
+    }
+    if (!this.paymentMethod) {
+      return 'Acción deshabilitada: Debe seleccionar una forma de pago';
+    }
+    if (this.isKmInvalid) {
+      return `Acción deshabilitada por kilometraje incorrecto (no puede ser menor a ${this.baseMileage})`;
+    }
+    return '';
+  }
+
+  onKmChange(value: any) {
+    const numValue =
+      value !== null && value !== undefined && value !== ''
+        ? Number(value)
+        : null;
+    if (numValue === null || isNaN(numValue) || numValue < this.baseMileage) {
+      this.isKmInvalid = true;
+      this.openSnackbar(
+        `El kilometraje no puede ser menor a ${this.baseMileage}`,
+      );
+    } else {
+      this.isKmInvalid = false;
+    }
+  }
+
+  validateKm(): boolean {
+    const numValue =
+      this.currentKm !== null &&
+      this.currentKm !== undefined &&
+      (this.currentKm as any) !== ''
+        ? Number(this.currentKm)
+        : null;
+    if (numValue === null || isNaN(numValue) || numValue < this.baseMileage) {
+      this.isKmInvalid = true;
+      this.openSnackbar(
+        `No se puede guardar: El kilometraje no puede ser menor a ${this.baseMileage}`,
+      );
+      return false;
+    }
+    this.isKmInvalid = false;
+    return true;
+  }
+
+  validateForm(): boolean {
+    if (!this.paymentMethod) {
+      this.openSnackbar('Debe seleccionar una forma de pago');
+      return false;
+    }
+    return this.validateKm();
+  }
+
+  onAccept() {
+    if (!this.validateForm()) {
+      return;
+    }
+    this.openSnackbar('Recaudo aceptado correctamente');
+  }
+
+  onCollect() {
+    if (!this.validateForm()) {
+      return;
+    }
+    this.openSnackbar('Recaudo guardado correctamente');
   }
 
   calculateTotal() {

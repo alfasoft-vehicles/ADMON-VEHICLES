@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from controller.wallet import *
+from schemas.wallet import *
 
 wallet_router = APIRouter()
 
@@ -26,3 +27,23 @@ async def get_messages(company_code: str, vehicle_number: str):
 @wallet_router.get("/wallet/notifications/{company_code}/{vehicle_number}/", tags=["Wallet"])
 async def get_notifications(company_code: str, vehicle_number: str):
   return await wallet_notifications(company_code, vehicle_number)
+
+@wallet_router.post("/wallet/create-surcharge/", tags=["Wallet"])
+async def post_create_surcharge(surcharge_data: newSurcharge):
+  return await create_surcharge(surcharge_data)
+
+@wallet_router.get("/wallet/surcharges/{company_code}/{vehicle_number}/{driver_number}/", tags=["Wallet"])
+async def get_surcharges(company_code: str, vehicle_number: str, driver_number: str):
+  return await surcharges_list(company_code, vehicle_number, driver_number)
+
+@wallet_router.post("/wallet/verify-revenue/", tags=["Wallet"])
+async def post_verify_revenue(revenue_data: Revenue):
+  return await verify_revenue_data(revenue_data)
+
+@wallet_router.post("/wallet/create-rent-receipt/", tags=["Wallet"])
+async def post_create_rent_receipt(receipt_data: newRentReceipt):
+  return await create_rent_receipt(receipt_data)
+
+@wallet_router.post("/wallet/collect-revenue/", tags=["Wallet"])
+async def post_collect_revenue(revenue_data: Revenue):
+  return await collect_revenue(revenue_data)

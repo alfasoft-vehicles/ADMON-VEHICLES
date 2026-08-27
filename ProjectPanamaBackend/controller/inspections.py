@@ -544,9 +544,11 @@ async def create_inspection(data: NewInspection):
     if not vehicle:
       return JSONResponse(content={"message": "Vehiculo no encontrado"}, status_code=404)
 
-    driver = db.query(Conductores).filter(Conductores.CODIGO == vehicle.CONDUCTOR).first()
-    if not driver:
-      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
+    driver = None
+    if vehicle.CONDUCTOR:
+      driver = db.query(Conductores).filter(Conductores.CODIGO == vehicle.CONDUCTOR).first()
+      if not driver:
+        return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
 
     owner = db.query(Propietarios).filter(Propietarios.CODIGO == vehicle.PROPI_IDEN, Propietarios.EMPRESA == data.company_code).first()
     if not owner:
@@ -574,9 +576,9 @@ async def create_inspection(data: NewInspection):
       NRO_CUPO=vehicle.NRO_CUPO,
       PROPI_IDEN=vehicle.PROPI_IDEN,
       NOMPROPI=owner.NOMBRE,
-      CONDUCTOR=vehicle.CONDUCTOR,
-      CEDULA=driver.CEDULA,
-      NOMCONDU=driver.NOMBRE,
+      CONDUCTOR=vehicle.CONDUCTOR if vehicle.CONDUCTOR else "",
+      CEDULA=driver.CEDULA if driver else "",
+      NOMCONDU=driver.NOMBRE if driver else "",
       TIPO_INSPEC=inspection_type.CODIGO,
       NOMINSPEC=inspection_type.NOMBRE,
       MECANICO=mechanic.CODIGO,

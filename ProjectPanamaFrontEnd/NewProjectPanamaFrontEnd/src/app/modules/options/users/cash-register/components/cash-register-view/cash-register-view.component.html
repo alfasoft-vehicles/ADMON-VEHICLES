@@ -377,7 +377,15 @@
             </div>
             <mat-form-field class="cr-field-input cr-input-km-custom">
               <mat-label>Km Actual</mat-label>
-              <input matInput type="number" value="0.00" />
+              <input
+                matInput
+                type="number"
+                name="currentKm"
+                [(ngModel)]="currentKm"
+                (ngModelChange)="onKmChange($event)"
+                [min]="baseMileage"
+                #kmModel="ngModel"
+              />
             </mat-form-field>
           </div>
 
@@ -465,10 +473,22 @@
               >
             </div>
             <div class="cr-action-buttons-inline">
-              <button mat-flat-button class="cr-button cr-btn-pastel-green">
+              <button
+                mat-flat-button
+                class="cr-button cr-btn-pastel-green"
+                [disabled]="isFormDisabled"
+                [matTooltip]="disabledTooltip"
+                (click)="onAccept()"
+              >
                 <mat-icon>check_circle</mat-icon> Aceptar
               </button>
-              <button mat-flat-button class="cr-button cr-btn-pastel-orange">
+              <button
+                mat-flat-button
+                class="cr-button cr-btn-pastel-orange"
+                [disabled]="isFormDisabled"
+                [matTooltip]="disabledTooltip"
+                (click)="onCollect()"
+              >
                 <mat-icon>save</mat-icon> Recaudar
               </button>
             </div>
