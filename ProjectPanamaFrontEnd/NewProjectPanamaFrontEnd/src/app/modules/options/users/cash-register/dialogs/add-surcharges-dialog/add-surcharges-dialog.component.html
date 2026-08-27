@@ -1,0 +1,42 @@
+<h2 mat-dialog-title>Añadir Recargo</h2>
+<mat-divider></mat-divider>
+
+<mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
+
+<mat-dialog-content class="scrollable-content">
+  <div class="form-container" *ngIf="!isLoading">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Valor Recargo</mat-label>
+      <span matPrefix class="currency-prefix">$ &nbsp;</span>
+      <input
+        matInput
+        type="number"
+        [(ngModel)]="surchargeValue"
+        min="0"
+        placeholder="0.0"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Motivo</mat-label>
+      <mat-select [(ngModel)]="selectedSurchargeCode">
+        <mat-option *ngFor="let item of surchargesList" [value]="item.code">
+          {{ item.code }} {{ item.name }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">
+    <mat-icon>close</mat-icon> Cancelar
+  </button>
+  <button
+    mat-button
+    (click)="loadSurcharge()"
+    [disabled]="isLoading || !selectedSurchargeCode || !surchargeValue || surchargeValue <= 0"
+  >
+    <mat-icon>check</mat-icon> Cargar
+  </button>
+</mat-dialog-actions>

@@ -8,6 +8,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { QueriesDialogComponent } from '../../dialogs/queries-dialog/queries-dialog.component';
+import { AddSurchargesDialogComponent } from '../../dialogs/add-surcharges-dialog/add-surcharges-dialog.component';
 
 export interface drivers {
   codigo_conductor: string;
@@ -386,5 +387,36 @@ export class CashRegisterViewComponent implements OnInit {
       width: '600px',
       maxWidth: '90vw',
     });
+  }
+
+  openAddSurchargesDialog() {
+    const dialogRef = this.dialog.open(AddSurchargesDialogComponent, {
+      width: '450px',
+      maxWidth: '90vw',
+      data: {
+        companyCode: this.getCompany(),
+      },
+    });
+
+    dialogRef
+      .afterClosed()
+      .subscribe(
+        (result: { value: number; code: string; name: string } | null) => {
+          if (result && result.value > 0) {
+            if (this.walletInfo) {
+              this.walletInfo.debts.other_debts =
+                (this.walletInfo.debts.other_debts || 0) + result.value;
+            }
+            this.openSnackbar(
+              `Recargo de $${result.value} (${result.name}) añadido.`
+            );
+          }
+        }
+      );
+  }
+
+  openPaySurchargesDialog() {
+    // Dialog para pagar recargos (se integrará en el futuro)
+    console.log('Abrir dialog de pagar recargos');
   }
 }

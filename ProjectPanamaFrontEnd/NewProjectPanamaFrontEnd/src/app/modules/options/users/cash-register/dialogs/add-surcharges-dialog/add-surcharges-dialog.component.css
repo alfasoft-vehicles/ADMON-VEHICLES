@@ -1,0 +1,33 @@
+h2 {
+  margin-bottom: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.scrollable-content {
+  padding: 20px 24px;
+  max-height: 70vh;
+  min-width: 320px;
+  overflow-y: auto;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.currency-prefix {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+mat-dialog-actions {
+  padding: 12px 24px 16px;
+  gap: 8px;
+}

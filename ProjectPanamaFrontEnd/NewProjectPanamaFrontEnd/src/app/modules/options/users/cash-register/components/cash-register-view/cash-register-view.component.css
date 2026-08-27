@@ -1084,3 +1084,44 @@
   width: 24px;
   height: 24px;
 }
+
+.cr-cursor-pointer {
+  cursor: pointer !important;
+}
+
+::ng-deep .cr-surcharges-field .mat-mdc-form-field-icon-suffix {
+  align-self: center !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+
+::ng-deep .cr-surcharges-field .cr-btn-add-surcharge {
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+::ng-deep .cr-surcharges-field .cr-btn-add-surcharge .mat-mdc-button-touch-target {
+  width: 32px !important;
+  height: 32px !important;
+}
+
+::ng-deep .cr-surcharges-field .cr-btn-add-surcharge .mat-mdc-button-persistent-ripple {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+}
+
+::ng-deep .cr-surcharges-field .cr-btn-add-surcharge mat-icon {
+  font-size: 20px !important;
+  width: 20px !important;
+  height: 20px !important;
+  line-height: 20px !important;
+  margin: 0 !important;
+}

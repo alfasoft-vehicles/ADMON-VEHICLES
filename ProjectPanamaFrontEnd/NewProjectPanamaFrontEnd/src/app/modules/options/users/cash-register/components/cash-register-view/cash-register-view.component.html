@@ -402,15 +402,29 @@
                 (ngModelChange)="calculateTotal()"
               />
             </mat-form-field>
-            <mat-form-field class="cr-field-input cr-payment-input">
+            <mat-form-field class="cr-field-input cr-payment-input cr-surcharges-field">
               <mat-label>Recargos</mat-label>
               <span matPrefix class="cr-currency-prefix">$</span>
               <input
                 matInput
                 type="number"
                 [(ngModel)]="surchargesPayment"
-                (ngModelChange)="calculateTotal()"
+                readonly
+                class="cr-cursor-pointer"
+                (click)="openPaySurchargesDialog()"
+                matTooltip="Pagar recargos"
               />
+              <button
+                type="button"
+                matSuffix
+                mat-icon-button
+                color="primary"
+                class="cr-btn-add-surcharge"
+                matTooltip="Añadir recargo"
+                (click)="$event.stopPropagation(); openAddSurchargesDialog()"
+              >
+                <mat-icon>add</mat-icon>
+              </button>
             </mat-form-field>
             <mat-form-field class="cr-field-input cr-payment-input">
               <mat-label>Inscripción</mat-label>
