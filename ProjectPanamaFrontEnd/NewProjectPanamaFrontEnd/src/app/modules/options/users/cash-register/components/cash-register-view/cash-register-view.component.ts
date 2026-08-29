@@ -9,6 +9,10 @@ import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { QueriesDialogComponent } from '../../dialogs/queries-dialog/queries-dialog.component';
 import { AddSurchargesDialogComponent } from '../../dialogs/add-surcharges-dialog/add-surcharges-dialog.component';
+import {
+  PaySurchargesDialogComponent,
+  PaySurchargesDialogResult,
+} from '../../dialogs/pay-surcharges-dialog/pay-surcharges-dialog.component';
 
 export interface drivers {
   codigo_conductor: string;
@@ -496,15 +500,37 @@ export class CashRegisterViewComponent implements OnInit {
                 (this.walletInfo.debts.other_debts || 0) + result.value;
             }
             this.openSnackbar(
-              `Recargo de $${result.value} (${result.name}) añadido.`
+              `Recargo de $${result.value} (${result.name}) añadido.`,
             );
           }
-        }
+        },
       );
   }
 
   openPaySurchargesDialog() {
-    // Dialog para pagar recargos (se integrará en el futuro)
-    console.log('Abrir dialog de pagar recargos');
+    const dialogRef = this.dialog.open(PaySurchargesDialogComponent, {
+      width: '650px',
+      maxWidth: '95vw',
+      data: {
+        companyCode: this.getCompany(),
+        currentSurchargesPayment: this.surchargesPayment,
+      },
+    });
+
+    dialogRef
+      .afterClosed()
+      .subscribe((result: PaySurchargesDialogResult | null) => {
+        if (result && result.totalPayment !== undefined) {
+          this.surchargesPayment = result.totalPayment;
+          this.calculateTotal();
+          if (result.totalPayment > 0) {
+            this.openSnackbar(
+              `Recargos aplicados al recaudo: $${result.totalPayment.toFixed(2)}`,
+            );
+          } else {
+            this.openSnackbar('Monto de recargos establecido en $0.00');
+          }
+        }
+      });
   }
 }

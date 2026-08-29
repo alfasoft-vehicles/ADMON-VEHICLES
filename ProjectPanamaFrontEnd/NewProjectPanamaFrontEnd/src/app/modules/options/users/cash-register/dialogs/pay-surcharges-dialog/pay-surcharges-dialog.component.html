@@ -1,1 +1,232 @@
-<p>pay-surcharges-dialog works!</p>
+<div class="dialog-header-container">
+  <div class="dialog-header-info">
+    <h2 class="dialog-title">Pagar Recargos</h2>
+    <p class="dialog-subtitle">
+      Distribución y pago de recargos pendientes del conductor
+    </p>
+  </div>
+  <button
+    mat-icon-button
+    (click)="cancel()"
+    class="close-button"
+    matTooltip="Cerrar"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-divider></mat-divider>
+
+<mat-dialog-content class="dialog-content-custom">
+  <!-- Tarjetas de Resumen / KPIs -->
+  <div class="kpi-summary-grid">
+    <div class="kpi-card kpi-balance">
+      <div class="kpi-icon-box">
+        <mat-icon>account_balance_wallet</mat-icon>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Saldo Pendiente</span>
+        <span class="kpi-value text-red"
+          >$ {{ getTotalBalance() | number: "1.2-2" }}</span
+        >
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-payment">
+      <div class="kpi-icon-box">
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Total a Pagar</span>
+        <span class="kpi-value text-green"
+          >$ {{ getTotalToPay() | number: "1.2-2" }}</span
+        >
+      </div>
+    </div>
+
+    <div class="kpi-card kpi-remaining">
+      <div class="kpi-icon-box">
+        <mat-icon>savings</mat-icon>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Saldo Restante</span>
+        <span class="kpi-value text-blue"
+          >$ {{ getRemainingBalance() | number: "1.2-2" }}</span
+        >
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de búsqueda y acciones rápidas -->
+  <div class="table-toolbar">
+    <div class="search-box-wrapper">
+      <mat-icon class="search-box-icon">search</mat-icon>
+      <input
+        type="text"
+        class="search-box-input"
+        [(ngModel)]="filterTerm"
+        placeholder="Buscar recargo o código..."
+      />
+      <button
+        *ngIf="filterTerm"
+        type="button"
+        class="search-box-clear"
+        (click)="filterTerm = ''"
+        matTooltip="Limpiar búsqueda"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="quick-actions">
+      <button
+        mat-stroked-button
+        color="primary"
+        type="button"
+        class="quick-btn"
+        (click)="payAllBalances()"
+        [disabled]="getTotalBalance() <= 0"
+        matTooltip="Copiar todo el saldo pendiente al monto a pagar"
+      >
+        <mat-icon>done_all</mat-icon> Pagar Todo
+      </button>
+
+      <button
+        mat-stroked-button
+        color="warn"
+        type="button"
+        class="quick-btn"
+        (click)="clearAllAmounts()"
+        [disabled]="getTotalToPay() <= 0"
+        matTooltip="Restablecer todos los montos a cero"
+      >
+        <mat-icon>refresh</mat-icon> Limpiar
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabla de Recargos -->
+  <div class="table-responsive-wrapper mat-elevation-z1">
+    <table mat-table [dataSource]="filteredSurcharges" class="surcharges-table">
+      <!-- Código Column -->
+      <ng-container matColumnDef="code">
+        <th mat-header-cell *matHeaderCellDef class="th-code">Cód</th>
+        <td mat-cell *matCellDef="let element" class="td-code">
+          <span class="code-badge">{{ element.code }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Nombre Column -->
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef class="th-name">Concepto</th>
+        <td mat-cell *matCellDef="let element" class="td-name">
+          <span class="surcharge-name">{{ element.name }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Saldo Column -->
+      <ng-container matColumnDef="balance">
+        <th mat-header-cell *matHeaderCellDef class="th-balance">Saldo</th>
+        <td mat-cell *matCellDef="let element" class="td-balance">
+          <span
+            class="balance-text"
+            [ngClass]="{
+              'text-red': element.balance > 0,
+              'text-muted': element.balance === 0,
+            }"
+          >
+            $ {{ element.balance | number: "1.2-2" }}
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Pagar Column -->
+      <ng-container matColumnDef="amountToPay">
+        <th mat-header-cell *matHeaderCellDef class="th-pay">Pagar</th>
+        <td mat-cell *matCellDef="let element" class="td-pay">
+          <!-- Si el saldo es mayor a 0, mostramos el input para pagar -->
+          <div
+            class="pay-input-wrapper"
+            *ngIf="element.balance > 0; else zeroBalance"
+          >
+            <mat-form-field appearance="outline" class="compact-input">
+              <span matPrefix class="currency-symbol">$</span>
+              <input
+                matInput
+                type="number"
+                min="0"
+                [max]="element.balance"
+                step="0.01"
+                placeholder="0.00"
+                [value]="
+                  element.amountToPay !== null ? element.amountToPay : ''
+                "
+                (input)="onAmountInput(element, $event)"
+              />
+            </mat-form-field>
+            <button
+              mat-icon-button
+              type="button"
+              class="btn-quick-fill"
+              color="primary"
+              (click)="paySingleItem(element)"
+              matTooltip="Pagar saldo completo ($ {{
+                element.balance | number: '1.2-2'
+              }})"
+            >
+              <mat-icon>check_circle_outline</mat-icon>
+            </button>
+          </div>
+
+          <!-- Si el saldo es 0, no mostramos nada en la columna pagar -->
+          <ng-template #zeroBalance></ng-template>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        class="table-data-row"
+        [ngClass]="{
+          'row-has-payment': row.amountToPay && row.amountToPay > 0,
+        }"
+      ></tr>
+
+      <!-- Fila de cuando no hay resultados en el filtro -->
+      <tr class="mat-row" *matNoDataRow>
+        <td
+          class="mat-cell no-data-cell"
+          [attr.colspan]="displayedColumns.length"
+        >
+          <div class="no-data-content">
+            <mat-icon>search_off</mat-icon>
+            <span
+              >No se encontraron recargos que coincidan con "{{
+                filterTerm
+              }}"</span
+            >
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</mat-dialog-content>
+
+<mat-divider></mat-divider>
+
+<!-- Acciones del Diálogo -->
+<mat-dialog-actions align="end" class="dialog-actions-custom">
+  <button mat-button type="button" (click)="cancel()" class="action-btn">
+    <mat-icon>close</mat-icon> Cancelar
+  </button>
+  <button
+    mat-raised-button
+    color="primary"
+    type="button"
+    (click)="confirm()"
+    class="action-btn btn-confirm"
+  >
+    <mat-icon>check</mat-icon> Confirmar
+  </button>
+</mat-dialog-actions>
