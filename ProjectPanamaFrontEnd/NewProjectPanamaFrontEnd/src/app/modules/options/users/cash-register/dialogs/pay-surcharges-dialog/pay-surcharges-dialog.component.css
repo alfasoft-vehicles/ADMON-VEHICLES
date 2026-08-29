@@ -39,6 +39,7 @@
   max-height: 72vh;
   min-width: 540px;
   overflow-y: auto;
+  box-sizing: border-box;
 }
 
 /* KPI Summary Cards */
@@ -74,6 +75,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .kpi-balance {
@@ -106,6 +108,7 @@
 .kpi-data {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .kpi-label {
@@ -114,11 +117,13 @@
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: #64748b;
+  white-space: nowrap;
 }
 
 .kpi-value {
   font-size: 1.15rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .text-red {
@@ -144,21 +149,22 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
-/* Custom Search Box con alineación perfecta y botón de limpiar */
+/* Custom Search Box con altura generosa (48px) y alineación perfecta */
 .search-box-wrapper {
   flex: 1;
-  min-width: 220px;
+  min-width: 240px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background-color: #ffffff;
   border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 0 10px 0 12px;
-  height: 40px;
+  border-radius: 10px;
+  padding: 0 14px;
+  height: 48px;
+  min-height: 48px;
   box-sizing: border-box;
   transition:
     border-color 0.2s ease,
@@ -172,24 +178,28 @@
 
 .search-box-icon {
   color: #64748b;
-  font-size: 20px;
-  width: 20px;
-  height: 20px;
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .search-box-input {
   border: none;
   outline: none;
   background: transparent;
+  flex: 1;
+  min-width: 0;
   width: 100%;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: #1e293b;
   padding: 0;
   margin: 0;
   line-height: 1.5;
+  height: 100%;
 }
 
 .search-box-input::placeholder {
@@ -200,7 +210,7 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;
   border-radius: 50%;
   color: #64748b;
   display: flex;
@@ -209,8 +219,9 @@
   transition:
     background-color 0.15s ease,
     color 0.15s ease;
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
 }
 
 .search-box-clear:hover {
@@ -219,36 +230,61 @@
 }
 
 .search-box-clear mat-icon {
-  font-size: 18px;
-  width: 18px;
-  height: 18px;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
 }
 
 .quick-actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .quick-btn {
-  height: 40px;
-  font-size: 0.82rem;
+  height: 48px;
+  font-size: 0.85rem;
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  padding: 0 16px;
+  border-radius: 10px;
 }
 
-/* Table */
+/* Table con Scroll Horizontal */
 .table-responsive-wrapper {
   border-radius: 8px;
-  overflow: hidden;
   border: 1px solid #e2e8f0;
   max-height: 380px;
+  overflow-x: auto;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: #ffffff;
+}
+
+/* Scrollbar styling */
+.table-responsive-wrapper::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+.table-responsive-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.table-responsive-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.table-responsive-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .surcharges-table {
   width: 100%;
+  min-width: 480px;
   border-collapse: collapse;
 }
 
@@ -299,7 +335,7 @@
 
 .th-name,
 .td-name {
-  min-width: 180px;
+  min-width: 170px;
 }
 
 .surcharge-name {
@@ -410,8 +446,12 @@
   box-shadow: 0 2px 4px rgba(25, 118, 210, 0.25);
 }
 
-/* Responsive */
+/* Responsive Móvil */
 @media (max-width: 600px) {
+  .dialog-header-container {
+    padding: 14px 16px;
+  }
+
   .dialog-content-custom {
     min-width: unset;
     width: 100%;
@@ -426,13 +466,30 @@
   .table-toolbar {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
+  }
+
+  .search-box-wrapper {
+    width: 100%;
+    min-width: 100%;
+    height: 48px;
+    min-height: 48px;
   }
 
   .quick-actions {
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
   }
 
-  .compact-input {
-    width: 80px;
+  .quick-btn {
+    width: 100%;
+    height: 44px;
+    justify-content: center;
+  }
+
+  .dialog-actions-custom {
+    padding: 10px 16px 14px;
   }
 }

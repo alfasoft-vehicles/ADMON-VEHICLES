@@ -410,7 +410,9 @@
                 (ngModelChange)="calculateTotal()"
               />
             </mat-form-field>
-            <mat-form-field class="cr-field-input cr-payment-input cr-surcharges-field">
+            <mat-form-field
+              class="cr-field-input cr-payment-input cr-surcharges-field"
+            >
               <mat-label>Recargos</mat-label>
               <span matPrefix class="cr-currency-prefix">$</span>
               <input
@@ -556,24 +558,34 @@
         <div class="cr-p-4">
           <div class="cr-consult-grid-main">
             <button class="cr-consult-btn-main" matRipple>
-              <mat-icon class="cr-text-orange-500">cloud_upload</mat-icon>
-              <span>Carga Masiva</span>
+              <div class="cr-consult-icon-box cr-bg-orange-soft">
+                <mat-icon class="cr-text-orange-600">cloud_upload</mat-icon>
+              </div>
+              <span class="cr-consult-btn-label">Carga Masiva</span>
             </button>
             <button class="cr-consult-btn-main" matRipple>
-              <mat-icon class="cr-text-green-500">account_balance</mat-icon>
-              <span>Cuadre Caja</span>
+              <div class="cr-consult-icon-box cr-bg-green-soft">
+                <mat-icon class="cr-text-green-600">account_balance</mat-icon>
+              </div>
+              <span class="cr-consult-btn-label">Cuadre Caja</span>
             </button>
             <button class="cr-consult-btn-main" matRipple>
-              <mat-icon class="cr-text-red-500">assignment_turned_in</mat-icon>
-              <span>Cierre Caja</span>
+              <div class="cr-consult-icon-box cr-bg-red-soft">
+                <mat-icon class="cr-text-red-600"
+                  >assignment_turned_in</mat-icon
+                >
+              </div>
+              <span class="cr-consult-btn-label">Cierre Caja</span>
             </button>
             <button
               class="cr-consult-btn-main"
               matRipple
               (click)="openQueriesDialog()"
             >
-              <mat-icon class="cr-text-indigo-600">apps</mat-icon>
-              <span>Ver más</span>
+              <div class="cr-consult-icon-box cr-bg-indigo-soft">
+                <mat-icon class="cr-text-indigo-600">apps</mat-icon>
+              </div>
+              <span class="cr-consult-btn-label">Ver más</span>
             </button>
           </div>
         </div>

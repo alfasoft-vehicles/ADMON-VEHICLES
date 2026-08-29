@@ -1,9 +1,25 @@
-<h2 mat-dialog-title>Añadir Recargo</h2>
+<div class="dialog-header-container">
+  <div class="dialog-header-info">
+    <h2 class="dialog-title">Añadir Recargo</h2>
+    <p class="dialog-subtitle">
+      Registrar un nuevo cargo o concepto a la cuenta
+    </p>
+  </div>
+  <button
+    mat-icon-button
+    (click)="cancel()"
+    class="close-button"
+    matTooltip="Cerrar"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
 <mat-divider></mat-divider>
 
 <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
 
-<mat-dialog-content class="scrollable-content">
+<mat-dialog-content class="dialog-content-custom">
   <div class="form-container" *ngIf="!isLoading">
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Valor Recargo</mat-label>
@@ -13,7 +29,8 @@
         type="number"
         [(ngModel)]="surchargeValue"
         min="0"
-        placeholder="0.0"
+        step="0.01"
+        placeholder="0.00"
       />
     </mat-form-field>
 
@@ -21,22 +38,32 @@
       <mat-label>Motivo</mat-label>
       <mat-select [(ngModel)]="selectedSurchargeCode">
         <mat-option *ngFor="let item of surchargesList" [value]="item.code">
-          {{ item.code }} {{ item.name }}
+          <span class="code-badge-small">{{ item.code }}</span> {{ item.name }}
         </mat-option>
       </mat-select>
     </mat-form-field>
   </div>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end">
-  <button mat-button (click)="cancel()">
+<mat-divider></mat-divider>
+
+<mat-dialog-actions align="end" class="dialog-actions-custom">
+  <button mat-button type="button" (click)="cancel()" class="action-btn">
     <mat-icon>close</mat-icon> Cancelar
   </button>
   <button
-    mat-button
+    mat-raised-button
+    color="primary"
+    type="button"
     (click)="loadSurcharge()"
-    [disabled]="isLoading || !selectedSurchargeCode || !surchargeValue || surchargeValue <= 0"
+    class="action-btn btn-confirm"
+    [disabled]="
+      isLoading ||
+      !selectedSurchargeCode ||
+      !surchargeValue ||
+      surchargeValue <= 0
+    "
   >
-    <mat-icon>check</mat-icon> Cargar
+    <mat-icon>check</mat-icon> Cargar Recargo
   </button>
 </mat-dialog-actions>

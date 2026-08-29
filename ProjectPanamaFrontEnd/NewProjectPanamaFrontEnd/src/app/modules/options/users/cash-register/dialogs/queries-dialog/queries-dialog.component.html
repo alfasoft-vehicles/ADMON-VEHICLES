@@ -1,56 +1,71 @@
-<div class="cr-dialog-container">
-  <div class="cr-dialog-header">
-    <h2>Consultas</h2>
-    <button mat-icon-button mat-dialog-close>
-      <mat-icon>close</mat-icon>
-    </button>
+<div class="dialog-header-container">
+  <div class="dialog-header-info">
+    <h2 class="dialog-title">Consultas de Caja</h2>
+    <p class="dialog-subtitle">
+      Acceso rápido a informes, reportes y resúmenes de recaudos
+    </p>
   </div>
-  <mat-dialog-content>
-    <div class="cr-consult-grid">
-      <button class="cr-consult-btn" matRipple>
-        <mat-icon class="cr-text-green-600">request_quote</mat-icon
-        ><span>Inf. Comisiones</span>
-      </button>
-      <button class="cr-consult-btn" matRipple>
-        <mat-icon class="cr-text-gray-600">receipt_long</mat-icon
-        ><span>Copia Recibo</span>
-      </button>
-      <button class="cr-consult-btn" matRipple>
-        <mat-icon class="cr-text-blue-600">point_of_sale</mat-icon
-        ><span>Ventas Contado</span>
-      </button>
-      <button class="cr-consult-btn" matRipple>
-        <mat-icon class="cr-text-orange-600">format_list_numbered</mat-icon
-        ><span>Consecutivo</span>
-      </button>
-      <button class="cr-consult-btn" matRipple>
-        <mat-icon class="cr-text-indigo-600">list_alt</mat-icon
-        ><span>Detalle General</span>
-      </button>
-      <button class="cr-consult-btn" matRipple>
-        <mat-icon class="cr-text-purple-600">business</mat-icon
-        ><span>Resumen Emp.</span>
-      </button>
-      <button class="cr-consult-btn" matRipple>
-        <mat-icon class="cr-text-teal-600">person</mat-icon
-        ><span>Resumen Cajero</span>
-      </button>
-      <button class="cr-consult-btn" matRipple>
-        <mat-icon class="cr-text-blue-500">group</mat-icon
-        ><span>Cajero/Empresa</span>
-      </button>
-      <button class="cr-consult-btn" matRipple>
-        <mat-icon class="cr-text-blue-400">sync_alt</mat-icon
-        ><span>Transferencias</span>
-      </button>
-      <button class="cr-consult-btn" matRipple>
-        <mat-icon class="cr-text-gray-700">calendar_today</mat-icon
-        ><span>Resumen Diario</span>
-      </button>
-      <button class="cr-consult-btn" matRipple>
-        <mat-icon class="cr-text-red-500">lock_clock</mat-icon
-        ><span>Resumen Cierre</span>
+  <button
+    mat-icon-button
+    (click)="close()"
+    class="close-button"
+    matTooltip="Cerrar"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-divider></mat-divider>
+
+<mat-dialog-content class="dialog-content-custom">
+  <!-- Barra de búsqueda rápida -->
+  <div class="search-toolbar">
+    <div class="search-box-wrapper">
+      <mat-icon class="search-box-icon">search</mat-icon>
+      <input
+        type="text"
+        class="search-box-input"
+        [(ngModel)]="filterTerm"
+        placeholder="Buscar consulta o reporte..."
+      />
+      <button
+        *ngIf="filterTerm"
+        type="button"
+        class="search-box-clear"
+        (click)="filterTerm = ''"
+        matTooltip="Limpiar búsqueda"
+      >
+        <mat-icon>close</mat-icon>
       </button>
     </div>
-  </mat-dialog-content>
-</div>
+  </div>
+
+  <!-- Grid de Consultas -->
+  <div class="queries-grid">
+    <button
+      *ngFor="let item of filteredOptions"
+      class="query-tile-btn"
+      matRipple
+      (click)="selectQuery(item)"
+    >
+      <div class="query-icon-container" [ngClass]="item.bgClass">
+        <mat-icon [ngClass]="item.colorClass">{{ item.icon }}</mat-icon>
+      </div>
+      <span class="query-tile-label">{{ item.label }}</span>
+    </button>
+  </div>
+
+  <!-- Sin resultados -->
+  <div *ngIf="filteredOptions.length === 0" class="no-results">
+    <mat-icon>search_off</mat-icon>
+    <span>No se encontraron consultas para "{{ filterTerm }}"</span>
+  </div>
+</mat-dialog-content>
+
+<mat-divider></mat-divider>
+
+<mat-dialog-actions align="end" class="dialog-actions-custom">
+  <button mat-button type="button" (click)="close()" class="action-btn">
+    <mat-icon>close</mat-icon> Cerrar
+  </button>
+</mat-dialog-actions>

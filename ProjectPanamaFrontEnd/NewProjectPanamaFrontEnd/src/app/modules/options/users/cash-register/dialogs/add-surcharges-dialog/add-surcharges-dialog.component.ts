@@ -23,7 +23,7 @@ export class AddSurchargesDialogComponent implements OnInit {
     public dialogRef: MatDialogRef<AddSurchargesDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any,
     private apiService: ApiService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
   ) {}
 
   ngOnInit(): void {
@@ -37,7 +37,11 @@ export class AddSurchargesDialogComponent implements OnInit {
 
     this.apiService.getData(`surcharges/${company}`).subscribe({
       next: (res: SurchargeType[]) => {
-        this.surchargesList = res || [];
+        if (res && res.length > 0) {
+          this.surchargesList = res;
+        } else {
+          this.surchargesList = this.getFallbackSurcharges();
+        }
         if (this.surchargesList.length > 0) {
           this.selectedSurchargeCode = this.surchargesList[0].code;
         }
@@ -45,15 +49,36 @@ export class AddSurchargesDialogComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error al obtener tipos de recargos:', err);
+        this.surchargesList = this.getFallbackSurcharges();
+        if (this.surchargesList.length > 0) {
+          this.selectedSurchargeCode = this.surchargesList[0].code;
+        }
         this.isLoading = false;
       },
     });
   }
 
+  private getFallbackSurcharges(): SurchargeType[] {
+    return [
+      { code: '121', name: 'Acuerdos De Pago' },
+      { code: '122', name: 'Exceso de Kilometraje' },
+      { code: '123', name: 'Gastos Administrativos' },
+      { code: '124', name: 'Mantenimiento' },
+      { code: '125', name: 'Multa Por Pagar Tarde' },
+      { code: '126', name: 'Negativo Panapass' },
+      { code: '127', name: 'Otras (Salida Interior-Cierre Semana)' },
+      { code: '128', name: 'Recargos Financieros' },
+    ];
+  }
+
   loadSurcharge(): void {
-    if (this.surchargeValue && this.surchargeValue > 0 && this.selectedSurchargeCode) {
+    if (
+      this.surchargeValue &&
+      this.surchargeValue > 0 &&
+      this.selectedSurchargeCode
+    ) {
       const selectedItem = this.surchargesList.find(
-        (item) => item.code === this.selectedSurchargeCode
+        (item) => item.code === this.selectedSurchargeCode,
       );
       this.dialogRef.close({
         value: Number(this.surchargeValue),
