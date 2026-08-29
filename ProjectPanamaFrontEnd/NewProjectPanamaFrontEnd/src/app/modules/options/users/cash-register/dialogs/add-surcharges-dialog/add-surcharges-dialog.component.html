@@ -10,6 +10,7 @@
     (click)="cancel()"
     class="close-button"
     matTooltip="Cerrar"
+    [disabled]="isSubmitting"
   >
     <mat-icon>close</mat-icon>
   </button>
@@ -22,6 +23,11 @@
 </div>
 
 <ng-container *ngIf="!isLoading">
+  <mat-progress-bar
+    mode="indeterminate"
+    *ngIf="isSubmitting"
+  ></mat-progress-bar>
+
   <mat-dialog-content class="dialog-content-custom">
     <div class="form-container">
       <mat-form-field appearance="outline" class="full-width">
@@ -34,12 +40,16 @@
           min="0"
           step="0.01"
           placeholder="0.00"
+          [disabled]="isSubmitting"
         />
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Motivo</mat-label>
-        <mat-select [(ngModel)]="selectedSurchargeCode">
+        <mat-select
+          [(ngModel)]="selectedSurchargeCode"
+          [disabled]="isSubmitting"
+        >
           <mat-option *ngFor="let item of surchargesList" [value]="item.code">
             <span class="code-badge-small">{{ item.code }}</span>
             {{ item.name }}
@@ -52,7 +62,13 @@
   <mat-divider></mat-divider>
 
   <mat-dialog-actions align="end" class="dialog-actions-custom">
-    <button mat-button type="button" (click)="cancel()" class="action-btn">
+    <button
+      mat-button
+      type="button"
+      (click)="cancel()"
+      class="action-btn"
+      [disabled]="isSubmitting"
+    >
       <mat-icon>close</mat-icon> Cancelar
     </button>
     <button
@@ -62,10 +78,15 @@
       (click)="loadSurcharge()"
       class="action-btn btn-confirm"
       [disabled]="
-        !selectedSurchargeCode || !surchargeValue || surchargeValue <= 0
+        isSubmitting ||
+        !selectedSurchargeCode ||
+        !surchargeValue ||
+        surchargeValue <= 0
       "
     >
-      <mat-icon>check</mat-icon> Cargar Recargo
+      <mat-icon *ngIf="!isSubmitting">check</mat-icon>
+      <span *ngIf="!isSubmitting">Cargar Recargo</span>
+      <span *ngIf="isSubmitting">Guardando...</span>
     </button>
   </mat-dialog-actions>
 </ng-container>

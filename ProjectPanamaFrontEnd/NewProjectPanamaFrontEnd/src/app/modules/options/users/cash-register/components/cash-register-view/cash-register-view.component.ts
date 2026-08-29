@@ -497,11 +497,17 @@ export class CashRegisterViewComponent implements OnInit {
   }
 
   openAddSurchargesDialog() {
+    const companyCode = this.getCompany();
+    const vehicleNumber = this.getSelectedVehicleNumber();
+    const driverCode = this.getSelectedDriverCode();
+
     const dialogRef = this.dialog.open(AddSurchargesDialogComponent, {
       width: '450px',
       maxWidth: '90vw',
       data: {
-        companyCode: this.getCompany(),
+        companyCode,
+        vehicleNumber,
+        driverNumber: driverCode,
       },
     });
 
@@ -510,16 +516,44 @@ export class CashRegisterViewComponent implements OnInit {
       .subscribe(
         (result: { value: number; code: string; name: string } | null) => {
           if (result && result.value > 0) {
-            if (this.walletInfo) {
-              this.walletInfo.debts.other_debts =
-                (this.walletInfo.debts.other_debts || 0) + result.value;
+            // Actualizar fondos y deudas del componente padre consultando el backend
+            this.refreshWalletInfo();
+
+            // Si ya se tenían recargos cargados, sincronizar el nuevo saldo
+            const existingItem = this.surchargesItems.find(
+              (item) => String(item.code) === String(result.code),
+            );
+            if (existingItem) {
+              existingItem.balance = (existingItem.balance || 0) + result.value;
             }
+
             this.openSnackbar(
-              `Recargo de $${result.value} (${result.name}) añadido.`,
+              `Recargo de $${result.value.toFixed(2)} (${result.name}) añadido correctamente.`,
             );
           }
         },
       );
+  }
+
+  refreshWalletInfo() {
+    const company = this.getCompany();
+    const vehicleNumber = this.getSelectedVehicleNumber();
+    const driverCode = this.getSelectedDriverCode();
+
+    if (company && vehicleNumber && driverCode) {
+      this.apiService
+        .getData(
+          `wallet/vehicle-wallet-info/${company}/${vehicleNumber}/${driverCode}`,
+        )
+        .subscribe({
+          next: (wallet) => {
+            this.walletInfo = wallet;
+          },
+          error: (err) => {
+            console.error('Error al actualizar fondos y deudas:', err);
+          },
+        });
+    }
   }
 
   openPaySurchargesDialog() {
