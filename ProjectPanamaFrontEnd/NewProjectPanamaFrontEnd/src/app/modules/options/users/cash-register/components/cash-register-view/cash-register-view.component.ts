@@ -12,6 +12,7 @@ import { AddSurchargesDialogComponent } from '../../dialogs/add-surcharges-dialo
 import {
   PaySurchargesDialogComponent,
   PaySurchargesDialogResult,
+  SurchargePayItem,
 } from '../../dialogs/pay-surcharges-dialog/pay-surcharges-dialog.component';
 
 export interface drivers {
@@ -121,6 +122,7 @@ export class CashRegisterViewComponent implements OnInit {
   isKmInvalid: boolean = false;
 
   messages: string[] = [];
+  surchargesItems: SurchargePayItem[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -374,13 +376,13 @@ export class CashRegisterViewComponent implements OnInit {
       driver: '',
       vehicle: '',
     });
-
     this.paymentMethod = '';
     this.rentPayment = 0;
     this.accidentsPayment = 0;
     this.surchargesPayment = 0;
     this.registrationPayment = 0;
     this.savingsPayment = 0;
+    this.surchargesItems = [];
     this.baseMileage = 0;
     this.currentKm = 0;
     this.isKmInvalid = false;
@@ -393,14 +395,27 @@ export class CashRegisterViewComponent implements OnInit {
     }
   }
 
+  getSelectedVehicleNumber(): string {
+    const vehicle = this.searchForm.get('vehicle')?.value;
+    if (vehicle && typeof vehicle === 'object') {
+      return vehicle.unidad;
+    }
+    return this.detailInfo?.vehicle || '';
+  }
+
+  getSelectedDriverCode(): string {
+    const driver = this.searchForm.get('driver')?.value;
+    if (driver && typeof driver === 'object') {
+      return driver.codigo_conductor;
+    }
+    return this.detailInfo?.driver_code || '';
+  }
+
   get isFormDisabled(): boolean {
     return !this.paymentMethod || this.isKmInvalid;
   }
 
   get disabledTooltip(): string {
-    if (!this.paymentMethod && this.isKmInvalid) {
-      return 'Acción deshabilitada: Seleccione una forma de pago e ingrese un kilometraje válido';
-    }
     if (!this.paymentMethod) {
       return 'Acción deshabilitada: Debe seleccionar una forma de pago';
     }
@@ -508,12 +523,19 @@ export class CashRegisterViewComponent implements OnInit {
   }
 
   openPaySurchargesDialog() {
+    const companyCode = this.getCompany();
+    const vehicleNumber = this.getSelectedVehicleNumber();
+    const driverCode = this.getSelectedDriverCode();
+
     const dialogRef = this.dialog.open(PaySurchargesDialogComponent, {
       width: '650px',
       maxWidth: '95vw',
       data: {
-        companyCode: this.getCompany(),
+        companyCode,
+        vehicleNumber,
+        driverNumber: driverCode,
         currentSurchargesPayment: this.surchargesPayment,
+        savedItems: this.surchargesItems,
       },
     });
 
@@ -522,6 +544,7 @@ export class CashRegisterViewComponent implements OnInit {
       .subscribe((result: PaySurchargesDialogResult | null) => {
         if (result && result.totalPayment !== undefined) {
           this.surchargesPayment = result.totalPayment;
+          this.surchargesItems = result.allItems || result.items || [];
           this.calculateTotal();
           if (result.totalPayment > 0) {
             this.openSnackbar(
