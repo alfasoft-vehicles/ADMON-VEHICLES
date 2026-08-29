@@ -17,53 +17,55 @@
 
 <mat-divider></mat-divider>
 
-<mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
+<div class="loading-wrapper" *ngIf="isLoading">
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+</div>
 
-<mat-dialog-content class="dialog-content-custom">
-  <div class="form-container" *ngIf="!isLoading">
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Valor Recargo</mat-label>
-      <span matPrefix class="currency-prefix">$ &nbsp;</span>
-      <input
-        matInput
-        type="number"
-        [(ngModel)]="surchargeValue"
-        min="0"
-        step="0.01"
-        placeholder="0.00"
-      />
-    </mat-form-field>
+<ng-container *ngIf="!isLoading">
+  <mat-dialog-content class="dialog-content-custom">
+    <div class="form-container">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Valor Recargo</mat-label>
+        <span matPrefix class="currency-prefix">$ &nbsp;</span>
+        <input
+          matInput
+          type="number"
+          [(ngModel)]="surchargeValue"
+          min="0"
+          step="0.01"
+          placeholder="0.00"
+        />
+      </mat-form-field>
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Motivo</mat-label>
-      <mat-select [(ngModel)]="selectedSurchargeCode">
-        <mat-option *ngFor="let item of surchargesList" [value]="item.code">
-          <span class="code-badge-small">{{ item.code }}</span> {{ item.name }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
-  </div>
-</mat-dialog-content>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Motivo</mat-label>
+        <mat-select [(ngModel)]="selectedSurchargeCode">
+          <mat-option *ngFor="let item of surchargesList" [value]="item.code">
+            <span class="code-badge-small">{{ item.code }}</span>
+            {{ item.name }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </mat-dialog-content>
 
-<mat-divider></mat-divider>
+  <mat-divider></mat-divider>
 
-<mat-dialog-actions align="end" class="dialog-actions-custom">
-  <button mat-button type="button" (click)="cancel()" class="action-btn">
-    <mat-icon>close</mat-icon> Cancelar
-  </button>
-  <button
-    mat-raised-button
-    color="primary"
-    type="button"
-    (click)="loadSurcharge()"
-    class="action-btn btn-confirm"
-    [disabled]="
-      isLoading ||
-      !selectedSurchargeCode ||
-      !surchargeValue ||
-      surchargeValue <= 0
-    "
-  >
-    <mat-icon>check</mat-icon> Cargar Recargo
-  </button>
-</mat-dialog-actions>
+  <mat-dialog-actions align="end" class="dialog-actions-custom">
+    <button mat-button type="button" (click)="cancel()" class="action-btn">
+      <mat-icon>close</mat-icon> Cancelar
+    </button>
+    <button
+      mat-raised-button
+      color="primary"
+      type="button"
+      (click)="loadSurcharge()"
+      class="action-btn btn-confirm"
+      [disabled]="
+        !selectedSurchargeCode || !surchargeValue || surchargeValue <= 0
+      "
+    >
+      <mat-icon>check</mat-icon> Cargar Recargo
+    </button>
+  </mat-dialog-actions>
+</ng-container>

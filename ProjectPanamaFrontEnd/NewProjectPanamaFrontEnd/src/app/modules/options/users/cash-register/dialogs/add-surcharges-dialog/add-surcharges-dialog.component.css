@@ -33,6 +33,11 @@
   color: #64748b;
 }
 
+/* Loading Wrapper */
+.loading-wrapper {
+  padding-bottom: 24px;
+}
+
 /* Content Container */
 .dialog-content-custom {
   padding: 20px 24px;
