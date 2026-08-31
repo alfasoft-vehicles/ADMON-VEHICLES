@@ -367,6 +367,7 @@
                 color="primary"
                 class="cr-radio-group"
                 [(ngModel)]="paymentMethod"
+                (ngModelChange)="onPaymentMethodChange()"
               >
                 <mat-radio-button value="efectivo">Efectivo</mat-radio-button>
                 <mat-radio-button value="ach">ACH (Trans)</mat-radio-button>
@@ -475,23 +476,31 @@
               >
             </div>
             <div class="cr-action-buttons-inline">
+              <!-- Botón Verificar (Visible cuando NO está verificado) -->
               <button
+                *ngIf="!isVerified"
                 mat-flat-button
-                class="cr-button cr-btn-pastel-green"
+                class="cr-button cr-btn-pastel-blue"
                 [disabled]="isFormDisabled"
                 [matTooltip]="disabledTooltip"
                 (click)="onAccept()"
               >
-                <mat-icon>check_circle</mat-icon> Aceptar
+                <mat-icon *ngIf="!isVerifying">fact_check</mat-icon>
+                <mat-icon class="cr-spin" *ngIf="isVerifying">sync</mat-icon>
+                <span>{{ isVerifying ? "Verificando..." : "Verificar" }}</span>
               </button>
+
+              <!-- Botón Recaudar (Visible únicamente tras verificar con éxito) -->
               <button
+                *ngIf="isVerified"
                 mat-flat-button
-                class="cr-button cr-btn-pastel-orange"
+                class="cr-button cr-btn-pastel-green"
                 [disabled]="isFormDisabled"
                 [matTooltip]="disabledTooltip"
                 (click)="onCollect()"
               >
-                <mat-icon>save</mat-icon> Recaudar
+                <mat-icon>payments</mat-icon>
+                <span>Recaudar</span>
               </button>
             </div>
           </div>

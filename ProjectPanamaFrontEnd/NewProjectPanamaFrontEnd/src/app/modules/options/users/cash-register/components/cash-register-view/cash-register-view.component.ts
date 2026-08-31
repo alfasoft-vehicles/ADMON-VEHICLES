@@ -14,6 +14,7 @@ import {
   PaySurchargesDialogResult,
   SurchargePayItem,
 } from '../../dialogs/pay-surcharges-dialog/pay-surcharges-dialog.component';
+import { ConfirmActionDialogComponent } from 'src/app/modules/shared/components/confirm-action-dialog/confirm-action-dialog.component';
 
 export interface drivers {
   codigo_conductor: string;
@@ -123,6 +124,10 @@ export class CashRegisterViewComponent implements OnInit {
 
   messages: string[] = [];
   surchargesItems: SurchargePayItem[] = [];
+
+  isVerifying: boolean = false;
+  isCreatingRentReceipt: boolean = false;
+  isVerified: boolean = false;
 
   constructor(
     private fb: FormBuilder,
@@ -386,6 +391,7 @@ export class CashRegisterViewComponent implements OnInit {
     this.baseMileage = 0;
     this.currentKm = 0;
     this.isKmInvalid = false;
+    this.isVerified = false;
     this.calculateTotal();
 
     if (triggerToOpen) {
@@ -412,10 +418,21 @@ export class CashRegisterViewComponent implements OnInit {
   }
 
   get isFormDisabled(): boolean {
-    return !this.paymentMethod || this.isKmInvalid;
+    return (
+      !this.paymentMethod ||
+      this.isKmInvalid ||
+      this.isVerifying ||
+      this.isCreatingRentReceipt
+    );
   }
 
   get disabledTooltip(): string {
+    if (this.isVerifying) {
+      return 'Verificando recaudo...';
+    }
+    if (this.isCreatingRentReceipt) {
+      return 'Creando cuentas de diario...';
+    }
     if (!this.paymentMethod) {
       return 'Acción deshabilitada: Debe seleccionar una forma de pago';
     }
@@ -425,7 +442,12 @@ export class CashRegisterViewComponent implements OnInit {
     return '';
   }
 
+  onPaymentMethodChange() {
+    this.isVerified = false;
+  }
+
   onKmChange(value: any) {
+    this.isVerified = false;
     const numValue =
       value !== null && value !== undefined && value !== ''
         ? Number(value)
@@ -466,11 +488,147 @@ export class CashRegisterViewComponent implements OnInit {
     return this.validateKm();
   }
 
+  getRevenuePayload() {
+    const companyCode = this.getCompany();
+    const vehicleNumber = this.getSelectedVehicleNumber();
+    const driverNumber = this.getSelectedDriverCode();
+    const userData = this.jwtService.getUserData();
+    const userId = userData?.id ? String(userData.id) : '';
+
+    const paidSurcharges = this.surchargesItems
+      .filter((item) => (item.amountToPay || 0) > 0)
+      .map((item) => ({
+        id: String(item.code),
+        value: String(item.amountToPay),
+      }));
+
+    return {
+      company_code: String(companyCode),
+      vehicle_number: String(vehicleNumber),
+      driver_number: String(driverNumber),
+      payment_method: String(this.paymentMethod),
+      mileage: parseInt(String(this.currentKm || 0), 10),
+      daily_rent: Number(this.rentPayment || 0),
+      accidents: Number(this.accidentsPayment || 0),
+      surcharges_list: paidSurcharges,
+      registration: Number(this.registrationPayment || 0),
+      savings: Number(this.savingsPayment || 0),
+      user: userId,
+    };
+  }
+
   onAccept() {
-    if (!this.validateForm()) {
+    if (!this.validateForm() || this.isVerifying) {
       return;
     }
-    this.openSnackbar('Recaudo aceptado correctamente');
+
+    const payload = this.getRevenuePayload();
+
+    if (!payload.vehicle_number || !payload.driver_number) {
+      this.openSnackbar('Debe seleccionar un vehículo y un conductor válidos.');
+      return;
+    }
+
+    this.isVerifying = true;
+
+    this.apiService.postData('wallet/verify-revenue', payload).subscribe({
+      next: (res: {
+        valid: boolean;
+        comments: string[];
+        valid_rent: boolean;
+        comments_rent: string[];
+      }) => {
+        this.isVerifying = false;
+
+        if (!res.valid) {
+          this.isVerified = false;
+          const errorMsg =
+            res.comments && res.comments.length > 0
+              ? res.comments.join(' ')
+              : 'La información ingresada no es válida.';
+          this.openSnackbar(errorMsg);
+          return;
+        }
+
+        if (!res.valid_rent) {
+          this.isVerified = false;
+          const confirmMsg =
+            res.comments_rent && res.comments_rent.length > 0
+              ? res.comments_rent[0]
+              : '¿Crear Cuentas de Diario al Conductor (Anticipo de Cuenta)?';
+          this.openConfirmRentReceiptDialog(confirmMsg);
+          return;
+        }
+
+        this.isVerified = true;
+        this.openSnackbar(
+          'Verificación exitosa. Puede proceder con el recaudo.',
+        );
+      },
+      error: (err) => {
+        this.isVerifying = false;
+        this.isVerified = false;
+        console.error('Error al verificar recaudo:', err);
+        const errMsg =
+          err?.error?.message ||
+          'Error al verificar la información. Intente nuevamente.';
+        this.openSnackbar(errMsg);
+      },
+    });
+  }
+
+  openConfirmRentReceiptDialog(message: string) {
+    const dialogRef = this.dialog.open(ConfirmActionDialogComponent, {
+      width: '450px',
+      maxWidth: '90vw',
+      data: {
+        documentName: 'Crear Cuenta de Diario al Conductor',
+        message: message,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (confirmed) {
+        this.createRentReceipt();
+      }
+    });
+  }
+
+  createRentReceipt() {
+    const companyCode = this.getCompany();
+    const vehicleNumber = this.getSelectedVehicleNumber();
+    const driverNumber = this.getSelectedDriverCode();
+    const userData = this.jwtService.getUserData();
+    const userId = userData?.id ? String(userData.id) : '';
+
+    const payload = {
+      company_code: String(companyCode),
+      vehicle_number: String(vehicleNumber),
+      driver_number: String(driverNumber),
+      user: userId,
+      amount: Number(this.rentPayment || 0),
+    };
+
+    this.isCreatingRentReceipt = true;
+
+    this.apiService.postData('wallet/create-rent-receipt', payload).subscribe({
+      next: (res) => {
+        this.isCreatingRentReceipt = false;
+        this.isVerified = false;
+        this.refreshWalletInfo();
+        this.openSnackbar(
+          'Cuentas de diario creadas correctamente. Haga clic en Verificar nuevamente para validar el recaudo.',
+        );
+      },
+      error: (err) => {
+        this.isCreatingRentReceipt = false;
+        console.error('Error al crear cuentas de diario:', err);
+        const errMsg =
+          err?.error?.message ||
+          'Error al crear las cuentas de diario. Intente nuevamente.';
+        this.openSnackbar(errMsg);
+      },
+    });
   }
 
   onCollect() {
@@ -481,6 +639,7 @@ export class CashRegisterViewComponent implements OnInit {
   }
 
   calculateTotal() {
+    this.isVerified = false;
     this.totalReceived =
       (this.rentPayment || 0) +
       (this.accidentsPayment || 0) +
@@ -541,18 +700,28 @@ export class CashRegisterViewComponent implements OnInit {
     const driverCode = this.getSelectedDriverCode();
 
     if (company && vehicleNumber && driverCode) {
-      this.apiService
-        .getData(
-          `wallet/vehicle-wallet-info/${company}/${vehicleNumber}/${driverCode}`,
-        )
-        .subscribe({
-          next: (wallet) => {
-            this.walletInfo = wallet;
-          },
-          error: (err) => {
-            console.error('Error al actualizar fondos y deudas:', err);
-          },
-        });
+      const walletObs = this.apiService.getData(
+        `wallet/vehicle-wallet-info/${company}/${vehicleNumber}/${driverCode}`,
+      );
+      const receiptsObs = this.apiService.getData(
+        `wallet/receipts/${company}/${vehicleNumber}/${driverCode}`,
+      );
+      const detailObs = this.apiService.getData(
+        `wallet/vehicle-driver-info/${company}/${vehicleNumber}`,
+      );
+
+      forkJoin([walletObs, receiptsObs, detailObs]).subscribe({
+        next: ([wallet, receipts, detail]) => {
+          this.walletInfo = wallet;
+          this.receiptsInfo = receipts;
+          if (this.detailInfo && detail) {
+            this.detailInfo.accounts = detail.accounts;
+          }
+        },
+        error: (err) => {
+          console.error('Error al actualizar fondos, deudas y recibos:', err);
+        },
+      });
     }
   }
 

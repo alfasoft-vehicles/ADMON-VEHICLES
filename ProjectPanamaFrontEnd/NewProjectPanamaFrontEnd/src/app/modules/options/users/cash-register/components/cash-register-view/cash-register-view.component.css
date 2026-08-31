@@ -1195,3 +1195,16 @@
   line-height: 20px !important;
   margin: 0 !important;
 }
+
+.cr-spin {
+  animation: cr-spin-keyframes 1.2s linear infinite;
+}
+
+@keyframes cr-spin-keyframes {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
