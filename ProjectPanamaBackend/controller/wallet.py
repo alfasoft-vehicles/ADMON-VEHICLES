@@ -848,7 +848,7 @@ async def collect_revenue(data: Revenue):
         ).first()
 
         if not surcharge_entry:
-          return JSONResponse(content={"message": "Surcharge with ID {surcharge.id} not found"}, status_code=404)
+          return JSONResponse(content={"message": f"Surcharge with ID {surcharge.id} not found"}, status_code=404)
 
         current_balance = surcharge_entry.SALDO or 0
         applied_payment = min(current_balance, surcharge_payment)
