@@ -499,8 +499,9 @@
                 [matTooltip]="disabledTooltip"
                 (click)="onCollect()"
               >
-                <mat-icon>payments</mat-icon>
-                <span>Recaudar</span>
+                <mat-icon *ngIf="!isCollecting">payments</mat-icon>
+                <mat-icon class="cr-spin" *ngIf="isCollecting">sync</mat-icon>
+                <span>{{ isCollecting ? "Recaudando..." : "Recaudar" }}</span>
               </button>
             </div>
           </div>

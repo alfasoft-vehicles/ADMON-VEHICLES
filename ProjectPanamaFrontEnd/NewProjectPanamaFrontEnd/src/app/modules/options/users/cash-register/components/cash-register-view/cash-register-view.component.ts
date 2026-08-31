@@ -127,6 +127,7 @@ export class CashRegisterViewComponent implements OnInit {
 
   isVerifying: boolean = false;
   isCreatingRentReceipt: boolean = false;
+  isCollecting: boolean = false;
   isVerified: boolean = false;
 
   constructor(
@@ -422,13 +423,17 @@ export class CashRegisterViewComponent implements OnInit {
       !this.paymentMethod ||
       this.isKmInvalid ||
       this.isVerifying ||
-      this.isCreatingRentReceipt
+      this.isCreatingRentReceipt ||
+      this.isCollecting
     );
   }
 
   get disabledTooltip(): string {
     if (this.isVerifying) {
       return 'Verificando recaudo...';
+    }
+    if (this.isCollecting) {
+      return 'Procesando recaudo...';
     }
     if (this.isCreatingRentReceipt) {
       return 'Creando cuentas de diario...';
@@ -632,10 +637,78 @@ export class CashRegisterViewComponent implements OnInit {
   }
 
   onCollect() {
-    if (!this.validateForm()) {
+    if (!this.validateForm() || this.isCollecting) {
       return;
     }
-    this.openSnackbar('Recaudo guardado correctamente');
+
+    const payload = this.getRevenuePayload();
+
+    if (!payload.vehicle_number || !payload.driver_number) {
+      this.openSnackbar('Debe seleccionar un vehículo y un conductor válidos.');
+      return;
+    }
+
+    this.isCollecting = true;
+
+    this.apiService.postData('wallet/collect-revenue', payload).subscribe({
+      next: (res: {
+        valid: boolean;
+        comments: string[];
+        valid_rent: boolean;
+        comments_rent: string[];
+        receipt_number?: string;
+        total_collected?: number;
+      }) => {
+        this.isCollecting = false;
+
+        if (!res.valid || !res.valid_rent) {
+          const allComments = [
+            ...(res.comments || []),
+            ...(res.comments_rent || []),
+          ];
+          const errorMsg =
+            allComments.length > 0
+              ? allComments.join(' ')
+              : 'No se pudo procesar el recaudo. Verifique los datos.';
+          this.isVerified = false;
+          this.openSnackbar(errorMsg);
+          return;
+        }
+
+        const receiptNo = res.receipt_number || '';
+        const total =
+          res.total_collected !== undefined
+            ? Number(res.total_collected).toFixed(2)
+            : this.totalReceived.toFixed(2);
+
+        this.openSnackbar(
+          `Recaudo #${receiptNo} procesado exitosamente por $${total}.`,
+        );
+
+        // Resetear inputs de pago y estado de verificación
+        this.paymentMethod = '';
+        this.rentPayment = 0;
+        this.accidentsPayment = 0;
+        this.surchargesPayment = 0;
+        this.registrationPayment = 0;
+        this.savingsPayment = 0;
+        this.surchargesItems = [];
+        this.totalReceived = 0;
+        this.isVerified = false;
+
+        // Recargar toda la información de la unidad y conductor como si se acabara de seleccionar
+        this.fetchWalletData(payload.vehicle_number, payload.driver_number);
+      },
+      error: (err) => {
+        this.isCollecting = false;
+        this.isVerified = false;
+        console.error('Error al procesar recaudo:', err);
+        const errMsg =
+          err?.error?.message ||
+          'Error al procesar el recaudo. Intente nuevamente.';
+        this.openSnackbar(errMsg);
+      },
+    });
   }
 
   calculateTotal() {
