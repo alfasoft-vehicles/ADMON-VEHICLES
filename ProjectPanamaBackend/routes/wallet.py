@@ -47,3 +47,7 @@ async def post_create_rent_receipt(receipt_data: newRentReceipt):
 @wallet_router.post("/wallet/collect-revenue/", tags=["Wallet"])
 async def post_collect_revenue(revenue_data: Revenue):
   return await collect_revenue(revenue_data)
+
+@wallet_router.get("/wallet/revenue-pdf/{company_code}/{receipt_number}/", tags=["Wallet"])
+async def get_revenue_pdf(company_code: str, receipt_number: str):
+  return await generate_revenue_pdf(company_code, receipt_number)

@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+
+<html lang="es">
+    <head>
+        <meta charset="windows-1252">
+        <style>
+            @page {
+                size: Letter;
+                margin: 0;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                font-family: Arial, sans-serif;
+                font-size: 13px;
+                font-weight: bold;
+                color: #000;
+                width: 110mm; /* Ancho aproximado del recibo. */
+                margin-left: 5mm;
+                margin-top: 5mm;
+            }
+
+            .header {
+                width: 100%;
+                text-align: left;
+                line-height: 1.5;
+            }
+
+            .logo {
+                display: block;
+                width: 80mm;
+                max-height: 18mm;
+                object-fit: contain;
+                margin-bottom: 2mm;
+            }
+
+            .company-info {
+                font-size: 13px;
+                line-height: 1.7;
+            }
+
+            .line {
+                width: 100%;
+                border-top: 1px solid #000;
+                margin: 3px 0;
+            }
+
+            .receipt-header {
+                width: 100%;
+                display: table;
+                table-layout: fixed;
+
+                line-height: 1.6;
+            }
+
+            .receipt-left {
+                display: table-cell;
+                width: 60%;
+                white-space: nowrap;
+                text-align: left;
+                vertical-align: bottom;
+            }
+
+            .receipt-right {
+                display: table-cell;
+                width: 40%;
+                white-space: normal;
+                text-align: right;
+                vertical-align: bottom;
+            }
+
+            .receipt-number {
+                font-size: 14px;
+            }
+
+            .receipt-date-value {
+                font-size: 13px;
+            }
+
+            .row {
+                width: 100%;
+                display: table;
+                table-layout: fixed;
+                line-height: 1.9;
+            }
+
+            .cell {
+                display: table-cell;
+                vertical-align: top;
+            }
+
+            .label {
+                width: 26mm;
+                white-space: nowrap;
+            }
+
+            .value {
+                padding-left: 2px;
+                word-wrap: break-word;
+            }
+
+            .two-columns {
+                width: 100%;
+                display: table;
+                table-layout: fixed;
+                line-height: 1.9;
+            }
+
+            .column-left {
+                display: table-cell;
+                width: 50%;
+                vertical-align: top;
+            }
+
+            .column-right {
+                display: table-cell;
+                width: 50%;
+                vertical-align: top;
+            }
+
+            .field-label {
+                display: inline-block;
+                width: 26mm;
+            }
+
+            .field-underline {
+                text-decoration: underline;
+            }
+
+            .payment-row {
+                width: 100%;
+                display: table;
+                table-layout: fixed;
+                margin-top: 3px;
+            }
+
+            .payment-method {
+                display: table-cell;
+                width: 50%;
+                vertical-align: middle;
+            }
+
+            .paid {
+                display: table-cell;
+                width: 50%;
+                vertical-align: middle;
+                border: 1px solid #000;
+                padding: 6px 4px;
+                font-size: 19px;
+                white-space: nowrap;
+                text-align: center;
+            }
+
+            .section-title {
+                margin-top: 5px;
+                margin-bottom: 2px;
+                font-size: 13px;
+                line-height: 1.5;
+                text-decoration: underline;
+            }
+
+            .concept-header {
+                width: 100%;
+                display: table;
+                table-layout: fixed;
+                border-bottom: 1px solid #000;
+                font-size: 10px;
+                line-height: 1.8;
+            }
+
+            .concept-header > div {
+                display: table-cell;
+                vertical-align: bottom;
+            }
+
+            .concept-name-header {
+                width: 28.5%;
+                text-align: left;
+            }
+
+            .concept-number-header {
+                width: 15.5%;
+                text-align: right;
+                padding-right: 2px;
+            }
+
+            .concept-pago-header {
+                width: 14.5%;
+                text-align: right;
+                padding-left: 2px;
+                border-left: 1px solid #000;
+            }
+
+            .concept-dias-header {
+                width: 10.5%;
+                text-align: left;
+                padding-left: 2px;
+            }
+
+            .concept {
+                width: 100%;
+                display: table;
+                table-layout: fixed;
+                font-size: 10px;
+                line-height: 2.1;
+            }
+
+            .concept > div {
+                display: table-cell;
+                vertical-align: top;
+            }
+
+            .concept-name {
+                width: 38%;
+                text-align: left;
+                white-space: nowrap;
+            }
+
+            .concept-number {
+                width: 20.666%;
+                text-align: right;
+                padding-right: 2px;
+            }
+
+            .debts-container {
+                width: 100%;
+                display: table;
+                table-layout: fixed;
+            }
+
+            .debts-column {
+                display: table-cell;
+                width: 75%;
+                vertical-align: top;
+            }
+
+            .days-column {
+                display: table-cell;
+                width: 25%;
+                vertical-align: top;
+
+                border-left: 1px solid #000;
+
+                padding-left: 2px;
+            }
+
+            .rent-day {
+                width: 100%;
+                display: table;
+                font-family: "Courier New", monospace;
+                font-size: 10px;
+                line-height: 2.1;
+            }
+
+            .rent-date {
+                display: table-cell;
+                width: 58%;
+                text-align: left;
+                white-space: nowrap;
+            }
+
+            .rent-amount {
+                display: table-cell;
+                width: 42%;
+                text-align: right;
+                white-space: nowrap;
+            }
+
+            .expediente {
+                width: 75%;
+                margin-top: 6px;
+                text-align: center;
+                font-size: 18px;
+                color: #888;
+            }
+
+            .signature-area {
+                width: 100%;
+                margin-top: 38mm;
+            }
+
+            .signature-columns {
+                width: 100%;
+                display: table;
+                table-layout: fixed;
+            }
+
+            .signature-left {
+                display: table-cell;
+                width: 50%;
+                text-align: center;
+                vertical-align: top;
+            }
+
+            .signature-right {
+                display: table-cell;
+                width: 50%;
+                text-align: center;
+                vertical-align: top;
+            }
+
+            .signature-line {
+                border-top: 1px solid #000;
+                margin-left: 2mm;
+                margin-right: 2mm;
+                margin-bottom: 2px;
+            }
+
+            .signature-label {
+                font-size: 9px;
+                text-decoration: underline;
+            }
+
+            .user-name {
+                font-size: 11px;
+                text-decoration: underline;
+                margin-bottom: 2px;
+            }
+
+            .user-label {
+                font-size: 11px;
+            }
+
+
+            .print-info {
+                width: 100%;
+                display: table;
+                table-layout: fixed;
+                margin-top: 8px;
+                font-family: "Courier New", monospace;
+                font-size: 10px;
+            }
+
+            .print-message {
+                display: table-cell;
+                width: 55%;
+                text-align: left;
+                vertical-align: top;
+            }
+
+            .print-date {
+                display: table-cell;
+                width: 45%;
+                text-align: right;
+                vertical-align: top;
+            }
+
+            .installment {
+                width: 100%;
+                border-top: 1px solid #000;
+                margin-top: 6px;
+                padding-top: 5px;
+                text-align: center;
+                font-family: "Courier New", monospace;
+                font-size: 10px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="header">
+
+            {% if data.company.LOGO %}
+                <img src="{{ data.company.LOGO }}" class="logo" alt="">
+            {% endif %}
+
+            {% if data.company.CIUDAD %}
+                <div class="company-info">
+                    {{ data.company.CIUDAD }}
+                </div>
+            {% endif %}
+
+            {% if data.company.DIRECCION %}
+                <div class="company-info">
+                    {{ data.company.DIRECCION }}
+                </div>
+            {% endif %}
+
+            {% if data.company.TELEFONO %}
+                <div class="company-info">
+                    Tel. {{ data.company.TELEFONO }}
+                </div>
+            {% endif %}
+
+            {% if data.company.CORREO %}
+                <div class="company-info">
+                    E-Mail: {{ data.company.CORREO }}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="line"></div>
+
+        <div class="receipt-header">
+            <div class="receipt-left">
+                RECIBO N&#186;:
+                <span class="receipt-number">{{ data.receipt.number }}</span>
+            </div>
+
+            <div class="receipt-right">
+                Fecha:
+                <span class="receipt-date-value">
+                    {{ data.receipt.date }}
+                </span>
+            </div>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="row">
+            <div class="cell label">
+                Empresa:
+            </div>
+
+            <div class="cell value">
+                {{ data.company.NOMBRE }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="cell label">
+                Nombre:
+            </div>
+
+            <div class="cell value">
+                {{ data.driver.NOMBRE }}
+            </div>
+        </div>
+
+
+        <div class="two-columns">
+            <div class="column-left">
+                <span class="field-label">Operador:</span>
+                <span class="field-underline">{{ data.driver.CODIGO }}</span>
+            </div>
+
+            <div class="column-right">
+                <span class="field-label">Cedula N&#186;:</span>
+                {{ data.driver.CEDULA }}
+            </div>
+        </div>
+
+        <div class="two-columns">
+            <div class="column-left">
+                <span class="field-label">Klm.Antes:</span>
+                {{ data.receipt.old_mileage }}
+            </div>
+
+            <div class="column-right">
+                <span class="field-label">Klm. Actual:</span>
+                {{ data.receipt.new_mileage }}
+            </div>
+        </div>
+            
+        <div class="two-columns">
+            <div class="column-left">
+                <span class="field-label">Placa N&#186;:</span>
+                {{ data.vehicle.PLACA }}
+            </div>
+
+            <div class="column-right">
+                <span class="field-label">Unidad N&#186;:</span>
+                <span class="field-underline">{{ data.vehicle.NUMERO }}</span>
+            </div>
+        </div>
+
+        <div class="payment-row">
+            <div class="payment-method">
+                Forma Pago:
+                {{ data.receipt.payment_method }}
+            </div>
+
+            <div class="paid">
+                Pagado:
+                {{ "%.2f"|format(data.total_paid) }}
+            </div>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="concept-header">
+            <div class="concept-name-header">
+                CONCEPTO
+            </div>
+
+            <div class="concept-number-header">
+                Anterior
+            </div>
+
+            <div class="concept-number-header">
+                Valor
+            </div>
+
+            <div class="concept-number-header">
+                Saldo
+            </div>
+
+            <div class="concept-pago-header">
+                PAGO
+            </div>
+
+            <div class="concept-dias-header">
+                DIAS
+            </div>
+        </div>
+
+        <div class="debts-container">
+            <div class="debts-column">
+                <div class="section-title">
+                    DEUDAS
+                </div>
+
+                {% if data.concepts["10"]["paid"] > 0 %}
+                    <div class="concept">
+                        <div class="concept-name">
+                            Rta.Diaria:
+                        </div>
+
+                        <div class="concept-number">
+                            {{ "%.2f"|format(
+                                data.concepts["10"]["previous"]
+                            ) }}
+                        </div>
+
+                        <div class="concept-number">
+                            {{ "%.2f"|format(
+                                data.concepts["10"]["paid"]
+                            ) }}
+                        </div>
+
+                        <div class="concept-number">
+                            {{ "%.2f"|format(
+                                data.concepts["10"]["balance"]
+                            ) }}
+                        </div>
+                    </div>
+                {% endif %}
+
+
+                {% if data.concepts["11"]["paid"] > 0 %}
+                    <div class="concept">
+                        <div class="concept-name">
+                            Siniestros:
+                        </div>
+
+                        <div class="concept-number">
+                            {{ "%.2f"|format(
+                                data.concepts["11"]["previous"]
+                            ) }}
+                        </div>
+
+                        <div class="concept-number">
+                            {{ "%.2f"|format(
+                                data.concepts["11"]["paid"]
+                            ) }}
+                        </div>
+                        <div class="concept-number">
+                            {{ "%.2f"|format(
+                                data.concepts["11"]["balance"]
+                            ) }}
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if data.concepts["12"]["paid"] > 0 %}
+                    <div class="concept">
+                        <div class="concept-name">
+                            Recargos:
+                        </div>
+
+                        <div class="concept-number">
+                            {{ "%.2f"|format(
+                                data.concepts["12"]["previous"]
+                            ) }}
+                        </div>
+
+                        <div class="concept-number">
+                            {{ "%.2f"|format(
+                                data.concepts["12"]["paid"]
+                            ) }}
+                        </div>
+
+                        <div class="concept-number">
+                            {{ "%.2f"|format(
+                                data.concepts["12"]["balance"]
+                            ) }}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="section-title">
+                    FONDOS
+                </div>
+
+                <div class="concept">
+                    <div class="concept-name">
+                        Inscripcion:
+                    </div>
+
+                    <div class="concept-number">
+                        {% if data.concepts["01"]["previous"] %}
+                            {{ "%.2f"|format(data.concepts["01"]["previous"]) }}
+                        {% endif %}
+                    </div>
+
+                    <div class="concept-number">
+                        {% if data.concepts["01"]["paid"] %}
+                            {{ "%.2f"|format(data.concepts["01"]["paid"]) }}
+                        {% endif %}
+                    </div>
+
+                    <div class="concept-number">
+                        {{ "%.2f"|format(
+                            data.concepts["01"]["balance"]
+                        ) }}
+                    </div>
+                </div>
+
+                <div class="concept">
+                    <div class="concept-name">
+                        Ahorros:
+                    </div>
+
+                    <div class="concept-number">
+                        {% if data.concepts["02"]["previous"] %}
+                            {{ "%.2f"|format(data.concepts["02"]["previous"]) }}
+                        {% endif %}
+                    </div>
+
+                    <div class="concept-number">
+                        {% if data.concepts["02"]["paid"] %}
+                            {{ "%.2f"|format(data.concepts["02"]["paid"]) }}
+                        {% endif %}
+                    </div>
+
+                    <div class="concept-number">
+                        {{ "%.2f"|format(
+                            data.concepts["02"]["balance"]
+                        ) }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="days-column">
+                {% for rent in data.rent_details %}
+                    <div class="rent-day">
+                        <div class="rent-date">
+                            {{ rent.date }}
+                        </div>
+
+                        <div class="rent-amount">
+                            {{ "%.2f"|format(
+                                rent.amount
+                            ) }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="line"></div>
+
+        {% if data.file %}
+            <div class="expediente">
+                Expediente:
+                {{ data.file }}
+            </div>
+        {% endif %}
+
+        <div class="signature-area">
+            <div class="signature-columns">
+                <div class="signature-left">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">
+                        Firma y Cedula
+                    </div>
+                </div>
+
+                <div class="signature-right">
+                    <div class="signature-line"></div>
+                    <div class="user-name">
+                        {{ data.user }}
+                    </div>
+                    <div class="user-label">
+                        Usuario:
+                    </div>
+                </div>
+            </div>
+
+            <div class="print-info">
+                <div class="print-message">
+                    &iexcl;Gracias por Mantener<br>
+                    su Cuenta al Dia!
+                </div>
+
+                <div class="print-date">
+                    Impreso: {{ data.print_date }}
+                    <br>
+                    {{ data.print_hour }}
+                </div>
+            </div>
+
+            {% if data.quota %}
+                <div class="installment">
+                    Cuota N&#186;:
+                    {{ data.quota }}
+                    {% if data.remaining_quotas %}
+                        , le Faltan
+                        {{ data.remaining_quotas }}
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </body>
+</html>

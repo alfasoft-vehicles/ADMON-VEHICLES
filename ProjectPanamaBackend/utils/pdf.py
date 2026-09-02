@@ -182,3 +182,30 @@ def generate_contract_pdf(current_docx_path, temp_docx_path, data, final_signatu
     os.remove(temp_docx_path)
 
     return temp_pdf_path
+
+def html2pdf_receipt(html_path, pdf_path):
+    """
+    Genera el PDF del recibo utilizando wkhtmltopdf.
+
+    Esta funcion es exclusiva para los recibos de recaudo.
+    No utiliza encabezado, pie de pagina, titulo ni numeracion.
+    """
+
+    options = {
+        'page-size': 'Letter',
+        'margin-top': '4mm',
+        'margin-right': '4mm',
+        'margin-bottom': '4mm',
+        'margin-left': '4mm',
+        'encoding': 'UTF-8',
+        'no-outline': None,
+        'enable-local-file-access': None,
+    }
+
+    if isinstance(pdf_path, BytesIO):
+        with open(html_path) as f:
+            pdf_bytes = pdfkit.from_file(f, False, options=options)
+        pdf_path.write(pdf_bytes)
+    elif isinstance(pdf_path, (str, os.PathLike)):
+        with open(html_path) as f:
+            pdfkit.from_file(f, pdf_path, options=options)
