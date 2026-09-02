@@ -367,6 +367,7 @@
                 color="primary"
                 class="cr-radio-group"
                 [(ngModel)]="paymentMethod"
+                (ngModelChange)="onPaymentMethodChange()"
               >
                 <mat-radio-button value="efectivo">Efectivo</mat-radio-button>
                 <mat-radio-button value="ach">ACH (Trans)</mat-radio-button>
@@ -410,15 +411,31 @@
                 (ngModelChange)="calculateTotal()"
               />
             </mat-form-field>
-            <mat-form-field class="cr-field-input cr-payment-input">
+            <mat-form-field
+              class="cr-field-input cr-payment-input cr-surcharges-field"
+            >
               <mat-label>Recargos</mat-label>
               <span matPrefix class="cr-currency-prefix">$</span>
               <input
                 matInput
                 type="number"
                 [(ngModel)]="surchargesPayment"
-                (ngModelChange)="calculateTotal()"
+                readonly
+                class="cr-cursor-pointer"
+                (click)="openPaySurchargesDialog()"
+                matTooltip="Pagar recargos"
               />
+              <button
+                type="button"
+                matSuffix
+                mat-icon-button
+                color="primary"
+                class="cr-btn-add-surcharge"
+                matTooltip="Añadir recargo"
+                (click)="$event.stopPropagation(); openAddSurchargesDialog()"
+              >
+                <mat-icon>add</mat-icon>
+              </button>
             </mat-form-field>
             <mat-form-field class="cr-field-input cr-payment-input">
               <mat-label>Inscripción</mat-label>
@@ -459,23 +476,32 @@
               >
             </div>
             <div class="cr-action-buttons-inline">
+              <!-- Botón Verificar (Visible cuando NO está verificado) -->
               <button
+                *ngIf="!isVerified"
                 mat-flat-button
-                class="cr-button cr-btn-pastel-green"
+                class="cr-button cr-btn-pastel-blue"
                 [disabled]="isFormDisabled"
                 [matTooltip]="disabledTooltip"
                 (click)="onAccept()"
               >
-                <mat-icon>check_circle</mat-icon> Aceptar
+                <mat-icon *ngIf="!isVerifying">fact_check</mat-icon>
+                <mat-icon class="cr-spin" *ngIf="isVerifying">sync</mat-icon>
+                <span>{{ isVerifying ? "Verificando..." : "Verificar" }}</span>
               </button>
+
+              <!-- Botón Recaudar (Visible únicamente tras verificar con éxito) -->
               <button
+                *ngIf="isVerified"
                 mat-flat-button
-                class="cr-button cr-btn-pastel-orange"
+                class="cr-button cr-btn-pastel-green"
                 [disabled]="isFormDisabled"
                 [matTooltip]="disabledTooltip"
                 (click)="onCollect()"
               >
-                <mat-icon>save</mat-icon> Recaudar
+                <mat-icon *ngIf="!isCollecting">payments</mat-icon>
+                <mat-icon class="cr-spin" *ngIf="isCollecting">sync</mat-icon>
+                <span>{{ isCollecting ? "Recaudando..." : "Recaudar" }}</span>
               </button>
             </div>
           </div>
@@ -542,24 +568,34 @@
         <div class="cr-p-4">
           <div class="cr-consult-grid-main">
             <button class="cr-consult-btn-main" matRipple>
-              <mat-icon class="cr-text-orange-500">cloud_upload</mat-icon>
-              <span>Carga Masiva</span>
+              <div class="cr-consult-icon-box cr-bg-orange-soft">
+                <mat-icon class="cr-text-orange-600">cloud_upload</mat-icon>
+              </div>
+              <span class="cr-consult-btn-label">Carga Masiva</span>
             </button>
             <button class="cr-consult-btn-main" matRipple>
-              <mat-icon class="cr-text-green-500">account_balance</mat-icon>
-              <span>Cuadre Caja</span>
+              <div class="cr-consult-icon-box cr-bg-green-soft">
+                <mat-icon class="cr-text-green-600">account_balance</mat-icon>
+              </div>
+              <span class="cr-consult-btn-label">Cuadre Caja</span>
             </button>
             <button class="cr-consult-btn-main" matRipple>
-              <mat-icon class="cr-text-red-500">assignment_turned_in</mat-icon>
-              <span>Cierre Caja</span>
+              <div class="cr-consult-icon-box cr-bg-red-soft">
+                <mat-icon class="cr-text-red-600"
+                  >assignment_turned_in</mat-icon
+                >
+              </div>
+              <span class="cr-consult-btn-label">Cierre Caja</span>
             </button>
             <button
               class="cr-consult-btn-main"
               matRipple
               (click)="openQueriesDialog()"
             >
-              <mat-icon class="cr-text-indigo-600">apps</mat-icon>
-              <span>Ver más</span>
+              <div class="cr-consult-icon-box cr-bg-indigo-soft">
+                <mat-icon class="cr-text-indigo-600">apps</mat-icon>
+              </div>
+              <span class="cr-consult-btn-label">Ver más</span>
             </button>
           </div>
         </div>

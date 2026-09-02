@@ -29,6 +29,7 @@ def create_cash_record(db, data, vehicle, driver, old_mileage, total, entry, rec
     CEDULA=driver.CEDULA,
     NIT=driver.NIT,
     PROPI_IDEN=vehicle.PROPI_IDEN,
+    CTA_GASTO=getattr(entry, 'TIPRECARGO', '') or '',
     ZONA=vehicle.PROPI_IDEN,
     FORMAPAGO=data.payment_method,
     NOMFORMAPA=payment_methods_map.get(data.payment_method, ""),

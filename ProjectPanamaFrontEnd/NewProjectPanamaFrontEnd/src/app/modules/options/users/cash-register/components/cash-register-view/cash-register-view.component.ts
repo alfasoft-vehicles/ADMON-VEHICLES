@@ -8,6 +8,13 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { QueriesDialogComponent } from '../../dialogs/queries-dialog/queries-dialog.component';
+import { AddSurchargesDialogComponent } from '../../dialogs/add-surcharges-dialog/add-surcharges-dialog.component';
+import {
+  PaySurchargesDialogComponent,
+  PaySurchargesDialogResult,
+  SurchargePayItem,
+} from '../../dialogs/pay-surcharges-dialog/pay-surcharges-dialog.component';
+import { ConfirmActionDialogComponent } from 'src/app/modules/shared/components/confirm-action-dialog/confirm-action-dialog.component';
 
 export interface drivers {
   codigo_conductor: string;
@@ -116,6 +123,12 @@ export class CashRegisterViewComponent implements OnInit {
   isKmInvalid: boolean = false;
 
   messages: string[] = [];
+  surchargesItems: SurchargePayItem[] = [];
+
+  isVerifying: boolean = false;
+  isCreatingRentReceipt: boolean = false;
+  isCollecting: boolean = false;
+  isVerified: boolean = false;
 
   constructor(
     private fb: FormBuilder,
@@ -369,16 +382,17 @@ export class CashRegisterViewComponent implements OnInit {
       driver: '',
       vehicle: '',
     });
-
     this.paymentMethod = '';
     this.rentPayment = 0;
     this.accidentsPayment = 0;
     this.surchargesPayment = 0;
     this.registrationPayment = 0;
     this.savingsPayment = 0;
+    this.surchargesItems = [];
     this.baseMileage = 0;
     this.currentKm = 0;
     this.isKmInvalid = false;
+    this.isVerified = false;
     this.calculateTotal();
 
     if (triggerToOpen) {
@@ -388,13 +402,41 @@ export class CashRegisterViewComponent implements OnInit {
     }
   }
 
+  getSelectedVehicleNumber(): string {
+    const vehicle = this.searchForm.get('vehicle')?.value;
+    if (vehicle && typeof vehicle === 'object') {
+      return vehicle.unidad;
+    }
+    return this.detailInfo?.vehicle || '';
+  }
+
+  getSelectedDriverCode(): string {
+    const driver = this.searchForm.get('driver')?.value;
+    if (driver && typeof driver === 'object') {
+      return driver.codigo_conductor;
+    }
+    return this.detailInfo?.driver_code || '';
+  }
+
   get isFormDisabled(): boolean {
-    return !this.paymentMethod || this.isKmInvalid;
+    return (
+      !this.paymentMethod ||
+      this.isKmInvalid ||
+      this.isVerifying ||
+      this.isCreatingRentReceipt ||
+      this.isCollecting
+    );
   }
 
   get disabledTooltip(): string {
-    if (!this.paymentMethod && this.isKmInvalid) {
-      return 'Acción deshabilitada: Seleccione una forma de pago e ingrese un kilometraje válido';
+    if (this.isVerifying) {
+      return 'Verificando recaudo...';
+    }
+    if (this.isCollecting) {
+      return 'Procesando recaudo...';
+    }
+    if (this.isCreatingRentReceipt) {
+      return 'Creando cuentas de diario...';
     }
     if (!this.paymentMethod) {
       return 'Acción deshabilitada: Debe seleccionar una forma de pago';
@@ -405,7 +447,12 @@ export class CashRegisterViewComponent implements OnInit {
     return '';
   }
 
+  onPaymentMethodChange() {
+    this.isVerified = false;
+  }
+
   onKmChange(value: any) {
+    this.isVerified = false;
     const numValue =
       value !== null && value !== undefined && value !== ''
         ? Number(value)
@@ -446,21 +493,226 @@ export class CashRegisterViewComponent implements OnInit {
     return this.validateKm();
   }
 
+  getRevenuePayload() {
+    const companyCode = this.getCompany();
+    const vehicleNumber = this.getSelectedVehicleNumber();
+    const driverNumber = this.getSelectedDriverCode();
+    const userData = this.jwtService.getUserData();
+    const userId = userData?.id ? String(userData.id) : '';
+
+    const paidSurcharges = this.surchargesItems
+      .filter((item) => (item.amountToPay || 0) > 0)
+      .map((item) => ({
+        id: String(item.code),
+        value: String(item.amountToPay),
+      }));
+
+    return {
+      company_code: String(companyCode),
+      vehicle_number: String(vehicleNumber),
+      driver_number: String(driverNumber),
+      payment_method: String(this.paymentMethod),
+      mileage: parseInt(String(this.currentKm || 0), 10),
+      daily_rent: Number(this.rentPayment || 0),
+      accidents: Number(this.accidentsPayment || 0),
+      surcharges_list: paidSurcharges,
+      registration: Number(this.registrationPayment || 0),
+      savings: Number(this.savingsPayment || 0),
+      user: userId,
+    };
+  }
+
   onAccept() {
-    if (!this.validateForm()) {
+    if (!this.validateForm() || this.isVerifying) {
       return;
     }
-    this.openSnackbar('Recaudo aceptado correctamente');
+
+    const payload = this.getRevenuePayload();
+
+    if (!payload.vehicle_number || !payload.driver_number) {
+      this.openSnackbar('Debe seleccionar un vehículo y un conductor válidos.');
+      return;
+    }
+
+    this.isVerifying = true;
+
+    this.apiService.postData('wallet/verify-revenue', payload).subscribe({
+      next: (res: {
+        valid: boolean;
+        comments: string[];
+        valid_rent: boolean;
+        comments_rent: string[];
+      }) => {
+        this.isVerifying = false;
+
+        if (!res.valid) {
+          this.isVerified = false;
+          const errorMsg =
+            res.comments && res.comments.length > 0
+              ? res.comments.join(' ')
+              : 'La información ingresada no es válida.';
+          this.openSnackbar(errorMsg);
+          return;
+        }
+
+        if (!res.valid_rent) {
+          this.isVerified = false;
+          const confirmMsg =
+            res.comments_rent && res.comments_rent.length > 0
+              ? res.comments_rent[0]
+              : '¿Crear Cuentas de Diario al Conductor (Anticipo de Cuenta)?';
+          this.openConfirmRentReceiptDialog(confirmMsg);
+          return;
+        }
+
+        this.isVerified = true;
+        this.openSnackbar(
+          'Verificación exitosa. Puede proceder con el recaudo.',
+        );
+      },
+      error: (err) => {
+        this.isVerifying = false;
+        this.isVerified = false;
+        console.error('Error al verificar recaudo:', err);
+        const errMsg =
+          err?.error?.message ||
+          'Error al verificar la información. Intente nuevamente.';
+        this.openSnackbar(errMsg);
+      },
+    });
+  }
+
+  openConfirmRentReceiptDialog(message: string) {
+    const dialogRef = this.dialog.open(ConfirmActionDialogComponent, {
+      width: '450px',
+      maxWidth: '90vw',
+      data: {
+        documentName: 'Crear Cuenta de Diario al Conductor',
+        message: message,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (confirmed) {
+        this.createRentReceipt();
+      }
+    });
+  }
+
+  createRentReceipt() {
+    const companyCode = this.getCompany();
+    const vehicleNumber = this.getSelectedVehicleNumber();
+    const driverNumber = this.getSelectedDriverCode();
+    const userData = this.jwtService.getUserData();
+    const userId = userData?.id ? String(userData.id) : '';
+
+    const payload = {
+      company_code: String(companyCode),
+      vehicle_number: String(vehicleNumber),
+      driver_number: String(driverNumber),
+      user: userId,
+      amount: Number(this.rentPayment || 0),
+    };
+
+    this.isCreatingRentReceipt = true;
+
+    this.apiService.postData('wallet/create-rent-receipt', payload).subscribe({
+      next: (res) => {
+        this.isCreatingRentReceipt = false;
+        this.isVerified = false;
+        this.refreshWalletInfo();
+        this.openSnackbar(
+          'Cuentas de diario creadas correctamente. Haga clic en Verificar nuevamente para validar el recaudo.',
+        );
+      },
+      error: (err) => {
+        this.isCreatingRentReceipt = false;
+        console.error('Error al crear cuentas de diario:', err);
+        const errMsg =
+          err?.error?.message ||
+          'Error al crear las cuentas de diario. Intente nuevamente.';
+        this.openSnackbar(errMsg);
+      },
+    });
   }
 
   onCollect() {
-    if (!this.validateForm()) {
+    if (!this.validateForm() || this.isCollecting) {
       return;
     }
-    this.openSnackbar('Recaudo guardado correctamente');
+
+    const payload = this.getRevenuePayload();
+
+    if (!payload.vehicle_number || !payload.driver_number) {
+      this.openSnackbar('Debe seleccionar un vehículo y un conductor válidos.');
+      return;
+    }
+
+    this.isCollecting = true;
+
+    this.apiService.postData('wallet/collect-revenue', payload).subscribe({
+      next: (res: {
+        valid: boolean;
+        comments: string[];
+        valid_rent: boolean;
+        comments_rent: string[];
+        receipt_number?: string;
+        total_collected?: number;
+      }) => {
+        this.isCollecting = false;
+
+        if (!res.valid || !res.valid_rent) {
+          const allComments = [
+            ...(res.comments || []),
+            ...(res.comments_rent || []),
+          ];
+          const errorMsg =
+            allComments.length > 0
+              ? allComments.join(' ')
+              : 'No se pudo procesar el recaudo. Verifique los datos.';
+          this.isVerified = false;
+          this.openSnackbar(errorMsg);
+          return;
+        }
+
+        const receiptNo = res.receipt_number || '';
+        const total =
+          res.total_collected !== undefined
+            ? Number(res.total_collected).toFixed(2)
+            : this.totalReceived.toFixed(2);
+
+        this.openSnackbar(
+          `Recaudo #${receiptNo} procesado exitosamente por $${total}.`,
+        );
+
+        // Resetear inputs de pago y estado de verificación
+        this.paymentMethod = '';
+        this.rentPayment = 0;
+        this.accidentsPayment = 0;
+        this.surchargesPayment = 0;
+        this.registrationPayment = 0;
+        this.savingsPayment = 0;
+        this.surchargesItems = [];
+        this.totalReceived = 0;
+        this.isVerified = false;
+
+        // Recargar toda la información de la unidad y conductor como si se acabara de seleccionar
+        this.fetchWalletData(payload.vehicle_number, payload.driver_number);
+      },
+      error: (err) => {
+        this.isCollecting = false;
+        this.isVerified = false;
+        console.error('Error al procesar recaudo:', err);
+        const errMsg =
+          err?.error?.message ||
+          'Error al procesar el recaudo. Intente nuevamente.';
+        this.openSnackbar(errMsg);
+      },
+    });
   }
 
   calculateTotal() {
+    this.isVerified = false;
     this.totalReceived =
       (this.rentPayment || 0) +
       (this.accidentsPayment || 0) +
@@ -474,5 +726,110 @@ export class CashRegisterViewComponent implements OnInit {
       width: '600px',
       maxWidth: '90vw',
     });
+  }
+
+  openAddSurchargesDialog() {
+    const companyCode = this.getCompany();
+    const vehicleNumber = this.getSelectedVehicleNumber();
+    const driverCode = this.getSelectedDriverCode();
+
+    const dialogRef = this.dialog.open(AddSurchargesDialogComponent, {
+      width: '450px',
+      maxWidth: '90vw',
+      data: {
+        companyCode,
+        vehicleNumber,
+        driverNumber: driverCode,
+      },
+    });
+
+    dialogRef
+      .afterClosed()
+      .subscribe(
+        (result: { value: number; code: string; name: string } | null) => {
+          if (result && result.value > 0) {
+            // Actualizar fondos y deudas del componente padre consultando el backend
+            this.refreshWalletInfo();
+
+            // Si ya se tenían recargos cargados, sincronizar el nuevo saldo
+            const existingItem = this.surchargesItems.find(
+              (item) => String(item.code) === String(result.code),
+            );
+            if (existingItem) {
+              existingItem.balance = (existingItem.balance || 0) + result.value;
+            }
+
+            this.openSnackbar(
+              `Recargo de $${result.value.toFixed(2)} (${result.name}) añadido correctamente.`,
+            );
+          }
+        },
+      );
+  }
+
+  refreshWalletInfo() {
+    const company = this.getCompany();
+    const vehicleNumber = this.getSelectedVehicleNumber();
+    const driverCode = this.getSelectedDriverCode();
+
+    if (company && vehicleNumber && driverCode) {
+      const walletObs = this.apiService.getData(
+        `wallet/vehicle-wallet-info/${company}/${vehicleNumber}/${driverCode}`,
+      );
+      const receiptsObs = this.apiService.getData(
+        `wallet/receipts/${company}/${vehicleNumber}/${driverCode}`,
+      );
+      const detailObs = this.apiService.getData(
+        `wallet/vehicle-driver-info/${company}/${vehicleNumber}`,
+      );
+
+      forkJoin([walletObs, receiptsObs, detailObs]).subscribe({
+        next: ([wallet, receipts, detail]) => {
+          this.walletInfo = wallet;
+          this.receiptsInfo = receipts;
+          if (this.detailInfo && detail) {
+            this.detailInfo.accounts = detail.accounts;
+          }
+        },
+        error: (err) => {
+          console.error('Error al actualizar fondos, deudas y recibos:', err);
+        },
+      });
+    }
+  }
+
+  openPaySurchargesDialog() {
+    const companyCode = this.getCompany();
+    const vehicleNumber = this.getSelectedVehicleNumber();
+    const driverCode = this.getSelectedDriverCode();
+
+    const dialogRef = this.dialog.open(PaySurchargesDialogComponent, {
+      width: '650px',
+      maxWidth: '95vw',
+      data: {
+        companyCode,
+        vehicleNumber,
+        driverNumber: driverCode,
+        currentSurchargesPayment: this.surchargesPayment,
+        savedItems: this.surchargesItems,
+      },
+    });
+
+    dialogRef
+      .afterClosed()
+      .subscribe((result: PaySurchargesDialogResult | null) => {
+        if (result && result.totalPayment !== undefined) {
+          this.surchargesPayment = result.totalPayment;
+          this.surchargesItems = result.allItems || result.items || [];
+          this.calculateTotal();
+          if (result.totalPayment > 0) {
+            this.openSnackbar(
+              `Recargos aplicados al recaudo: $${result.totalPayment.toFixed(2)}`,
+            );
+          } else {
+            this.openSnackbar('Monto de recargos establecido en $0.00');
+          }
+        }
+      });
   }
 }

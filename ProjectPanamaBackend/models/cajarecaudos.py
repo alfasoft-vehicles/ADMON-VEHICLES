@@ -4,7 +4,7 @@ from config.dbconnection import Base
 class CajaRecaudos(Base):
     __tablename__ = 'CAJARECAUDOS'
 
-    EMPRESA = Column(CHAR(2)) 
+    EMPRESA = Column(CHAR(2), primary_key=True) 
     RECIBO = Column(CHAR(8), primary_key=True)
     FEC_RECIBO = Column(Date)
     HOR_RECIBO = Column(CHAR(8))
@@ -18,7 +18,7 @@ class CajaRecaudos(Base):
     CEDULA = Column(CHAR(12))
     NIT = Column(CHAR(12))
     PROPI_IDEN = Column(CHAR(12))
-    CTA_GASTO = Column(CHAR(10))
+    CTA_GASTO = Column(CHAR(10), default='', primary_key=True)
     ZONA = Column(CHAR(2))
     CLASIFICAC = Column(CHAR(1))
     FORMAPAGO = Column(CHAR(2))
@@ -49,8 +49,8 @@ class CajaRecaudos(Base):
     RTE_FTE = Column(DECIMAL(12, 2))
     RTE_ICA = Column(DECIMAL(12, 2))
     RTE_IVA = Column(DECIMAL(12, 2))
-    TIPO = Column(CHAR(2))
-    FACTURA = Column(CHAR(12))
+    TIPO = Column(CHAR(2), primary_key=True)
+    FACTURA = Column(CHAR(12), primary_key=True)
     FEC_FACTU = Column(CHAR(8))
     CRUCE_ANTI = Column(CHAR(1))
     FON_INSCRI = Column(DECIMAL(12, 2))
