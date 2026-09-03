@@ -698,6 +698,11 @@ export class CashRegisterViewComponent implements OnInit {
 
         // Recargar toda la información de la unidad y conductor como si se acabara de seleccionar
         this.fetchWalletData(payload.vehicle_number, payload.driver_number);
+
+        // Generar reporte PDF del recaudo
+        if (receiptNo) {
+          this.getPdfData(receiptNo);
+        }
       },
       error: (err) => {
         this.isCollecting = false;
@@ -709,6 +714,20 @@ export class CashRegisterViewComponent implements OnInit {
         this.openSnackbar(errMsg);
       },
     });
+  }
+
+  getPdfData(receiptNumber: string) {
+    if (!receiptNumber) {
+      return;
+    }
+    const company = this.getCompany();
+    const endpoint = `wallet/revenue-pdf/${company}/${receiptNumber}`;
+
+    if (endpoint) {
+      localStorage.removeItem('pdfData');
+      localStorage.setItem('pdfEndpoint', endpoint);
+      window.open(`/pdf`, '_blank');
+    }
   }
 
   calculateTotal() {

@@ -764,7 +764,7 @@ async def collect_revenue(data: Revenue):
     last_record = db.query(CajaRecaudos).filter(CajaRecaudos.EMPRESA == data.company_code).order_by(CajaRecaudos.RECIBO.desc()).first()
     new_record = str(int(last_record.RECIBO) + 1 if last_record else 1).zfill(8)
 
-    total_collected = 0
+    total_collected = Decimal("0")
 
     try:
       rent_entries = db.query(Cartera).filter(
@@ -778,13 +778,13 @@ async def collect_revenue(data: Revenue):
         Cartera.FECHA.asc()
       ).all()
 
-      remaining_rent = Decimal(data.daily_rent) if data.daily_rent is not None else 0
+      remaining_rent = Decimal(str(data.daily_rent or 0))
 
       for entry in rent_entries:
         if remaining_rent <= 0:
           break
 
-        current_balance = entry.SALDO or 0
+        current_balance = Decimal(str(entry.SALDO or 0))
         payment = min(current_balance, remaining_rent)
         entry.SALDO = current_balance - payment
         entry.ABONOS = payment
@@ -811,25 +811,25 @@ async def collect_revenue(data: Revenue):
       ).all()
 
       payments = {
-        '11': data.accidents or 0,
-        '01': data.registration or 0,
-        '02': data.savings or 0
+        '11': Decimal(str(data.accidents or 0)),
+        '01': Decimal(str(data.registration or 0)),
+        '02': Decimal(str(data.savings or 0))
       }
 
       for entry in other_entries:
-        payment_available = payments.get(entry.TIPO, 0)
+        payment_available = payments.get(entry.TIPO, Decimal("0"))
 
         if payment_available <= 0:
           continue
 
-        current_balance = entry.SALDO or 0
+        current_balance = Decimal(str(entry.SALDO or 0))
 
         if current_balance <= 0:
           continue
 
         applied_payment = min(current_balance, payment_available)
         entry.SALDO = current_balance - applied_payment
-        entry.ABONOS = payment
+        entry.ABONOS = applied_payment
         entry.FEC_ABONO = date
         entry.DOC_ABONO = new_record
         entry.CAN_ABONO = (entry.CAN_ABONO or 0) + 1
@@ -841,7 +841,7 @@ async def collect_revenue(data: Revenue):
 
 
       for surcharge in data.surcharges_list or []:
-        surcharge_payment = Decimal(surcharge.value)
+        surcharge_payment = Decimal(str(surcharge.value or 0))
 
         if surcharge_payment <= 0:
           continue
@@ -857,7 +857,7 @@ async def collect_revenue(data: Revenue):
         if not surcharge_entry:
           return JSONResponse(content={"message": f"Surcharge with ID {surcharge.id} not found"}, status_code=404)
 
-        current_balance = surcharge_entry.SALDO or 0
+        current_balance = Decimal(str(surcharge_entry.SALDO or 0))
         applied_payment = min(current_balance, surcharge_payment)
         surcharge_entry.SALDO = (current_balance - applied_payment)
         surcharge_entry.ABONOS = applied_payment
@@ -876,6 +876,8 @@ async def collect_revenue(data: Revenue):
 
     if valid and valid_rent:
       db.commit()
+    else:
+      db.rollback()
 
     response = {
       "valid": valid,
@@ -883,7 +885,7 @@ async def collect_revenue(data: Revenue):
       "valid_rent": valid_rent,
       "comments_rent": comments_rent,
       "receipt_number": new_record,
-      "total_collected": total_collected
+      "total_collected": float(total_collected)
     }
 
     return JSONResponse(content=jsonable_encoder(response), status_code=200)
@@ -1040,15 +1042,15 @@ async def generate_revenue_pdf(company_code: str, receipt_number: str):
       pdf_path,
     )
 
-    background_tasks = BackgroundTasks()
-    background_tasks.add_task(os.remove, temp_html_path)
+    # background_tasks = BackgroundTasks()
+    # background_tasks.add_task(os.remove, temp_html_path)
     # background_tasks.add_task(os.remove, pdf_path)
 
     response = FileResponse(
       pdf_path, 
       media_type='application/pdf', 
       filename=f'RC_{receipt_number}.pdf', 
-      background=background_tasks
+      # background=background_tasks
     )
 
     return response
