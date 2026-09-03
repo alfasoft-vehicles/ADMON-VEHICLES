@@ -1002,6 +1002,10 @@ async def generate_revenue_pdf(company_code: str, receipt_number: str):
       "payment_method": receipt_entries[0].NOMFORMAPA,
     }
 
+    decimal_part = Decimal(str(driver.NROENTPAGO or 0)) % 1
+    quota = Decimal(str(driver.NROENTPAGO or 0)) - decimal_part
+    remaining_quotas = Decimal(str(driver.NROENTSDO or 0)) + decimal_part
+
     data = {
       "company": company,
       "receipt": receipt,
@@ -1013,9 +1017,8 @@ async def generate_revenue_pdf(company_code: str, receipt_number: str):
       "user": user,
       "print_date": print_date,
       "print_hour": print_hour,
-      "file": "",
-      "quota": "",
-      "remaining_quotas": ""
+      "quota": quota,
+      "remaining_quotas": remaining_quotas
     }
 
     template_loader = jinja2.FileSystemLoader(searchpath="./templates")

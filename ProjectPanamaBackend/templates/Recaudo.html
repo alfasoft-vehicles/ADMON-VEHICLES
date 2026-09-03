@@ -24,8 +24,8 @@
                 font-size: 13px;
                 font-weight: bold;
                 color: #000;
-                width: 110mm; /* Ancho aproximado del recibo. */
-                margin-left: 5mm;
+                width: 86mm; /* Ancho aproximado del recibo. */
+                margin-left: 1mm;
                 margin-top: 5mm;
             }
 
@@ -64,7 +64,7 @@
 
             .receipt-left {
                 display: table-cell;
-                width: 60%;
+                width: 40%;
                 white-space: nowrap;
                 text-align: left;
                 vertical-align: bottom;
@@ -72,7 +72,7 @@
 
             .receipt-right {
                 display: table-cell;
-                width: 40%;
+                width: 60%;
                 white-space: normal;
                 text-align: right;
                 vertical-align: bottom;
@@ -183,12 +183,12 @@
             }
 
             .concept-name-header {
-                width: 28.5%;
+                width: 24%;
                 text-align: left;
             }
 
             .concept-number-header {
-                width: 15.5%;
+                width: 17%;
                 text-align: right;
                 padding-right: 2px;
             }
@@ -220,13 +220,13 @@
             }
 
             .concept-name {
-                width: 38%;
+                width: 32%;
                 text-align: left;
                 white-space: nowrap;
             }
 
             .concept-number {
-                width: 20.666%;
+                width: 22.667%;
                 text-align: right;
                 padding-right: 2px;
             }
@@ -266,6 +266,7 @@
                 width: 58%;
                 text-align: left;
                 white-space: nowrap;
+                padding-right: 4px;
             }
 
             .rent-amount {
@@ -669,12 +670,10 @@
 
         <div class="line"></div>
 
-        {% if data.file %}
-            <div class="expediente">
-                Expediente:
-                {{ data.file }}
-            </div>
-        {% endif %}
+        <div class="expediente">
+            Expediente:
+            {{ data.vehicle.CONSECUTIV }}
+        </div>
 
         <div class="signature-area">
             <div class="signature-columns">
@@ -709,16 +708,12 @@
                 </div>
             </div>
 
-            {% if data.quota %}
-                <div class="installment">
-                    Cuota N&#186;:
-                    {{ data.quota }}
-                    {% if data.remaining_quotas %}
-                        , le Faltan
-                        {{ data.remaining_quotas }}
-                    {% endif %}
-                </div>
-            {% endif %}
+            <div class="installment">
+                Cuota N&#186;:
+                {{  "%.0f"|format(data.quota) }}
+                , le Faltan
+                {{  "%.0f"|format(data.remaining_quotas) }}
+            </div>
         </div>
     </body>
 </html>

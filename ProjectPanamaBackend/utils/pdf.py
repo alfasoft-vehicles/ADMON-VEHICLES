@@ -194,9 +194,9 @@ def html2pdf_receipt(html_path, pdf_path):
     options = {
         'page-size': 'Letter',
         'margin-top': '4mm',
-        'margin-right': '4mm',
+        'margin-right': '1mm',
         'margin-bottom': '4mm',
-        'margin-left': '4mm',
+        'margin-left': '1mm',
         'encoding': 'UTF-8',
         'no-outline': None,
         'enable-local-file-access': None,
