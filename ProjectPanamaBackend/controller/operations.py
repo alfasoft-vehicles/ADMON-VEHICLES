@@ -50,8 +50,6 @@ load_dotenv()
 
 docs_path = os.getenv('DOCS_PATH')
 images_path = os.getenv('DIRECTORY_IMG')
-path_10  = os.getenv('DROPBOX_INTEGRATION_PATH_10')
-path_58  = os.getenv('DROPBOX_INTEGRATION_PATH_58')
 PDF_THREAD_POOL = ThreadPoolExecutor(max_workers=2)
 
 async def get_vehicle_operation(company_code: str, vehicle_number: str):
@@ -174,21 +172,6 @@ async def delivery_vehicle_driver(company_code: str, data: DeliveryVehicleDriver
     driver.CUO_DIARIA = vehicle.CUO_DIARIA
 
     db.commit()
-
-    base_path = None
-
-    if vehicle.EMPRESA == '10':
-      base_path = path_10
-    elif vehicle.EMPRESA == '58':
-      base_path = path_58
-
-    if base_path:
-      panama_timezone = pytz.timezone('America/Panama')
-      now_in_panama = datetime.now(panama_timezone)
-
-      text_file = os.path.join(base_path, f"entregavehiculo_{vehicle.NUMERO}.txt")
-      with open(text_file, 'w') as file:
-        file.write(f"{vehicle.NUMERO},,{driver.CODIGO},,,,,,{now_in_panama.strftime('%Y-%m-%d')},{clean_text(data.user)}")
 
     return JSONResponse(content={"message": "Vehicle delivered successfully"}, status_code=200)
   
@@ -796,18 +779,6 @@ async def new_bill(bill_data: BillInfo):
     db.add(new_bill)
     db.commit()
 
-    base_path = None
-
-    if bill_data.company_code == '10':
-      base_path = path_10
-    elif bill_data.company_code == '58':
-      base_path = path_58
-
-    if base_path:
-      text_file = os.path.join(base_path, f"crearcuenta_{vehicle.NUMERO}.txt")
-      with open(text_file, 'w') as file:
-        file.write(f"{vehicle.NUMERO},,,,,,,{now_in_panama.strftime('%d%m%Y')},{now_in_panama.strftime('%Y-%m-%d')},{clean_text(bill_data.user)}")
-
     return JSONResponse(content={"message": "Cuenta creada con éxito"}, status_code=201)
   except Exception as e:
     db.rollback()
@@ -832,21 +803,6 @@ async def change_yard(data: ChangeYard):
     vehicle.NOMPATIO = yard.NOMBRE
 
     db.commit()
-
-    base_path = None
-
-    if data.company_code == '10':
-      base_path = path_10
-    elif data.company_code == '58':
-      base_path = path_58
-
-    if base_path:
-      panama_timezone = pytz.timezone('America/Panama')
-      now_in_panama = datetime.now(panama_timezone)
-
-      text_file = os.path.join(base_path, f"cambiopatio_{vehicle.NUMERO}.txt")
-      with open(text_file, 'w') as file:
-        file.write(f"{vehicle.NUMERO},,,,{vehicle.PATIO},,{clean_text(data.description)},,{now_in_panama.strftime('%Y-%m-%d')},{clean_text(data.user)}")
 
     return JSONResponse(content={"message": "Vehículo cambiado de patio con éxito"}, status_code=200)
 
@@ -880,21 +836,6 @@ async def change_vehicle_state(data: ChangeVehicleState):
     vehicle.NOMPATIO = yard.NOMBRE
 
     db.commit()
-
-    base_path = None
-
-    if data.company_code == '10':
-      base_path = path_10
-    elif data.company_code == '58':
-      base_path = path_58
-
-    if base_path:
-      panama_timezone = pytz.timezone('America/Panama')
-      now_in_panama = datetime.now(panama_timezone)
-
-      text_file = os.path.join(base_path, f"cambiarestado_{vehicle.NUMERO}.txt")
-      with open(text_file, 'w') as file:
-        file.write(f"{vehicle.NUMERO},,,{vehicle.ESTADO},{vehicle.PATIO},,{clean_text(data.change_reason)},,{now_in_panama.strftime('%Y-%m-%d')},{clean_text(data.user)}")
 
     return JSONResponse(content={"message": "Estado del vehículo cambiado con éxito"}, status_code=200)
 
@@ -936,21 +877,6 @@ async def update_mileage(data: VehicleMileage):
     vehicle.KILO_ANTES = vehicle.KILOMETRAJ
     vehicle.KILOMETRAJ = data.mileage
     db.commit()
-
-    base_path = None
-
-    if data.company_code == '10':
-      base_path = path_10
-    elif data.company_code == '58':
-      base_path = path_58
-
-    if base_path:
-      panama_timezone = pytz.timezone('America/Panama')
-      now_in_panama = datetime.now(panama_timezone)
-
-      text_file = os.path.join(base_path, f"corregirkilometraje_{vehicle.NUMERO}.txt")
-      with open(text_file, 'w') as file:
-        file.write(f"{vehicle.NUMERO},,,,,{vehicle.KILOMETRAJ},,,{now_in_panama.strftime('%Y-%m-%d')},{clean_text(data.user)}")
 
     return JSONResponse(content={"message": "Kilometraje actualizado con éxito"}, status_code=200)
 
@@ -1060,18 +986,6 @@ async def loan_vehicle(data: LoanVehicle):
 
     db.commit()
 
-    base_path = None
-
-    if data.company_code == '10':
-      base_path = path_10
-    elif data.company_code == '58':
-      base_path = path_58
-
-    if base_path:
-      text_file = os.path.join(base_path, f"prestamovehiculo_{original_vehicle.NUMERO}.txt")
-      with open(text_file, 'w') as file:
-        file.write(f"{original_vehicle.NUMERO},{loan_vehicle.NUMERO},,,,,{clean_text(data.reason)},,{now_in_panama.strftime('%Y-%m-%d')},{clean_text(data.user)}")
-
     return JSONResponse(content={"message": "Préstamo de vehículo realizado con éxito"}, status_code=200)
 
   except Exception as e:
@@ -1154,18 +1068,6 @@ async def return_vehicle(data: ReturnVehicle):
     driver.FEC_DEVOLU = now_in_panama
 
     db.commit()
-
-    base_path = None
-
-    if data.company_code == '10':
-      base_path = path_10
-    elif data.company_code == '58':
-      base_path = path_58
-
-    if base_path:
-      text_file = os.path.join(base_path, f"devolucion_{return_vehicle.NUMERO}.txt")
-      with open(text_file, 'w') as file:
-        file.write(f"{original_vehicle.NUMERO},{return_vehicle.NUMERO},,,,,{clean_text(data.reason)},,{now_in_panama.strftime('%Y-%m-%d')},{clean_text(data.user)}")
 
     return JSONResponse(content={"message": "Devolución de vehículo realizada con éxito"}, status_code=200)
   except Exception as e:
