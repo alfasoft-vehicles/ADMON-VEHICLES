@@ -9,6 +9,7 @@ import { SharedModule } from 'src/app/modules/shared/shared.module';
 import { QueriesDialogComponent } from './dialogs/queries-dialog/queries-dialog.component';
 import { PaySurchargesDialogComponent } from './dialogs/pay-surcharges-dialog/pay-surcharges-dialog.component';
 import { AddSurchargesDialogComponent } from './dialogs/add-surcharges-dialog/add-surcharges-dialog.component';
+import { BuYappyComponent } from './components/bulk-upload/bu-yappy/bu-yappy.component';
 
 @NgModule({
   declarations: [
@@ -16,6 +17,7 @@ import { AddSurchargesDialogComponent } from './dialogs/add-surcharges-dialog/ad
     QueriesDialogComponent,
     PaySurchargesDialogComponent,
     AddSurchargesDialogComponent,
+    BuYappyComponent,
   ],
   imports: [
     CommonModule,
