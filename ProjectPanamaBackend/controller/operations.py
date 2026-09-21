@@ -27,6 +27,7 @@ from docx.shared import Inches
 import pytz
 from num2words import num2words
 import locale
+import platform
 from decimal import Decimal
 
 #! Verificar si las importaciones son necesarias
@@ -382,7 +383,10 @@ async def vehicle_delivery_info(vehicle_number: str):
 docx_template_path_con_cupo = os.path.join(docs_path, 'contratos', 'ContratoOriginal_ConCupo_0010.docx')
 docx_template_path_sin_cupo = os.path.join(docs_path, 'contratos', 'ContratoOriginal_SinCupo_0010.docx')
 
-locale.setlocale(locale.LC_TIME, "es_ES.utf8")
+if platform.system() == "Darwin":
+  locale.setlocale(locale.LC_TIME, "es_ES.UTF-8")
+else:
+  locale.setlocale(locale.LC_TIME, "es_ES.utf8")
 
 async def generate_contract(vehicle_number: str, data: GenerateContractData):
   db = session()
