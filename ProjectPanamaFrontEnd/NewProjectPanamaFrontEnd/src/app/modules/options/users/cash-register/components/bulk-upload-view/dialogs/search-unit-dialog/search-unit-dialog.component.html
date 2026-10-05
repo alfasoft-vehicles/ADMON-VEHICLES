@@ -1,0 +1,380 @@
+<div class="dialog-header-container">
+  <div class="dialog-header-info">
+    <div class="dialog-title-wrapper">
+      <div class="dialog-badge-icon">
+        <mat-icon>manage_search</mat-icon>
+      </div>
+      <div>
+        <h2 class="dialog-title">Búsqueda y Asignación de Unidad</h2>
+        <p class="dialog-subtitle">
+          {{ data.record.nombre }} • ${{ data.record.credito }} USD
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<mat-divider></mat-divider>
+
+<mat-dialog-content class="dialog-content-custom">
+  <!-- Aviso para registros previamente identificados -->
+  <div class="identified-warning-banner" *ngIf="isAlreadyIdentified">
+    <div class="banner-icon-col">
+      <mat-icon>info</mat-icon>
+    </div>
+    <div class="banner-body">
+      <div class="banner-title-row">
+        <span class="banner-title">Registro previamente identificado</span>
+        <span class="banner-unit-pill"
+          >Unidad actual: <strong>{{ data.record.unidad }}</strong></span
+        >
+      </div>
+      <p class="banner-message">
+        Esta transacción ya cuenta con la unidad
+        <strong>{{ data.record.unidad }}</strong> asignada a
+        <strong>{{ data.record.nombre }}</strong
+        >. Puede realizar una búsqueda a continuación por si requiere cambiar o
+        reasignar la unidad.
+      </p>
+    </div>
+  </div>
+
+  <!-- 1. Tarjeta con Toda la Información Actual del Registro -->
+  <div class="record-info-card">
+    <div class="card-section-header">
+      <div class="header-label-group">
+        <mat-icon class="section-icon">receipt_long</mat-icon>
+        <span class="section-title">Datos Actuales de la Transacción</span>
+      </div>
+      <span
+        *ngIf="data.record.hasAlert || !data.record.unidad"
+        class="badge-alert-pill"
+      >
+        <mat-icon>warning</mat-icon> Requiere Revisión
+      </span>
+      <span
+        *ngIf="!data.record.hasAlert && data.record.unidad"
+        class="badge-ok-pill"
+      >
+        <mat-icon>check_circle</mat-icon> Validado
+      </span>
+    </div>
+
+    <div class="record-grid">
+      <!-- Fila 1: Datos de Conductor y Unidad -->
+      <div class="record-field">
+        <span class="field-label">Conductor Registrado</span>
+        <strong class="field-value text-bold">{{
+          data.record.nombre || "No identificado"
+        }}</strong>
+      </div>
+      <div class="record-field">
+        <span class="field-label">Cédula</span>
+        <strong class="field-value">{{
+          data.record.cedula || "Sin cédula"
+        }}</strong>
+      </div>
+      <div class="record-field">
+        <span class="field-label">Unidad Actual</span>
+        <strong
+          class="field-value"
+          [class.text-unit-assigned]="data.record.unidad"
+          [class.text-danger]="!data.record.unidad"
+        >
+          <mat-icon *ngIf="data.record.unidad" class="unit-icon-inline"
+            >directions_car</mat-icon
+          >
+          {{ data.record.unidad ? data.record.unidad : "SIN UNIDAD ASIGNADA" }}
+        </strong>
+      </div>
+
+      <!-- Fila 2: Datos de la Transacción -->
+      <div class="record-field">
+        <span class="field-label">Fecha y Hora</span>
+        <strong class="field-value"
+          >{{ data.record.fecha }} {{ data.record.hora }}</strong
+        >
+      </div>
+      <div class="record-field">
+        <span class="field-label">Crédito Recibido</span>
+        <strong class="field-value text-green"
+          >${{ data.record.credito }}</strong
+        >
+      </div>
+      <div class="record-field">
+        <span class="field-label">Celular</span>
+        <strong class="field-value">{{ data.record.celular || "—" }}</strong>
+      </div>
+
+      <!-- Fila 3: Comentario Original e Identifica al lado -->
+      <div class="record-field span-2-cols">
+        <span class="field-label">Comentario Original</span>
+        <strong class="field-value text-italic">{{
+          data.record.comentario || "Sin comentario"
+        }}</strong>
+      </div>
+      <div class="record-field">
+        <span class="field-label">Identifica</span>
+        <strong class="field-value text-italic">{{
+          data.record.identifica || "—"
+        }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Barra de Búsqueda Interactiva -->
+  <div class="search-section">
+    <div class="search-input-wrapper">
+      <mat-icon class="search-ico">search</mat-icon>
+      <input
+        #searchInput
+        type="text"
+        class="search-input"
+        [(ngModel)]="searchTerm"
+        (input)="onSearch()"
+        placeholder="Buscar unidad, placa, conductor, cédula o empresa..."
+      />
+      <button
+        *ngIf="searchTerm"
+        mat-icon-button
+        class="btn-clear-search"
+        (click)="clearSearch()"
+        matTooltip="Limpiar búsqueda"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <span class="search-tip" *ngIf="!selectedVehicle">
+      Escribe al menos un carácter para ver sugerencias (ej: 0373, 0334, Rebeca,
+      Manuel, AS51).
+    </span>
+  </div>
+
+  <!-- 3. Lista de Resultados de Búsqueda (Info básica) -->
+  <div
+    class="search-results-container"
+    *ngIf="filteredVehicles.length > 0 && !selectedVehicle"
+  >
+    <div class="results-header">
+      <div class="results-header-left">
+        <mat-icon class="results-header-ico">manage_search</mat-icon>
+        <span
+          >Coincidencias encontradas (<strong>{{
+            filteredVehicles.length
+          }}</strong
+          >):</span
+        >
+      </div>
+      <span class="results-header-hint"
+        >Haz clic en un registro para ver el detalle y asignar</span
+      >
+    </div>
+
+    <div class="results-grid">
+      <div
+        *ngFor="let item of filteredVehicles"
+        class="vehicle-tile"
+        matRipple
+        (click)="selectVehicle(item)"
+      >
+        <div class="tile-top">
+          <div class="tile-unit-badge">
+            <mat-icon>directions_car</mat-icon>
+            <strong>{{ item.unidad }}</strong>
+          </div>
+          <span class="tile-placa">{{ item.placa }}</span>
+          <span class="tile-status">{{ item.estado }}</span>
+        </div>
+
+        <div class="tile-body">
+          <div class="tile-row">
+            <mat-icon class="mini-ico">person</mat-icon>
+            <span class="tile-driver-name">{{ item.conductor }}</span>
+          </div>
+          <div class="tile-subrow">
+            <span class="tile-id"
+              >Cédula: <strong>{{ item.cedula }}</strong></span
+            >
+            <span class="tile-subrow-sep">•</span>
+            <span class="tile-company">{{ item.empresa }}</span>
+          </div>
+        </div>
+
+        <div class="tile-select-cta">
+          <span>Seleccionar</span>
+          <mat-icon>chevron_right</mat-icon>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Información Detallada del Vehículo Seleccionado -->
+  <div class="selected-vehicle-detail-card" *ngIf="selectedVehicle">
+    <div class="card-section-header">
+      <div class="header-label-group">
+        <mat-icon class="section-icon text-primary">verified</mat-icon>
+        <span class="section-title"
+          >Información Detallada del Vehículo Seleccionado</span
+        >
+      </div>
+      <button
+        mat-button
+        class="btn-change-selection"
+        (click)="selectedVehicle = null"
+      >
+        <mat-icon>sync</mat-icon>
+        <span>Cambiar</span>
+      </button>
+    </div>
+
+    <div class="detail-grid">
+      <div class="detail-field">
+        <span class="field-label">Unidad</span>
+        <strong class="detail-value highlight-unit">{{
+          selectedVehicle.unidad
+        }}</strong>
+      </div>
+
+      <div class="detail-field">
+        <span class="field-label">Placa</span>
+        <strong class="detail-value">{{ selectedVehicle.placa }}</strong>
+      </div>
+
+      <div class="detail-field">
+        <span class="field-label">N° Cupo</span>
+        <strong class="detail-value">{{ selectedVehicle.nroCupo }}</strong>
+      </div>
+
+      <div class="detail-field">
+        <span class="field-label">Propietario</span>
+        <strong class="detail-value">{{ selectedVehicle.propietario }}</strong>
+      </div>
+
+      <div class="detail-field">
+        <span class="field-label">Código Conductor</span>
+        <strong class="detail-value">{{
+          selectedVehicle.codigoConductor
+        }}</strong>
+      </div>
+
+      <div class="detail-field">
+        <span class="field-label">Conductor</span>
+        <strong class="detail-value">{{ selectedVehicle.conductor }}</strong>
+      </div>
+
+      <div class="detail-field">
+        <span class="field-label">Teléfono</span>
+        <strong class="detail-value">{{ selectedVehicle.telefono }}</strong>
+      </div>
+
+      <div class="detail-field">
+        <span class="field-label">Valor Cuota</span>
+        <strong class="detail-value text-green"
+          >${{ selectedVehicle.valorCuota.toFixed(2) }}</strong
+        >
+      </div>
+
+      <!-- Campo solicitado: Número cuotas / Pagas / Pendientes -->
+      <div class="detail-field full-row">
+        <span class="field-label">Número Cuotas / Pagas / Pendientes</span>
+        <div class="cuotas-pill-group">
+          <span class="cuota-badge-totales">
+            Totales: <strong>{{ selectedVehicle.cuotasTotales }}</strong>
+          </span>
+          <span class="cuota-divider">/</span>
+          <span class="cuota-badge-pagas">
+            Pagas: <strong>{{ selectedVehicle.cuotasPagas }}</strong>
+          </span>
+          <span class="cuota-divider">/</span>
+          <span class="cuota-badge-pendientes">
+            Pendientes: <strong>{{ selectedVehicle.cuotasPendientes }}</strong>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Comparativa entre Registro y Selección -->
+    <div class="comparison-section">
+      <h4 class="comparison-title">
+        <mat-icon>compare_arrows</mat-icon>
+        <span>Comparativa de Asignación</span>
+      </h4>
+
+      <div class="comparison-cards-grid">
+        <div class="comp-card comp-before">
+          <span class="comp-label">Datos Actuales (Transacción)</span>
+          <div class="comp-item">
+            <span class="k">Unidad:</span>
+            <strong class="v text-danger">{{
+              data.record.unidad || "(Sin unidad)"
+            }}</strong>
+          </div>
+          <div class="comp-item">
+            <span class="k">Conductor:</span>
+            <strong class="v">{{ data.record.nombre || "—" }}</strong>
+          </div>
+          <div class="comp-item">
+            <span class="k">Cédula:</span>
+            <strong class="v">{{ data.record.cedula || "—" }}</strong>
+          </div>
+          <div class="comp-item">
+            <span class="k">Código:</span>
+            <strong class="v">{{ data.record.codigo || "—" }}</strong>
+          </div>
+        </div>
+
+        <div class="comp-arrow-wrapper">
+          <mat-icon>arrow_forward</mat-icon>
+        </div>
+
+        <div class="comp-card comp-after">
+          <span class="comp-label">Nueva Asignación (Seleccionado)</span>
+          <div class="comp-item">
+            <span class="k">Unidad:</span>
+            <strong class="v text-primary">{{ selectedVehicle.unidad }}</strong>
+          </div>
+          <div class="comp-item">
+            <span class="k">Conductor:</span>
+            <strong class="v text-green">{{
+              selectedVehicle.conductor
+            }}</strong>
+          </div>
+          <div class="comp-item">
+            <span class="k">Cédula:</span>
+            <strong class="v">{{ selectedVehicle.cedula }}</strong>
+          </div>
+          <div class="comp-item">
+            <span class="k">Código:</span>
+            <strong class="v">{{ selectedVehicle.codigoConductor }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-divider></mat-divider>
+
+<!-- Acciones del Diálogo -->
+<mat-dialog-actions align="end" class="dialog-actions-custom">
+  <button
+    mat-button
+    type="button"
+    (click)="close()"
+    class="action-btn btn-cancel"
+  >
+    <mat-icon>close</mat-icon> Cancelar
+  </button>
+
+  <button
+    mat-raised-button
+    color="primary"
+    type="button"
+    (click)="onAccept()"
+    class="action-btn btn-confirm"
+    [disabled]="!selectedVehicle"
+  >
+    <mat-icon>check_circle</mat-icon>
+    <span>Aceptar y Asignar</span>
+  </button>
+</mat-dialog-actions>

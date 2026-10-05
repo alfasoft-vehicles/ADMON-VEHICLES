@@ -97,7 +97,6 @@
       <table class="bu-data-table">
         <thead>
           <tr>
-            <th class="th-center th-w-sm">#</th>
             <th class="th-w-date">Fecha</th>
             <th class="th-w-time">Hora</th>
             <th class="th-w-name">Nombre</th>
@@ -125,16 +124,6 @@
             [class.bu-row-selected]="row.id === selectedRowId"
             [class.bu-row-alert]="isRecordInReview(row)"
           >
-            <!-- Selector / ID -->
-            <td class="td-center td-index">
-              <mat-icon
-                *ngIf="row.id === selectedRowId"
-                class="bu-selected-arrow"
-                >play_arrow</mat-icon
-              >
-              <span *ngIf="row.id !== selectedRowId">{{ row.id }}</span>
-            </td>
-
             <!-- Fecha y Hora -->
             <td class="td-date">{{ row.fecha }}</td>
             <td class="td-time">{{ row.hora }}</td>
@@ -183,7 +172,11 @@
             <td class="td-center td-code">{{ row.codigo || "-" }}</td>
 
             <!-- Unidad (Resaltado muy evidente si falta) -->
-            <td class="td-center">
+            <td
+              class="td-center td-clickable-unit"
+              (click)="openSearchUnitDialog(row); $event.stopPropagation()"
+              matTooltip="Clic para buscar y asignar unidad"
+            >
               <span *ngIf="row.unidad" class="bu-badge-unit">{{
                 row.unidad
               }}</span>

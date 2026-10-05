@@ -11,6 +11,7 @@ import { PaySurchargesDialogComponent } from './dialogs/pay-surcharges-dialog/pa
 import { AddSurchargesDialogComponent } from './dialogs/add-surcharges-dialog/add-surcharges-dialog.component';
 import { BulkUploadViewComponent } from './components/bulk-upload-view/bulk-upload-view.component';
 import { SelectBankDialogComponent } from './components/bulk-upload-view/dialogs/select-bank-dialog/select-bank-dialog.component';
+import { SearchUnitDialogComponent } from './components/bulk-upload-view/dialogs/search-unit-dialog/search-unit-dialog.component';
 
 @NgModule({
   declarations: [
@@ -20,6 +21,7 @@ import { SelectBankDialogComponent } from './components/bulk-upload-view/dialogs
     AddSurchargesDialogComponent,
     BulkUploadViewComponent,
     SelectBankDialogComponent,
+    SearchUnitDialogComponent,
   ],
   imports: [
     CommonModule,

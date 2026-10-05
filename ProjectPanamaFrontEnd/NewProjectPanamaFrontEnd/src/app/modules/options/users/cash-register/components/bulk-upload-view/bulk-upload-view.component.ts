@@ -8,6 +8,7 @@ import { BulkUploadStrategy } from './strategies/bulk-upload.strategy';
 import { BulkUploadRecord } from './models/bulk-upload-record.interface';
 import { BulkUploadSummaryMetrics } from './models/bulk-upload-config.interface';
 import { ConfirmActionDialogComponent } from 'src/app/modules/shared/components/confirm-action-dialog/confirm-action-dialog.component';
+import { SearchUnitDialogComponent } from './dialogs/search-unit-dialog/search-unit-dialog.component';
 
 @Component({
   selector: 'app-bulk-upload-view',
@@ -164,5 +165,52 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
         });
       }
     });
+  }
+
+  openSearchUnitDialog(record: BulkUploadRecord): void {
+    const dialogRef = this.dialog.open(SearchUnitDialogComponent, {
+      width: '740px',
+      maxWidth: '94vw',
+      panelClass: 'custom-dialog-container',
+      disableClose: true,
+      data: { record },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result && result.confirmed && result.updatedData) {
+        this.updateRecordAssignment(record.id, result.updatedData);
+      }
+    });
+  }
+
+  updateRecordAssignment(
+    recordId: number,
+    updatedData: Partial<BulkUploadRecord>,
+  ): void {
+    const index = this.records.findIndex((r) => r.id === recordId);
+    if (index !== -1) {
+      this.records[index] = { ...this.records[index], ...updatedData };
+      this.recalculateMetrics();
+      this.applySort();
+    }
+  }
+
+  recalculateMetrics(): void {
+    const pendientes = this.records.filter((r) => this.isRecordInReview(r));
+    const pendientesCount = pendientes.length;
+    const validadosCount = this.records.length - pendientesCount;
+
+    const montoPendienteNum = pendientes.reduce(
+      (sum, r) => sum + (parseFloat(r.pendiente) || 0),
+      0,
+    );
+
+    this.metrics.registrosPendientes = pendientesCount;
+    this.metrics.registrosValidados = validadosCount;
+    this.metrics.montoPendiente = montoPendienteNum.toFixed(2);
+    this.metrics.porcentajeConciliado =
+      this.records.length > 0
+        ? parseFloat(((validadosCount / this.records.length) * 100).toFixed(1))
+        : 0;
   }
 }
