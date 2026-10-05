@@ -25,6 +25,7 @@ interface AppJwtPayload extends JwtPayload {
     opcion15: string;
     opcion16: string;
     opcion17: string;
+    opcion18: string;
     tarea01: string;
     tarea02: string;
     tarea03: string;
