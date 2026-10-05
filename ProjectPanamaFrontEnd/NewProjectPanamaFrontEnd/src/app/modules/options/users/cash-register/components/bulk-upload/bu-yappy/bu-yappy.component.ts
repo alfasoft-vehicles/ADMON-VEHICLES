@@ -410,11 +410,46 @@ export class BuYappyComponent {
     },
   ];
 
+  // Criterio de ordenamiento: 'default' | 'revision' | 'ready'
+  sortOrder: 'default' | 'revision' | 'ready' = 'default';
+
   selectRow(id: number): void {
     this.selectedRowId = this.selectedRowId === id ? null : id;
   }
 
   clearSearch(): void {
     this.searchTerm = '';
+  }
+
+  onSortChange(value: 'default' | 'revision' | 'ready'): void {
+    this.sortOrder = value || 'default';
+    this.applySort();
+  }
+
+  applySort(): void {
+    if (this.sortOrder === 'revision') {
+      // Priorizar los registros que requieren revisión (hasAlert || !unidad)
+      this.records.sort((a, b) => {
+        const aNeedsReview = a.hasAlert || !a.unidad ? 1 : 0;
+        const bNeedsReview = b.hasAlert || !b.unidad ? 1 : 0;
+        if (bNeedsReview !== aNeedsReview) {
+          return bNeedsReview - aNeedsReview;
+        }
+        return a.id - b.id;
+      });
+    } else if (this.sortOrder === 'ready') {
+      // Priorizar los registros listos / asignados (!hasAlert && unidad)
+      this.records.sort((a, b) => {
+        const aReady = !a.hasAlert && a.unidad ? 1 : 0;
+        const bReady = !b.hasAlert && b.unidad ? 1 : 0;
+        if (bReady !== aReady) {
+          return bReady - aReady;
+        }
+        return a.id - b.id;
+      });
+    } else {
+      // Orden por defecto: id ascendente
+      this.records.sort((a, b) => a.id - b.id);
+    }
   }
 }

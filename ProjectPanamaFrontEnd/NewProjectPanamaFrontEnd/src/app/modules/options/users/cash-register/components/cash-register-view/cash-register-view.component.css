@@ -746,6 +746,12 @@
     flex-grow: 1;
   }
 
+  .cr-bulk-upload-btn {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+  }
+
   .cr-alert-warning {
     width: 100%;
     box-sizing: border-box;
@@ -946,6 +952,12 @@
     flex-grow: 1;
   }
 
+  .cr-bulk-upload-btn {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+  }
+
   .cr-alert-warning {
     width: 100%;
     box-sizing: border-box;
@@ -1114,6 +1126,55 @@
   color: #334155;
   text-align: center;
   line-height: 1.2;
+}
+
+/* Botón de Carga Masiva en sección de búsqueda */
+.cr-bulk-upload-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 49px;
+  padding: 0 16px 0 8px;
+  background: #ffffff;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+  outline: none;
+  margin-left: auto;
+  box-sizing: border-box;
+}
+
+.cr-bulk-upload-btn:hover {
+  background: #fff7ed;
+  border-color: #ea580c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(234, 88, 12, 0.15);
+}
+
+.cr-bulk-upload-btn .cr-consult-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+
+.cr-bulk-upload-btn:hover .cr-consult-icon-box {
+  transform: scale(1.08);
+}
+
+.cr-bulk-upload-btn .cr-consult-btn-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.cr-bulk-upload-btn:hover .cr-consult-btn-label {
+  color: #ea580c;
 }
 
 /* Backgrounds pastel para los icon boxes de consultas */

@@ -26,8 +26,10 @@ import { MatChipsModule} from '@angular/material/chips';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatRippleModule } from '@angular/material/core';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 const materialModules = [
+  MatButtonToggleModule,
   MatFormFieldModule, 
   MatInputModule, 
   MatTableModule, 

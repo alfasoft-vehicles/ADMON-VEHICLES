@@ -13,23 +13,57 @@
       <div class="bu-header-divider"></div>
       <div class="bu-title-group">
         <h1 class="bu-title">Carga Masiva</h1>
+        <div class="bu-yappy-badge">
+          <mat-icon class="bu-yappy-icon">payments</mat-icon>
+          <span class="bu-yappy-text">YAPPY</span>
+        </div>
       </div>
     </div>
 
     <div class="bu-header-right">
-      <div class="bu-meta-pill bu-pill-info">
-        <mat-icon class="bu-meta-icon">receipt_long</mat-icon>
-        <span class="bu-meta-label">Registros:</span>
-        <strong class="bu-meta-value">{{ totalRegistros }}</strong>
-      </div>
-      <div class="bu-meta-pill bu-pill-status">
-        <span class="bu-pulse-dot"></span>
-        <span class="bu-meta-label">Estado:</span>
-        <strong class="bu-meta-value">Por Recaudar</strong>
-      </div>
-      <div class="bu-yappy-badge">
-        <mat-icon class="bu-yappy-icon">payments</mat-icon>
-        <span class="bu-yappy-text">YAPPY</span>
+      <div class="bu-sort-container">
+        <span class="bu-sort-label">
+          <mat-icon class="bu-sort-label-icon">sort</mat-icon>
+          <span>Ordenar:</span>
+        </span>
+        <mat-button-toggle-group
+          [value]="sortOrder"
+          (change)="onSortChange($event.value)"
+          hideSingleSelectionIndicator="true"
+          name="sortOrder"
+          aria-label="Criterio de ordenamiento"
+          class="bu-sort-toggle-group"
+        >
+          <mat-button-toggle
+            value="default"
+            class="bu-sort-toggle-btn bu-toggle-default"
+          >
+            <mat-icon class="bu-toggle-icon">swap_vert</mat-icon>
+            <span>Por Defecto</span>
+          </mat-button-toggle>
+
+          <mat-button-toggle
+            value="revision"
+            class="bu-sort-toggle-btn bu-toggle-warn"
+          >
+            <mat-icon class="bu-toggle-icon">warning_amber</mat-icon>
+            <span>Revisión</span>
+            <span class="bu-toggle-pill bu-pill-warn">{{
+              registrosPendientes
+            }}</span>
+          </mat-button-toggle>
+
+          <mat-button-toggle
+            value="ready"
+            class="bu-sort-toggle-btn bu-toggle-ok"
+          >
+            <mat-icon class="bu-toggle-icon">check_circle</mat-icon>
+            <span>Listos</span>
+            <span class="bu-toggle-pill bu-pill-ok">{{
+              registrosValidados
+            }}</span>
+          </mat-button-toggle>
+        </mat-button-toggle-group>
       </div>
     </div>
   </header>
@@ -110,13 +144,6 @@
                   [class.bu-name-alert]="row.hasAlert || !row.unidad"
                   >{{ row.nombre }}</span
                 >
-                <span
-                  *ngIf="row.hasAlert || !row.unidad"
-                  class="bu-warning-chip"
-                  matTooltip="Unidad no asignada"
-                >
-                  <mat-icon>error</mat-icon> Requiere Revisión
-                </span>
               </div>
             </td>
 
@@ -285,57 +312,58 @@
 
         <div class="bu-dash-divider"></div>
 
-        <!-- Bloque 3: Distribución de Rubros (Chips de Colores) -->
-        <div class="bu-dash-block bu-block-rubros">
-          <div class="bu-block-header">
-            <mat-icon class="bu-block-ico">pie_chart</mat-icon>
-            <span class="bu-block-title">Distribución de Rubros</span>
+        <!-- Bloque 3 y 4 Combinados: Distribución de Rubros + Banco General (Fondo Azul) -->
+        <div class="bu-bank-combined-card">
+          <div class="bu-bank-rubros-section">
+            <div class="bu-block-header bu-header-white">
+              <mat-icon class="bu-block-ico bu-ico-white">pie_chart</mat-icon>
+              <span class="bu-block-title bu-title-white"
+                >Distribución de Rubros</span
+              >
+            </div>
+
+            <div class="bu-rubros-chips-grid">
+              <div
+                class="bu-rubro-chip bu-chip-comis"
+                matTooltip="Comisión retenida por Yappy"
+              >
+                <span class="bu-chip-lbl">Comisión</span>
+                <strong class="bu-chip-val">${{ comision }}</strong>
+              </div>
+              <div
+                class="bu-rubro-chip bu-chip-inscrip"
+                matTooltip="Abono a Inscripciones"
+              >
+                <span class="bu-chip-lbl">Inscripción</span>
+                <strong class="bu-chip-val">${{ inscripcion }}</strong>
+              </div>
+              <div
+                class="bu-rubro-chip bu-chip-siniest"
+                matTooltip="Abono a Siniestros"
+              >
+                <span class="bu-chip-lbl">Siniestros</span>
+                <strong class="bu-chip-val">${{ siniestros }}</strong>
+              </div>
+              <div
+                class="bu-rubro-chip bu-chip-panapass"
+                matTooltip="Recarga de Panapass"
+              >
+                <span class="bu-chip-lbl">Panapass</span>
+                <strong class="bu-chip-val">${{ panapass }}</strong>
+              </div>
+              <div
+                class="bu-rubro-chip bu-chip-multas"
+                matTooltip="Cobro de Multas"
+              >
+                <span class="bu-chip-lbl">Multas</span>
+                <strong class="bu-chip-val">${{ multas }}</strong>
+              </div>
+            </div>
           </div>
 
-          <div class="bu-rubros-chips-grid">
-            <div
-              class="bu-rubro-chip bu-chip-comis"
-              matTooltip="Comisión retenida por Yappy"
-            >
-              <span class="bu-chip-lbl">Comisión</span>
-              <strong class="bu-chip-val">${{ comision }}</strong>
-            </div>
-            <div
-              class="bu-rubro-chip bu-chip-inscrip"
-              matTooltip="Abono a Inscripciones"
-            >
-              <span class="bu-chip-lbl">Inscripción</span>
-              <strong class="bu-chip-val">${{ inscripcion }}</strong>
-            </div>
-            <div
-              class="bu-rubro-chip bu-chip-siniest"
-              matTooltip="Abono a Siniestros"
-            >
-              <span class="bu-chip-lbl">Siniestros</span>
-              <strong class="bu-chip-val">${{ siniestros }}</strong>
-            </div>
-            <div
-              class="bu-rubro-chip bu-chip-panapass"
-              matTooltip="Recarga de Panapass"
-            >
-              <span class="bu-chip-lbl">Panapass</span>
-              <strong class="bu-chip-val">${{ panapass }}</strong>
-            </div>
-            <div
-              class="bu-rubro-chip bu-chip-multas"
-              matTooltip="Cobro de Multas"
-            >
-              <span class="bu-chip-lbl">Multas</span>
-              <strong class="bu-chip-val">${{ multas }}</strong>
-            </div>
-          </div>
-        </div>
+          <div class="bu-bank-inner-divider"></div>
 
-        <div class="bu-dash-divider"></div>
-
-        <!-- Bloque 4: Validación Banco General (Hero Card Centrada) -->
-        <div class="bu-dash-block bu-block-bank">
-          <div class="bu-bank-hero-card">
+          <div class="bu-bank-total-section">
             <div class="bu-bank-hero-top">
               <mat-icon class="bu-bank-mini-icon">account_balance</mat-icon>
               <span class="bu-bank-tag">BANCO GENERAL</span>
