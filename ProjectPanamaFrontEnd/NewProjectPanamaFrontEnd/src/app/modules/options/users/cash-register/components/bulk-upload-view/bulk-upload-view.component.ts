@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subscription } from 'rxjs';
 import { BulkUploadService } from './services/bulk-upload.service';
 import { BulkUploadStrategy } from './strategies/bulk-upload.strategy';
@@ -13,7 +14,7 @@ import { BulkUploadSummaryMetrics } from './models/bulk-upload-config.interface'
 })
 export class BulkUploadViewComponent implements OnInit, OnDestroy {
   // Estrategia activa según :type
-  activeStrategy!: BulkUploadStrategy;
+  activeStrategy: BulkUploadStrategy | null = null;
 
   // Criterios de búsqueda
   filterCriteria: string = 'unidad';
@@ -50,12 +51,27 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private bulkUploadService: BulkUploadService,
+    private snackBar: MatSnackBar,
   ) {}
 
   ngOnInit(): void {
     this.routeSub = this.route.paramMap.subscribe((params) => {
       const type = params.get('type');
+      if (!type || !this.bulkUploadService.hasStrategy(type)) {
+        this.snackBar.open(
+          'Por favor, seleccione un banco o pasarela para continuar con la carga masiva',
+          'Entendido',
+          {
+            duration: 4000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top',
+          },
+        );
+        this.router.navigate(['/cash-register']);
+        return;
+      }
       this.initStrategy(type);
     });
   }

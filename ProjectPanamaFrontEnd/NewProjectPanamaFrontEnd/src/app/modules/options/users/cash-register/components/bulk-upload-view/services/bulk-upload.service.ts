@@ -26,6 +26,16 @@ export class BulkUploadService {
   }
 
   /**
+   * Valida si existe una estrategia registrada para el tipo dado.
+   */
+  hasStrategy(type?: string | null): boolean {
+    if (!type) {
+      return false;
+    }
+    return this.strategyFactory.hasStrategy(type);
+  }
+
+  /**
    * Obtiene la estrategia actual seleccionada
    */
   getActiveStrategy(): BulkUploadStrategy {

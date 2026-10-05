@@ -10,8 +10,7 @@ const routes: Routes = [
   },
   {
     path: 'bulk-upload',
-    pathMatch: 'full',
-    redirectTo: 'bulk-upload/yappy',
+    component: BulkUploadViewComponent,
   },
   {
     path: 'bulk-upload/:type',

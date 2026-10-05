@@ -1,4 +1,4 @@
-<div class="bu-main-container">
+<div class="bu-main-container" *ngIf="activeStrategy">
   <!-- Encabezado Superior -->
   <header class="bu-top-header mat-elevation-z2">
     <div class="bu-header-left">
@@ -15,10 +15,17 @@
         <h1 class="bu-title">{{ activeStrategy.title }}</h1>
         <div
           class="bu-gateway-badge bu-yappy-badge"
-          [style.background]="activeStrategy.badgeConfig.gradient || 'linear-gradient(135deg, #0077c8 0%, #00a4e4 100%)'"
+          [style.background]="
+            activeStrategy.badgeConfig.gradient ||
+            'linear-gradient(135deg, #0077c8 0%, #00a4e4 100%)'
+          "
         >
-          <mat-icon class="bu-gateway-icon bu-yappy-icon">{{ activeStrategy.badgeConfig.icon }}</mat-icon>
-          <span class="bu-gateway-text bu-yappy-text">{{ activeStrategy.badgeConfig.text }}</span>
+          <mat-icon class="bu-gateway-icon bu-yappy-icon">{{
+            activeStrategy.badgeConfig.icon
+          }}</mat-icon>
+          <span class="bu-gateway-text bu-yappy-text">{{
+            activeStrategy.badgeConfig.text
+          }}</span>
         </div>
       </div>
     </div>
@@ -78,10 +85,12 @@
         <span class="bu-table-legend-title">Detalle de Transacciones</span>
         <div class="bu-legend-group">
           <span class="bu-legend-item bu-legend-ok">
-            <span class="bu-dot bu-dot-ok"></span> {{ metrics.registrosValidados }} Asignados
+            <span class="bu-dot bu-dot-ok"></span>
+            {{ metrics.registrosValidados }} Asignados
           </span>
           <span class="bu-legend-item bu-legend-warn">
-            <span class="bu-dot bu-dot-warn"></span> {{ metrics.registrosPendientes }} Requieren Revisión
+            <span class="bu-dot bu-dot-warn"></span>
+            {{ metrics.registrosPendientes }} Requieren Revisión
           </span>
         </div>
       </div>
@@ -259,15 +268,15 @@
             <div class="bu-status-chip bu-chip-success">
               <mat-icon>check_circle</mat-icon>
               <span
-                ><strong>{{ metrics.registrosValidados }}</strong> Validados</span
+                ><strong>{{ metrics.registrosValidados }}</strong>
+                Validados</span
               >
             </div>
             <div class="bu-status-chip bu-chip-danger">
               <mat-icon>warning</mat-icon>
               <span
-                ><strong>{{ metrics.registrosPendientes }}</strong> Sin Unidad (${{
-                  metrics.montoPendiente
-                }})</span
+                ><strong>{{ metrics.registrosPendientes }}</strong> Sin Unidad
+                (${{ metrics.montoPendiente }})</span
               >
             </div>
           </div>
@@ -328,7 +337,10 @@
             <div class="bu-rubros-chips-grid">
               <div
                 class="bu-rubro-chip bu-chip-comis"
-                [matTooltip]="'Comisión retenida por ' + (activeStrategy.badgeConfig.text || 'Pasarela')"
+                [matTooltip]="
+                  'Comisión retenida por ' +
+                  (activeStrategy.badgeConfig.text || 'Pasarela')
+                "
               >
                 <span class="bu-chip-lbl">Comisión</span>
                 <strong class="bu-chip-val">${{ metrics.comision }}</strong>
@@ -368,11 +380,17 @@
 
           <div class="bu-bank-total-section">
             <div class="bu-bank-hero-top">
-              <mat-icon class="bu-bank-mini-icon">{{ activeStrategy.bankCardConfig.icon }}</mat-icon>
-              <span class="bu-bank-tag">{{ activeStrategy.bankCardConfig.tag }}</span>
+              <mat-icon class="bu-bank-mini-icon">{{
+                activeStrategy.bankCardConfig.icon
+              }}</mat-icon>
+              <span class="bu-bank-tag">{{
+                activeStrategy.bankCardConfig.tag
+              }}</span>
             </div>
             <div class="bu-bank-hero-center">
-              <span class="bu-bank-label-text">{{ activeStrategy.bankCardConfig.label }}</span>
+              <span class="bu-bank-label-text">{{
+                activeStrategy.bankCardConfig.label
+              }}</span>
               <span class="bu-bank-amount-val">${{ metrics.totalBanco }}</span>
             </div>
           </div>
