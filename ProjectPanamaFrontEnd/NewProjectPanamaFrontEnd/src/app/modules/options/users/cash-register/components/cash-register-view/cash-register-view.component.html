@@ -101,6 +101,18 @@
       </div>
     </div>
 
+    <button
+      *ngIf="!hasData && !isLoadingAutocompletes"
+      class="cr-bulk-upload-btn"
+      matRipple
+      (click)="openBulkUploadDialog()"
+    >
+      <div class="cr-consult-icon-box cr-bg-orange-soft">
+        <mat-icon class="cr-text-orange-600">cloud_upload</mat-icon>
+      </div>
+      <span class="cr-consult-btn-label">Carga Masiva</span>
+    </button>
+
     <div
       *ngIf="hasData && notificationMessage"
       class="cr-alert-warning mat-elevation-z2"
@@ -570,7 +582,7 @@
             <button
               class="cr-consult-btn-main"
               matRipple
-              routerLink="/cash-register/bulk-upload"
+              (click)="openBulkUploadDialog()"
             >
               <div class="cr-consult-icon-box cr-bg-orange-soft">
                 <mat-icon class="cr-text-orange-600">cloud_upload</mat-icon>

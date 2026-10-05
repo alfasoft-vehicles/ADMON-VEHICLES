@@ -9,7 +9,8 @@ import { SharedModule } from 'src/app/modules/shared/shared.module';
 import { QueriesDialogComponent } from './dialogs/queries-dialog/queries-dialog.component';
 import { PaySurchargesDialogComponent } from './dialogs/pay-surcharges-dialog/pay-surcharges-dialog.component';
 import { AddSurchargesDialogComponent } from './dialogs/add-surcharges-dialog/add-surcharges-dialog.component';
-import { BuYappyComponent } from './components/bulk-upload/bu-yappy/bu-yappy.component';
+import { BulkUploadViewComponent } from './components/bulk-upload-view/bulk-upload-view.component';
+import { SelectBankDialogComponent } from './components/bulk-upload-view/dialogs/select-bank-dialog/select-bank-dialog.component';
 
 @NgModule({
   declarations: [
@@ -17,7 +18,8 @@ import { BuYappyComponent } from './components/bulk-upload/bu-yappy/bu-yappy.com
     QueriesDialogComponent,
     PaySurchargesDialogComponent,
     AddSurchargesDialogComponent,
-    BuYappyComponent,
+    BulkUploadViewComponent,
+    SelectBankDialogComponent,
   ],
   imports: [
     CommonModule,

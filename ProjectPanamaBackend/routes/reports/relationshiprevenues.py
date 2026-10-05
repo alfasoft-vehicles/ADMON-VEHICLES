@@ -30,80 +30,40 @@ async def relationshiprevenues_report(company_code: str, data: RelationshipReven
     if data.primeraFecha > data.ultimaFecha:
       return JSONResponse(content={"message": "La primera fecha no puede ser mayor a la última fecha"}, status_code=400)
 
-    user_admin = os.getenv("USER_ADMIN")
-    
     if data.unidad == "" or data.unidad == "TODOS":
-      if data.usuario != user_admin:
-        # empresa = db.query(Propietarios.CODIGO).filter(Propietarios.NOMBRE == data.empresa).all()
-        # if len(empresa) == 0:
-        #   return JSONResponse(content={"message": "No se encontró la empresa"}, status_code=400)
-        empresa = data.empresa
+      empresa = data.empresa
 
-        conteo_reporte_ingresos = db.query(
-          Propietarios.EMPRESA.label('codigo_empresa'),
-          CajaRecaudos.EMPRESA.label('num_empresa'),
-          CajaRecaudos.RECIBO.label('recibo'),
-          CajaRecaudos.FEC_RECIBO.label('fecha_recibo'),
-          CajaRecaudos.NUMERO.label('unidad'),
-          CajaRecaudos.SDO_RENTA.label('saldo_renta'),
-          CajaRecaudos.DEU_RENTA.label('deuda_renta'),
-          CajaRecaudos.FON_INSCRI.label('fondo_inscripcion'),
-          CajaRecaudos.FON_AHORRO.label('fondo_ahorro'),
-          CajaRecaudos.DEU_SINIES.label('deuda_siniestro'),
-          CajaRecaudos.FORMAPAGO.label('forma_pago'),
-          CajaRecaudos.TOTAL.label('total'),
-          Propietarios.NOMBRE.label('empresa'),
-          Vehiculos.PAGA_ADMON.label('paga_admon'),
-          Vehiculos.GLOBAL_UND.label('global_und'),
-          Vehiculos.CUO_ADMON.label('cuota_admon'),
-          Vehiculos.CUO_DIARIA.label('cuota_diaria'),
-        ) \
-        .join(Propietarios, Propietarios.CODIGO == CajaRecaudos.PROPI_IDEN) \
-        .join(Vehiculos, Vehiculos.NUMERO == CajaRecaudos.NUMERO) \
-        .filter(
-          CajaRecaudos.FEC_RECIBO >= data.primeraFecha,
-          CajaRecaudos.FEC_RECIBO <= data.ultimaFecha,
-          CajaRecaudos.PROPI_IDEN == empresa,
-          CajaRecaudos.FORMAPAGO.in_(["1", "2", "3", "4", "5"]),
-          CajaRecaudos.EMPRESA == company_code,
-          Propietarios.EMPRESA == company_code,
-          Vehiculos.EMPRESA == company_code,
-          CajaRecaudos.EMPRESA == Propietarios.EMPRESA
-        ).all()
-      else:
-        # empresa = db.query(Propietarios.CODIGO).filter(Propietarios.NOMBRE == data.empresa).all()
-        empresa = data.empresa
-        conteo_reporte_ingresos = db.query(
-          Propietarios.EMPRESA.label('codigo_empresa'),
-          CajaRecaudos.EMPRESA.label('num_empresa'),
-          CajaRecaudos.RECIBO.label('recibo'),
-          CajaRecaudos.FEC_RECIBO.label('fecha_recibo'),
-          CajaRecaudos.NUMERO.label('unidad'),
-          CajaRecaudos.SDO_RENTA.label('saldo_renta'),
-          CajaRecaudos.DEU_RENTA.label('deuda_renta'),
-          CajaRecaudos.FON_INSCRI.label('fondo_inscripcion'),
-          CajaRecaudos.FON_AHORRO.label('fondo_ahorro'),
-          CajaRecaudos.DEU_SINIES.label('deuda_siniestro'),
-          CajaRecaudos.FORMAPAGO.label('forma_pago'),
-          CajaRecaudos.TOTAL.label('total'),
-          Propietarios.NOMBRE.label('empresa'),
-          Vehiculos.PAGA_ADMON.label('paga_admon'),
-          Vehiculos.GLOBAL_UND.label('global_und'),
-          Vehiculos.CUO_ADMON.label('cuota_admon'),
-          Vehiculos.CUO_DIARIA.label('cuota_diaria'),
-        ) \
-        .join(Propietarios, Propietarios.CODIGO == CajaRecaudos.PROPI_IDEN) \
-        .join(Vehiculos, Vehiculos.NUMERO == CajaRecaudos.NUMERO) \
-        .filter(
-          CajaRecaudos.FEC_RECIBO >= data.primeraFecha,
-          CajaRecaudos.FEC_RECIBO <= data.ultimaFecha,
-          CajaRecaudos.FORMAPAGO.in_(["1", "2", "3", "4", "5"]),
-          CajaRecaudos.PROPI_IDEN == empresa,
-          CajaRecaudos.EMPRESA == company_code,
-          Propietarios.EMPRESA == company_code,
-          Vehiculos.EMPRESA == company_code,
-          CajaRecaudos.EMPRESA == Propietarios.EMPRESA
-        ).all()
+      conteo_reporte_ingresos = db.query(
+        Propietarios.EMPRESA.label('codigo_empresa'),
+        CajaRecaudos.EMPRESA.label('num_empresa'),
+        CajaRecaudos.RECIBO.label('recibo'),
+        CajaRecaudos.FEC_RECIBO.label('fecha_recibo'),
+        CajaRecaudos.NUMERO.label('unidad'),
+        CajaRecaudos.SDO_RENTA.label('saldo_renta'),
+        CajaRecaudos.DEU_RENTA.label('deuda_renta'),
+        CajaRecaudos.FON_INSCRI.label('fondo_inscripcion'),
+        CajaRecaudos.FON_AHORRO.label('fondo_ahorro'),
+        CajaRecaudos.DEU_SINIES.label('deuda_siniestro'),
+        CajaRecaudos.FORMAPAGO.label('forma_pago'),
+        CajaRecaudos.TOTAL.label('total'),
+        Propietarios.NOMBRE.label('empresa'),
+        Vehiculos.PAGA_ADMON.label('paga_admon'),
+        Vehiculos.GLOBAL_UND.label('global_und'),
+        Vehiculos.CUO_ADMON.label('cuota_admon'),
+        Vehiculos.CUO_DIARIA.label('cuota_diaria'),
+      ) \
+      .join(Propietarios, Propietarios.CODIGO == CajaRecaudos.PROPI_IDEN) \
+      .join(Vehiculos, Vehiculos.NUMERO == CajaRecaudos.NUMERO) \
+      .filter(
+        CajaRecaudos.FEC_RECIBO >= data.primeraFecha,
+        CajaRecaudos.FEC_RECIBO <= data.ultimaFecha,
+        CajaRecaudos.PROPI_IDEN == empresa,
+        CajaRecaudos.FORMAPAGO.in_(["1", "2", "3", "4", "5"]),
+        CajaRecaudos.EMPRESA == company_code,
+        Propietarios.EMPRESA == company_code,
+        Vehiculos.EMPRESA == company_code,
+        CajaRecaudos.EMPRESA == Propietarios.EMPRESA
+      ).all()
 
     elif data.unidad != "" and data.unidad != "TODOS":
       # empresa = db.query(Propietarios.CODIGO).filter(Propietarios.NOMBRE == data.empresa).all()
@@ -267,11 +227,6 @@ async def relationshiprevenues_report(company_code: str, data: RelationshipReven
     usuario = data.usuario
     titulo = 'Detalle Relación de Ingresos'
 
-    if data.usuario == user_admin:
-      usuario = "Administrador"
-    else:
-      usuario = data.usuario
-
     info_empresa = db.query(
       InfoEmpresas.NOMBRE,
       InfoEmpresas.NIT,
@@ -372,8 +327,6 @@ async def general_relationshiprevenues_report(data: GeneralRelationshipRevenuesR
 
     if not data.empresas or len(data.empresas) == 0:
       return JSONResponse(content={"message": "Debe proporcionar al menos una empresa"}, status_code=400)
-
-    user_admin = os.getenv("USER_ADMIN")
     
     conteo_reporte_ingresos = db.query(
       Propietarios.CODIGO.label('codigo_empresa'),
@@ -508,8 +461,6 @@ async def general_relationshiprevenues_report(data: GeneralRelationshipRevenuesR
     hora_actual = now_in_panama.strftime("%I:%M:%S %p")
     
     usuario = data.usuario
-    if data.usuario == user_admin:
-      usuario = "Administrador"
 
     info_empresa = db.query(InfoEmpresas.NOMBRE, InfoEmpresas.NIT, InfoEmpresas.LOGO).filter(InfoEmpresas.ID == data.codigo_empresa).first()
 

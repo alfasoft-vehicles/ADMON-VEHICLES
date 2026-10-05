@@ -1,4 +1,4 @@
-<div class="bu-main-container">
+<div class="bu-main-container" *ngIf="activeStrategy">
   <!-- Encabezado Superior -->
   <header class="bu-top-header mat-elevation-z2">
     <div class="bu-header-left">
@@ -12,24 +12,68 @@
       </button>
       <div class="bu-header-divider"></div>
       <div class="bu-title-group">
-        <h1 class="bu-title">Carga Masiva</h1>
+        <h1 class="bu-title">{{ activeStrategy.title }}</h1>
+        <div
+          class="bu-gateway-badge bu-yappy-badge"
+          [style.background]="
+            activeStrategy.badgeConfig.gradient ||
+            'linear-gradient(135deg, #0077c8 0%, #00a4e4 100%)'
+          "
+        >
+          <mat-icon class="bu-gateway-icon bu-yappy-icon">{{
+            activeStrategy.badgeConfig.icon
+          }}</mat-icon>
+          <span class="bu-gateway-text bu-yappy-text">{{
+            activeStrategy.badgeConfig.text
+          }}</span>
+        </div>
       </div>
     </div>
 
     <div class="bu-header-right">
-      <div class="bu-meta-pill bu-pill-info">
-        <mat-icon class="bu-meta-icon">receipt_long</mat-icon>
-        <span class="bu-meta-label">Registros:</span>
-        <strong class="bu-meta-value">{{ totalRegistros }}</strong>
-      </div>
-      <div class="bu-meta-pill bu-pill-status">
-        <span class="bu-pulse-dot"></span>
-        <span class="bu-meta-label">Estado:</span>
-        <strong class="bu-meta-value">Por Recaudar</strong>
-      </div>
-      <div class="bu-yappy-badge">
-        <mat-icon class="bu-yappy-icon">payments</mat-icon>
-        <span class="bu-yappy-text">YAPPY</span>
+      <div class="bu-sort-container">
+        <span class="bu-sort-label">
+          <mat-icon class="bu-sort-label-icon">sort</mat-icon>
+          <span>Ordenar:</span>
+        </span>
+        <mat-button-toggle-group
+          [value]="sortOrder"
+          (change)="onSortChange($event.value)"
+          hideSingleSelectionIndicator="true"
+          name="sortOrder"
+          aria-label="Criterio de ordenamiento"
+          class="bu-sort-toggle-group"
+        >
+          <mat-button-toggle
+            value="default"
+            class="bu-sort-toggle-btn bu-toggle-default"
+          >
+            <mat-icon class="bu-toggle-icon">swap_vert</mat-icon>
+            <span>Por Defecto</span>
+          </mat-button-toggle>
+
+          <mat-button-toggle
+            value="revision"
+            class="bu-sort-toggle-btn bu-toggle-warn"
+          >
+            <mat-icon class="bu-toggle-icon">warning_amber</mat-icon>
+            <span>Revisión</span>
+            <span class="bu-toggle-pill bu-pill-warn">{{
+              metrics.registrosPendientes
+            }}</span>
+          </mat-button-toggle>
+
+          <mat-button-toggle
+            value="ready"
+            class="bu-sort-toggle-btn bu-toggle-ok"
+          >
+            <mat-icon class="bu-toggle-icon">check_circle</mat-icon>
+            <span>Listos</span>
+            <span class="bu-toggle-pill bu-pill-ok">{{
+              metrics.registrosValidados
+            }}</span>
+          </mat-button-toggle>
+        </mat-button-toggle-group>
       </div>
     </div>
   </header>
@@ -39,18 +83,11 @@
     <div class="bu-table-toolbar">
       <div class="bu-toolbar-left">
         <span class="bu-table-legend-title">Detalle de Transacciones</span>
-        <div class="bu-legend-group">
-          <span class="bu-legend-item bu-legend-ok">
-            <span class="bu-dot bu-dot-ok"></span> 220 Asignados
-          </span>
-          <span class="bu-legend-item bu-legend-warn">
-            <span class="bu-dot bu-dot-warn"></span> 2 Requieren Revisión
-          </span>
-        </div>
       </div>
       <div class="bu-toolbar-right">
-        <span class="bu-toolbar-stat">
-          Crédito Total Lote: <strong>${{ creditos }}</strong>
+        <span class="bu-legend-item bu-legend-warn">
+          <span class="bu-dot bu-dot-warn"></span>
+          {{ metrics.registrosPendientes }} Requieren Revisión
         </span>
       </div>
     </div>
@@ -86,7 +123,7 @@
             *ngFor="let row of records"
             (click)="selectRow(row.id)"
             [class.bu-row-selected]="row.id === selectedRowId"
-            [class.bu-row-alert]="row.hasAlert || !row.unidad"
+            [class.bu-row-alert]="isRecordInReview(row)"
           >
             <!-- Selector / ID -->
             <td class="td-center td-index">
@@ -107,16 +144,9 @@
               <div class="bu-cell-name">
                 <span
                   class="bu-driver-name"
-                  [class.bu-name-alert]="row.hasAlert || !row.unidad"
+                  [class.bu-name-alert]="isRecordInReview(row)"
                   >{{ row.nombre }}</span
                 >
-                <span
-                  *ngIf="row.hasAlert || !row.unidad"
-                  class="bu-warning-chip"
-                  matTooltip="Unidad no asignada"
-                >
-                  <mat-icon>error</mat-icon> Requiere Revisión
-                </span>
               </div>
             </td>
 
@@ -213,7 +243,7 @@
           <span class="bu-card-header-label">Conciliación de Lote</span>
         </div>
         <div class="bu-badge-total-records">
-          Total Registros: <strong>{{ totalRegistros }}</strong>
+          Total Registros: <strong>{{ metrics.totalRegistros }}</strong>
         </div>
       </div>
 
@@ -229,15 +259,15 @@
             <div class="bu-status-chip bu-chip-success">
               <mat-icon>check_circle</mat-icon>
               <span
-                ><strong>{{ registrosValidados }}</strong> Validados</span
+                ><strong>{{ metrics.registrosValidados }}</strong>
+                Validados</span
               >
             </div>
             <div class="bu-status-chip bu-chip-danger">
               <mat-icon>warning</mat-icon>
               <span
-                ><strong>{{ registrosPendientes }}</strong> Sin Unidad (${{
-                  montoPendiente
-                }})</span
+                ><strong>{{ metrics.registrosPendientes }}</strong> Sin Unidad
+                (${{ metrics.montoPendiente }})</span
               >
             </div>
           </div>
@@ -246,11 +276,11 @@
             <div class="bu-progress-track">
               <div
                 class="bu-progress-fill"
-                [style.width.%]="porcentajeConciliado"
+                [style.width.%]="metrics.porcentajeConciliado"
               ></div>
             </div>
             <span class="bu-progress-label"
-              >{{ porcentajeConciliado }}% Conciliado</span
+              >{{ metrics.porcentajeConciliado }}% Conciliado</span
             >
           </div>
         </div>
@@ -270,7 +300,7 @@
                 <mat-icon>arrow_downward</mat-icon>
                 <span>DÉBITOS</span>
               </div>
-              <strong class="bu-kpi-amount">${{ debitos }}</strong>
+              <strong class="bu-kpi-amount">${{ metrics.debitos }}</strong>
             </div>
 
             <div class="bu-mini-kpi bu-kpi-credit">
@@ -278,71 +308,81 @@
                 <mat-icon>arrow_upward</mat-icon>
                 <span>CRÉDITOS</span>
               </div>
-              <strong class="bu-kpi-amount">${{ creditos }}</strong>
+              <strong class="bu-kpi-amount">${{ metrics.creditos }}</strong>
             </div>
           </div>
         </div>
 
         <div class="bu-dash-divider"></div>
 
-        <!-- Bloque 3: Distribución de Rubros (Chips de Colores) -->
-        <div class="bu-dash-block bu-block-rubros">
-          <div class="bu-block-header">
-            <mat-icon class="bu-block-ico">pie_chart</mat-icon>
-            <span class="bu-block-title">Distribución de Rubros</span>
+        <!-- Bloque 3 y 4 Combinados: Distribución de Rubros + Banco (Fondo Azul) -->
+        <div class="bu-bank-combined-card">
+          <div class="bu-bank-rubros-section">
+            <div class="bu-block-header bu-header-white">
+              <mat-icon class="bu-block-ico bu-ico-white">pie_chart</mat-icon>
+              <span class="bu-block-title bu-title-white"
+                >Distribución de Rubros</span
+              >
+            </div>
+
+            <div class="bu-rubros-chips-grid">
+              <div
+                class="bu-rubro-chip bu-chip-comis"
+                [matTooltip]="
+                  'Comisión retenida por ' +
+                  (activeStrategy.badgeConfig.text || 'Pasarela')
+                "
+              >
+                <span class="bu-chip-lbl">Comisión</span>
+                <strong class="bu-chip-val">${{ metrics.comision }}</strong>
+              </div>
+              <div
+                class="bu-rubro-chip bu-chip-inscrip"
+                matTooltip="Abono a Inscripciones"
+              >
+                <span class="bu-chip-lbl">Inscripción</span>
+                <strong class="bu-chip-val">${{ metrics.inscripcion }}</strong>
+              </div>
+              <div
+                class="bu-rubro-chip bu-chip-siniest"
+                matTooltip="Abono a Siniestros"
+              >
+                <span class="bu-chip-lbl">Siniestros</span>
+                <strong class="bu-chip-val">${{ metrics.siniestros }}</strong>
+              </div>
+              <div
+                class="bu-rubro-chip bu-chip-panapass"
+                matTooltip="Recarga de Panapass"
+              >
+                <span class="bu-chip-lbl">Panapass</span>
+                <strong class="bu-chip-val">${{ metrics.panapass }}</strong>
+              </div>
+              <div
+                class="bu-rubro-chip bu-chip-multas"
+                matTooltip="Cobro de Multas"
+              >
+                <span class="bu-chip-lbl">Multas</span>
+                <strong class="bu-chip-val">${{ metrics.multas }}</strong>
+              </div>
+            </div>
           </div>
 
-          <div class="bu-rubros-chips-grid">
-            <div
-              class="bu-rubro-chip bu-chip-comis"
-              matTooltip="Comisión retenida por Yappy"
-            >
-              <span class="bu-chip-lbl">Comisión</span>
-              <strong class="bu-chip-val">${{ comision }}</strong>
-            </div>
-            <div
-              class="bu-rubro-chip bu-chip-inscrip"
-              matTooltip="Abono a Inscripciones"
-            >
-              <span class="bu-chip-lbl">Inscripción</span>
-              <strong class="bu-chip-val">${{ inscripcion }}</strong>
-            </div>
-            <div
-              class="bu-rubro-chip bu-chip-siniest"
-              matTooltip="Abono a Siniestros"
-            >
-              <span class="bu-chip-lbl">Siniestros</span>
-              <strong class="bu-chip-val">${{ siniestros }}</strong>
-            </div>
-            <div
-              class="bu-rubro-chip bu-chip-panapass"
-              matTooltip="Recarga de Panapass"
-            >
-              <span class="bu-chip-lbl">Panapass</span>
-              <strong class="bu-chip-val">${{ panapass }}</strong>
-            </div>
-            <div
-              class="bu-rubro-chip bu-chip-multas"
-              matTooltip="Cobro de Multas"
-            >
-              <span class="bu-chip-lbl">Multas</span>
-              <strong class="bu-chip-val">${{ multas }}</strong>
-            </div>
-          </div>
-        </div>
+          <div class="bu-bank-inner-divider"></div>
 
-        <div class="bu-dash-divider"></div>
-
-        <!-- Bloque 4: Validación Banco General (Hero Card Centrada) -->
-        <div class="bu-dash-block bu-block-bank">
-          <div class="bu-bank-hero-card">
+          <div class="bu-bank-total-section">
             <div class="bu-bank-hero-top">
-              <mat-icon class="bu-bank-mini-icon">account_balance</mat-icon>
-              <span class="bu-bank-tag">BANCO GENERAL</span>
+              <mat-icon class="bu-bank-mini-icon">{{
+                activeStrategy.bankCardConfig.icon
+              }}</mat-icon>
+              <span class="bu-bank-tag">{{
+                activeStrategy.bankCardConfig.tag
+              }}</span>
             </div>
             <div class="bu-bank-hero-center">
-              <span class="bu-bank-label-text">T. BANCO</span>
-              <span class="bu-bank-amount-val">${{ totalBanco }}</span>
+              <span class="bu-bank-label-text">{{
+                activeStrategy.bankCardConfig.label
+              }}</span>
+              <span class="bu-bank-amount-val">${{ metrics.totalBanco }}</span>
             </div>
           </div>
         </div>
@@ -376,6 +416,7 @@
         <button
           mat-flat-button
           class="cr-button bu-btn-recaudar bu-action-btn bu-btn-full"
+          (click)="confirmRecaudo()"
         >
           <mat-icon>point_of_sale</mat-icon>
           <span>Recaudar</span>

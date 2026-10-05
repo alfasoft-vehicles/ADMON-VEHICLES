@@ -47,7 +47,7 @@ export class OwnersPartsrelationshipComponent implements OnInit {
   constructor(
     private apiService: ApiService,
     private jwtService: JwtService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
   ) {
     this.infoForm = this.fb.group({
       companie: ['', Validators.required],
@@ -77,7 +77,7 @@ export class OwnersPartsrelationshipComponent implements OnInit {
       },
       (error) => {
         error.log(error);
-      }
+      },
     );
   }
 
@@ -106,7 +106,7 @@ export class OwnersPartsrelationshipComponent implements OnInit {
       },
       (error) => {
         console.error(error);
-      }
+      },
     );
   }
 
@@ -120,19 +120,17 @@ export class OwnersPartsrelationshipComponent implements OnInit {
       (response) => {
         this.vehicles = response;
         // this.vehicles.sort((a, b) => a.numero.localeCompare(b.numero));
-        if (!this.jwtService.isAdmin()) {
-          const defaultVehicle = {
-            placa: '',
-            numero: '',
-            marca: '',
-            consecutivo: '',
-          };
-          this.vehicles = [defaultVehicle, ...this.vehicles];
-        }
+        const defaultVehicle = {
+          placa: '',
+          numero: '',
+          marca: '',
+          consecutivo: '',
+        };
+        this.vehicles = [defaultVehicle, ...this.vehicles];
       },
       (error) => {
         console.error(error);
-      }
+      },
     );
   }
 
@@ -153,7 +151,7 @@ export class OwnersPartsrelationshipComponent implements OnInit {
       },
       (error) => {
         console.error(error);
-      }
+      },
     );
   }
 
@@ -165,7 +163,7 @@ export class OwnersPartsrelationshipComponent implements OnInit {
 
   openExternalLink(): void {
     const company = this.getCompany();
-    let endpoint = 'partsrelationship/'+company;
+    let endpoint = 'partsrelationship/' + company;
     if (endpoint) {
       const companyValue = this.infoForm.value.companie;
       const companyId = companyValue.split(' - ').pop()?.trim() || companyValue;

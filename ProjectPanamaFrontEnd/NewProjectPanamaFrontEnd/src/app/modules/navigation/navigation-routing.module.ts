@@ -60,6 +60,7 @@ import { VehiclesAddnewComponent } from '../tasks/vehicles-old/vehicles-addnew/v
 import { InspectionsTableComponent } from '../tasks/inspections/inspections-table/inspections-table.component';
 import { inspectionsGuard } from 'src/app/guards/inspections.guard';
 import { vehicleRepairGuard } from 'src/app/guards/vehicle-repair.guard';
+import { PermissionGuard } from 'src/app/guards/permission.guard';
 
 const routes: Routes = [
   {
@@ -73,35 +74,137 @@ const routes: Routes = [
         loadChildren: () =>
           import('../home/home.module').then((m) => m.HomeModule),
       },
-      { path: 'statevehiclefleet', component: StatevehiclefleetComponent },
+      {
+        path: 'statevehiclefleet',
+        component: StatevehiclefleetComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'tarea04' },
+      },
       // { path: 'vehicles', component: VehiclesTableComponent },
-      { path: 'vehicle/:code', component: VehiclesResumeComponent },
-      { path: 'new-vehicle', component: VehiclesAddnewComponent },
-      { path: 'feespaid', component: FeespaidComponent },
+      {
+        path: 'vehicle/:code',
+        component: VehiclesResumeComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'tarea03' },
+      },
+      {
+        path: 'new-vehicle',
+        component: VehiclesAddnewComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'tarea03' },
+      },
+      {
+        path: 'feespaid',
+        component: FeespaidComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'tarea05' },
+      },
       // { path: 'owners', component: OwnersTableComponent },
-      { path: 'owner/:code', component: OwnersResumeComponent },
-      { path: 'new-owner', component: OwnersAddnewComponent },
+      {
+        path: 'owner/:code',
+        component: OwnersResumeComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'tarea01' },
+      },
+      {
+        path: 'new-owner',
+        component: OwnersAddnewComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'tarea01' },
+      },
       // { path: 'drivers', component: DriversTableComponent },
-      { path: 'driver/:code', component: DriversResumeComponent },
-      { path: 'new-driver', component: DriversAddnewComponent },
-      { path: 'operations', component: OpcionesOperacionesComponent },
-      { path: 'procedures', component: OpcionesTramitesComponent },
-      { path: 'warehouse', component: OpcionesAlmacenComponent },
-      { path: 'workshop', component: OpcionesTallerComponent },
-      { path: 'sheet-metal-work', component: OpcionesChapisteriaComponent },
-      { path: 'keychain', component: OpcionesLlaveroComponent },
-      { path: 'claims', component: OpcionesReclamosComponent },
-      { path: 'wallet', component: OpcionesCarteraComponent },
-      { path: 'management', component: OpcionesGerenciaComponent },
-      { path: 'expenses', component: OpcionesGastosComponent },
-      { path: 'cnt', component: OpcionesCntComponent },
-      { path: 'utilities', component: OpcionesUtilidadesComponent },
+      {
+        path: 'driver/:code',
+        component: DriversResumeComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'tarea02' },
+      },
+      {
+        path: 'new-driver',
+        component: DriversAddnewComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'tarea02' },
+      },
+      {
+        path: 'operations',
+        component: OpcionesOperacionesComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'opcion02' },
+      },
+      {
+        path: 'procedures',
+        component: OpcionesTramitesComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'opcion04' },
+      },
+      {
+        path: 'warehouse',
+        component: OpcionesAlmacenComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'opcion05' },
+      },
+      {
+        path: 'workshop',
+        component: OpcionesTallerComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'opcion06' },
+      },
+      {
+        path: 'sheet-metal-work',
+        component: OpcionesChapisteriaComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'opcion07' },
+      },
+      {
+        path: 'keychain',
+        component: OpcionesLlaveroComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'opcion08' },
+      },
+      {
+        path: 'claims',
+        component: OpcionesReclamosComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'opcion09' },
+      },
+      {
+        path: 'wallet',
+        component: OpcionesCarteraComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'opcion10' },
+      },
+      {
+        path: 'management',
+        component: OpcionesGerenciaComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'opcion11' },
+      },
+      {
+        path: 'expenses',
+        component: OpcionesGastosComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'opcion12' },
+      },
+      {
+        path: 'cnt',
+        component: OpcionesCntComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'opcion13' },
+      },
+      {
+        path: 'utilities',
+        component: OpcionesUtilidadesComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'opcion15' },
+      },
       {
         path: 'cobros',
         loadChildren: () =>
           import('../options/users/cobros/cobros.module').then(
             (m) => m.CobrosModule,
           ),
+        canActivate: [PermissionGuard],
+        data: { permission: 'opcion03' },
       },
       {
         path: 'inspections',
@@ -119,6 +222,8 @@ const routes: Routes = [
           import('../tasks/vehicles/vehicles.module').then(
             (m) => m.VehiclesModule,
           ),
+        canActivate: [PermissionGuard],
+        data: { permission: 'tarea03' },
       },
       {
         path: 'drivers',
@@ -126,11 +231,15 @@ const routes: Routes = [
           import('../tasks/drivers/drivers.module').then(
             (m) => m.DriversModule,
           ),
+        canActivate: [PermissionGuard],
+        data: { permission: 'tarea02' },
       },
       {
         path: 'owners',
         loadChildren: () =>
           import('../tasks/owners/owners.module').then((m) => m.OwnersModule),
+        canActivate: [PermissionGuard],
+        data: { permission: 'tarea01' },
       },
       {
         path: 'vehicle-repair',
@@ -146,7 +255,9 @@ const routes: Routes = [
           import('../options/users/cash-register/cash-register.module').then(
             (m) => m.CashRegisterModule,
           ),
-      }
+        canActivate: [PermissionGuard],
+        data: { permission: 'opcion01' },
+      },
     ],
   },
 ];

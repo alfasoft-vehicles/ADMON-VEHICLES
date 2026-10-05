@@ -28,108 +28,54 @@ async def partsrelationship_report(company_code: str, data: PartsRelationshipRep
     if data.primeraFecha > data.ultimaFecha:
       return JSONResponse(content={"error": "La primera fecha no puede ser mayor a la última fecha"}, status_code=400)
 
-    user_admin = os.getenv('USER_ADMIN')
-    
     if data.unidad == "" or data.unidad == "TODOS":
-      if data.usuario != user_admin:
-        # empresa = db.query(Propietarios.CODIGO).filter(Propietarios.NOMBRE == data.empresa).all()
-        # if len(empresa) == 0:
-        #   return JSONResponse(content={"error": "No se encontró la empresa"}, status_code=400)
-        empresa = data.empresa
+      empresa = data.empresa
 
-        conteo_reporte_piezas = db.query(
-          Propietarios.EMPRESA.label('codigo_empresa'),
-          Movimien.CODIGO.label('codigo'),
-          Movimien.NOMBRE.label('nombre'),
-          Movimien.PRESENTA.label('presenta'),
-          Movimien.PEDIDA.label('pedida'),
-          Movimien.DCTO_VALOR.label('dcto_valor'),
-          Movimien.IVA_VALOR.label('iva_valor'),
-          Movimien.TOTAL.label('total'),
-          Movimien.FACTURA.label('factura'),
-          Movimien.TIPNOM.label('tipnom'),
-          Movimien.UNIDAD.label('unidad'),
-          Movimien.FECHA.label('fecha'),
-          Propietarios.NOMBRE.label('propietario'),
-          Movienca.ORIGEN.label('origen'),
-          Movimien.VALOR.label('valor'),
-        ) \
-        .join(Movienca, (Movimien.FACTURA == Movienca.FACTURA) & 
-                        (Movimien.TIPO == Movienca.TIPO)) \
-        .join(Propietarios, Propietarios.CODIGO == Movimien.PROPI_IDEN) \
-        .filter(
-          Movimien.FECHA >= data.primeraFecha,
-          Movimien.FECHA <= data.ultimaFecha,
-          Movimien.PROPI_IDEN == empresa,
-          Movimien.TIPO == '022',
-          Movimien.EMPRESA == company_code,
-          Propietarios.EMPRESA == company_code,
-          Movienca.EMPRESA == company_code
-        ) \
-        .group_by(
-          Movimien.FACTURA,
-          Movimien.FECHA,
-          Movimien.TIPNOM,
-          Movimien.UNIDAD,
-          Propietarios.NOMBRE,
-          Movienca.ORIGEN,
-          Movimien.CODIGO,
-          Movimien.NOMBRE,
-          Movimien.PRESENTA,
-          Movimien.PEDIDA,
-          Movimien.VALOR,
-          Movimien.DCTO_VALOR,
-          Movimien.IVA_VALOR,
-          Movimien.TOTAL
-        ).all()
-      else:
-        # empresa = db.query(Propietarios.CODIGO).filter(Propietarios.NOMBRE == data.empresa).all()
-        empresa = data.empresa
-        conteo_reporte_piezas = db.query(
-          Propietarios.EMPRESA.label('codigo_empresa'),
-          Movimien.CODIGO.label('codigo'),
-          Movimien.NOMBRE.label('nombre'),
-          Movimien.PRESENTA.label('presenta'),
-          Movimien.PEDIDA.label('pedida'),
-          Movimien.DCTO_VALOR.label('dcto_valor'),
-          Movimien.IVA_VALOR.label('iva_valor'),
-          Movimien.TOTAL.label('total'),
-          Movimien.FACTURA.label('factura'),
-          Movimien.TIPNOM.label('tipnom'),
-          Movimien.UNIDAD.label('unidad'),
-          Movimien.FECHA.label('fecha'),
-          Propietarios.NOMBRE.label('propietario'),
-          Movienca.ORIGEN.label('origen'),
-          Movimien.VALOR.label('valor'),
-        ) \
-        .join(Movienca, (Movimien.FACTURA == Movienca.FACTURA) & 
-                        (Movimien.TIPO == Movienca.TIPO)) \
-        .join(Propietarios, Propietarios.CODIGO == Movimien.PROPI_IDEN) \
-        .filter(
-          Movimien.FECHA >= data.primeraFecha,
-          Movimien.FECHA <= data.ultimaFecha,
-          Movimien.PROPI_IDEN == empresa,
-          Movimien.TIPO == '022',
-          Movimien.EMPRESA == company_code,
-          Propietarios.EMPRESA == company_code,
-          Movienca.EMPRESA == company_code
-        ) \
-        .group_by(
-          Movimien.FACTURA,
-          Movimien.FECHA,
-          Movimien.TIPNOM,
-          Movimien.UNIDAD,
-          Propietarios.NOMBRE,
-          Movienca.ORIGEN,
-          Movimien.CODIGO,
-          Movimien.NOMBRE,
-          Movimien.PRESENTA,
-          Movimien.PEDIDA,
-          Movimien.VALOR,
-          Movimien.DCTO_VALOR,
-          Movimien.IVA_VALOR,
-          Movimien.TOTAL
-        ).all()
+      conteo_reporte_piezas = db.query(
+        Propietarios.EMPRESA.label('codigo_empresa'),
+        Movimien.CODIGO.label('codigo'),
+        Movimien.NOMBRE.label('nombre'),
+        Movimien.PRESENTA.label('presenta'),
+        Movimien.PEDIDA.label('pedida'),
+        Movimien.DCTO_VALOR.label('dcto_valor'),
+        Movimien.IVA_VALOR.label('iva_valor'),
+        Movimien.TOTAL.label('total'),
+        Movimien.FACTURA.label('factura'),
+        Movimien.TIPNOM.label('tipnom'),
+        Movimien.UNIDAD.label('unidad'),
+        Movimien.FECHA.label('fecha'),
+        Propietarios.NOMBRE.label('propietario'),
+        Movienca.ORIGEN.label('origen'),
+        Movimien.VALOR.label('valor'),
+      ) \
+      .join(Movienca, (Movimien.FACTURA == Movienca.FACTURA) & 
+                      (Movimien.TIPO == Movienca.TIPO)) \
+      .join(Propietarios, Propietarios.CODIGO == Movimien.PROPI_IDEN) \
+      .filter(
+        Movimien.FECHA >= data.primeraFecha,
+        Movimien.FECHA <= data.ultimaFecha,
+        Movimien.PROPI_IDEN == empresa,
+        Movimien.TIPO == '022',
+        Movimien.EMPRESA == company_code,
+        Propietarios.EMPRESA == company_code,
+        Movienca.EMPRESA == company_code
+      ) \
+      .group_by(
+        Movimien.FACTURA,
+        Movimien.FECHA,
+        Movimien.TIPNOM,
+        Movimien.UNIDAD,
+        Propietarios.NOMBRE,
+        Movienca.ORIGEN,
+        Movimien.CODIGO,
+        Movimien.NOMBRE,
+        Movimien.PRESENTA,
+        Movimien.PEDIDA,
+        Movimien.VALOR,
+        Movimien.DCTO_VALOR,
+        Movimien.IVA_VALOR,
+        Movimien.TOTAL
+      ).all()
 
     elif data.unidad != "" and data.unidad != "TODOS":
       # empresa = db.query(Propietarios.CODIGO).filter(Propietarios.NOMBRE == data.empresa).all()
@@ -273,10 +219,7 @@ async def partsrelationship_report(company_code: str, data: PartsRelationshipRep
     # Formatea la fecha y la hora según lo requerido
     fecha = now_in_panama.strftime("%d/%m/%Y")
     hora_actual = now_in_panama.strftime("%I:%M:%S %p")
-    if data.usuario == user_admin:
-      usuario = "Administrador"
-    else:
-      usuario = data.usuario
+    usuario = data.usuario
     titulo = 'Detalle Órdenes de Trabajo'
 
     info_empresa = db.query(

@@ -1,0 +1,239 @@
+<div class="dialog-header-container">
+  <div class="dialog-header-info">
+    <div class="dialog-title-wrapper">
+      <div class="dialog-badge-icon">
+        <mat-icon>cloud_upload</mat-icon>
+      </div>
+      <div>
+        <h2 class="dialog-title">Carga Masiva</h2>
+        <p class="dialog-subtitle" *ngIf="currentStep === 1">
+          Paso 1 de 2: Selecciona la entidad bancaria o pasarela a conciliar
+        </p>
+        <p class="dialog-subtitle" *ngIf="currentStep === 2">
+          Paso 2 de 2: Adjunta el archivo .CSV de extracto bancario
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Barra de Pasos / Stepper Pills -->
+<div class="stepper-bar">
+  <div
+    class="step-pill"
+    [class.active]="currentStep === 1"
+    [class.completed]="currentStep === 2"
+    (click)="currentStep = 1"
+  >
+    <span class="step-num">1</span>
+    <span class="step-label">Selección de Banco</span>
+    <mat-icon *ngIf="currentStep === 2" class="step-check">check</mat-icon>
+  </div>
+  <div class="step-connector" [class.active]="currentStep === 2"></div>
+  <div class="step-pill" [class.active]="currentStep === 2">
+    <span class="step-num">2</span>
+    <span class="step-label">Carga de Archivo</span>
+  </div>
+</div>
+
+<mat-divider></mat-divider>
+
+<!-- Progreso de subida -->
+<mat-progress-bar
+  *ngIf="isUploading"
+  mode="indeterminate"
+  class="upload-progress-bar"
+></mat-progress-bar>
+
+<mat-dialog-content class="dialog-content-custom">
+  <!-- PASO 1: Selección de Banco / Pasarela -->
+  <div *ngIf="currentStep === 1" class="step-content">
+    <div class="section-instruction">
+      <span>Elige la fuente de datos que deseas procesar para este lote:</span>
+    </div>
+
+    <div class="banks-grid">
+      <div
+        *ngFor="let bank of bankOptions"
+        class="bank-card"
+        [class.selected]="selectedBank?.id === bank.id"
+        matRipple
+        (click)="selectBank(bank)"
+      >
+        <div class="bank-card-header">
+          <div class="bank-icon-container" [style.background]="bank.gradient">
+            <mat-icon>{{ bank.icon }}</mat-icon>
+          </div>
+          <div class="select-indicator">
+            <mat-icon class="check-icon">check</mat-icon>
+          </div>
+        </div>
+
+        <div class="bank-card-body">
+          <h3 class="bank-name">{{ bank.name }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 2: Carga de Archivo CSV -->
+  <div *ngIf="currentStep === 2" class="step-content">
+    <!-- Banco seleccionado resumido -->
+    <div class="selected-bank-summary" *ngIf="selectedBank">
+      <div class="summary-left">
+        <div class="summary-icon" [style.background]="selectedBank.gradient">
+          <mat-icon>{{ selectedBank.icon }}</mat-icon>
+        </div>
+        <div class="summary-details">
+          <span class="summary-tag">{{ selectedBank.badge }}</span>
+          <h4 class="summary-name">{{ selectedBank.name }}</h4>
+        </div>
+      </div>
+      <button
+        mat-button
+        class="btn-change-bank"
+        (click)="previousStep()"
+        [disabled]="isUploading"
+      >
+        <mat-icon>sync_alt</mat-icon>
+        <span>Cambiar banco</span>
+      </button>
+    </div>
+
+    <!-- Dropzone / Área de Subida -->
+    <div
+      class="upload-dropzone"
+      [class.dragging]="isDragging"
+      [class.has-file]="!!selectedFile"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onFileDropped($event)"
+      (click)="!selectedFile && fileInput.click()"
+    >
+      <input
+        #fileInput
+        type="file"
+        accept=".csv"
+        style="display: none"
+        (change)="onFileSelected($event)"
+      />
+
+      <!-- Estado: Sin archivo seleccionado -->
+      <div *ngIf="!selectedFile" class="dropzone-empty">
+        <div class="dropzone-icon-box">
+          <mat-icon class="dropzone-icon">cloud_upload</mat-icon>
+        </div>
+        <div class="dropzone-texts">
+          <p class="dropzone-main-text">
+            Arrastra tu archivo <strong>.CSV</strong> aquí o
+            <span class="dropzone-browse">haz clic para examinar</span>
+          </p>
+          <p class="dropzone-hint">
+            Formatos soportados: CSV delimitado por comas o punto y coma (Máx.
+            10 MB)
+          </p>
+        </div>
+      </div>
+
+      <!-- Estado: Archivo seleccionado -->
+      <div
+        *ngIf="selectedFile"
+        class="file-preview-card"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="file-icon-box">
+          <mat-icon class="file-main-icon">description</mat-icon>
+          <span class="file-ext-badge">CSV</span>
+        </div>
+        <div class="file-info-col">
+          <span class="file-name" [title]="selectedFile.name">{{
+            selectedFile.name
+          }}</span>
+          <span class="file-size"
+            >{{ formatFileSize(selectedFile.size) }} • Listo para procesar</span
+          >
+        </div>
+        <div class="file-actions-col">
+          <div class="file-ready-chip">
+            <mat-icon>check_circle</mat-icon>
+            <span>Preparado</span>
+          </div>
+          <button
+            mat-icon-button
+            class="btn-remove-file"
+            (click)="removeFile($event)"
+            matTooltip="Quitar archivo"
+            [disabled]="isUploading"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Banner informativo de simulación / sin endpoint -->
+    <div class="dev-info-banner">
+      <mat-icon class="info-banner-icon">info</mat-icon>
+      <div class="info-banner-text">
+        <strong>Modo de Desarrollo:</strong> Aún no hay endpoints configurados
+        en el servidor. Puedes hacer clic en
+        <strong>"Subir y Procesar"</strong> directamente, con o sin archivo,
+        para continuar con la conciliación.
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-divider></mat-divider>
+
+<!-- Acciones del Diálogo (mat-dialog-actions) -->
+<mat-dialog-actions align="end" class="dialog-actions-custom">
+  <!-- Botones Paso 1 -->
+  <ng-container *ngIf="currentStep === 1">
+    <button
+      mat-button
+      type="button"
+      (click)="close()"
+      class="action-btn btn-cancel"
+    >
+      <mat-icon>close</mat-icon> Cancelar
+    </button>
+    <button
+      mat-raised-button
+      color="primary"
+      type="button"
+      (click)="nextStep()"
+      class="action-btn btn-next"
+      [disabled]="!selectedBank"
+    >
+      <span>Siguiente</span>
+      <mat-icon>arrow_forward</mat-icon>
+    </button>
+  </ng-container>
+
+  <!-- Botones Paso 2 -->
+  <ng-container *ngIf="currentStep === 2">
+    <button
+      mat-button
+      type="button"
+      (click)="previousStep()"
+      class="action-btn btn-back"
+      [disabled]="isUploading"
+    >
+      <mat-icon>arrow_back</mat-icon> Atrás
+    </button>
+    <button
+      mat-raised-button
+      color="primary"
+      type="button"
+      (click)="submitUpload()"
+      class="action-btn btn-submit"
+      [disabled]="isUploading"
+    >
+      <mat-icon *ngIf="!isUploading">cloud_upload</mat-icon>
+      <mat-icon *ngIf="isUploading" class="spin-icon">sync</mat-icon>
+      <span *ngIf="!isUploading">Subir y Procesar</span>
+      <span *ngIf="isUploading">Procesando...</span>
+    </button>
+  </ng-container>
+</mat-dialog-actions>

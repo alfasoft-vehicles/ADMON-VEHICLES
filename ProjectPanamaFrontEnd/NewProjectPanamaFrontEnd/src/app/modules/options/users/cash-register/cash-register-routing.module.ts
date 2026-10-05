@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { CashRegisterViewComponent } from './components/cash-register-view/cash-register-view.component';
-import { BuYappyComponent } from './components/bulk-upload/bu-yappy/bu-yappy.component';
+import { BulkUploadViewComponent } from './components/bulk-upload-view/bulk-upload-view.component';
 
 const routes: Routes = [
   {
@@ -10,7 +10,11 @@ const routes: Routes = [
   },
   {
     path: 'bulk-upload',
-    component: BuYappyComponent,
+    component: BulkUploadViewComponent,
+  },
+  {
+    path: 'bulk-upload/:type',
+    component: BulkUploadViewComponent,
   },
 ];
 
