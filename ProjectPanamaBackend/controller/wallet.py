@@ -1,7 +1,7 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.encoders import jsonable_encoder
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, UploadFile, File
 from concurrent.futures import ThreadPoolExecutor
 from config.dbconnection import session
 from models.cartera import Cartera
@@ -18,6 +18,7 @@ from models.cxctiposrecargos import CXCTiposRecargos
 from models.permisosusuario import PermisosUsuario
 from models.cajarecaudos import CajaRecaudos
 from models.infoempresas import InfoEmpresas
+from models.yappy import Yappy
 from schemas.wallet import newSurcharge, Revenue, newRentReceipt
 from sqlalchemy import func
 from utils.panapass import get_txt_file, search_value_in_txt
@@ -27,6 +28,8 @@ from utils.pdf import html2pdf_receipt
 from datetime import datetime, timedelta
 import pytz
 import os
+import csv
+import io
 import jinja2
 import asyncio
 import tempfile
@@ -1056,6 +1059,133 @@ async def generate_revenue_pdf(company_code: str, receipt_number: str):
     return response
 
   except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+YAPPY_COLUMN_MAP = {
+  'FECHA': 'FECHA',
+  'HORA': 'HORA',
+  'REFERENCIA': 'REFERENCIA',
+  'NOMBRE DEL CLIENTE': 'NOMBRE',
+  'CELULAR': 'CELULAR',
+  'COMENTARIO': 'COMENTARIO',
+  'ESTADO': 'ESTADO',
+  'PUNTO DE COBRO': 'PTO_COBRO',
+  'IDENTIFICADOR': 'IDENTIFICA',
+  'MOTIVO DE PAGO': 'MOTIVOPAGO',
+  'SUB-TOTAL': 'SUBTOTAL',
+  'PROPINA': 'PROPINA',
+  'DESCUENTO': 'DESCUENTO',
+  'IMPUESTO': 'IMPUESTO',
+  'TOTAL': 'TOTAL',
+  'ID GRUPO': 'IDGRUPO',
+  'ID CAJA': 'IDCAJA'
+}
+
+YAPPY_DECIMAL_FIELDS = ['SUBTOTAL', 'PROPINA', 'DESCUENTO', 'IMPUESTO', 'TOTAL']
+
+async def upload_yappy_csv(company_code: str, file: UploadFile = File(...)):
+  db = session()
+  try:
+    company_code = company_code.strip()
+    if not company_code or len(company_code) > 2:
+      return JSONResponse(content={"message": "company_code inválido"}, status_code=400)
+
+    if not file.filename or not file.filename.lower().endswith('.csv'):
+      return JSONResponse(content={"message": "El archivo debe tener extensión .csv"}, status_code=400)
+
+    raw_content = await file.read()
+
+    try:
+      text_content = raw_content.decode('utf-8-sig')
+    except UnicodeDecodeError:
+      text_content = raw_content.decode('latin-1')
+
+    reader = csv.DictReader(io.StringIO(text_content), delimiter=';')
+
+    if not reader.fieldnames:
+      return JSONResponse(content={"message": "El CSV está vacío o no tiene encabezados"}, status_code=400)
+
+    header_to_column = {
+      header: YAPPY_COLUMN_MAP[header.strip().upper()]
+      for header in reader.fieldnames
+      if header and header.strip().upper() in YAPPY_COLUMN_MAP
+    }
+
+    if 'REFERENCIA' not in header_to_column.values():
+      return JSONResponse(content={"message": "El CSV no tiene el formato de Yappy esperado"}, status_code=400)
+
+    inserted = 0
+    updated = 0
+    errors = []
+    warnings = []
+
+    for row_number, raw_row in enumerate(reader, start=2):
+      values = {'EMPRESA': company_code}
+
+      for header, column in header_to_column.items():
+        raw_value = (raw_row.get(header) or '').strip()
+
+        if column in YAPPY_DECIMAL_FIELDS:
+          if not raw_value:
+            values[column] = None
+            continue
+          try:
+            values[column] = Decimal(raw_value)
+          except InvalidOperation:
+            values[column] = None
+            warnings.append(f"Fila {row_number}: valor inválido en {column} ('{raw_value}'), se guardó vacío")
+          continue
+
+        if column == 'FECHA' and raw_value:
+          raw_value = raw_value.split()[-1]
+
+        max_length = Yappy.__table__.c[column].type.length
+        if len(raw_value) > max_length:
+          warnings.append(f"Fila {row_number}: {column} truncado a {max_length} caracteres")
+          raw_value = raw_value[:max_length]
+
+        values[column] = raw_value or None
+
+      has_reference = bool(values.get('REFERENCIA'))
+      values['REFERENCIA'] = values.get('REFERENCIA') or ''
+
+      try:
+        with db.begin_nested():
+          existing = None
+          if has_reference:
+            existing = db.query(Yappy).filter(
+              Yappy.EMPRESA == company_code,
+              Yappy.REFERENCIA == values['REFERENCIA']
+            ).first()
+
+          if existing:
+            for column, value in values.items():
+              setattr(existing, column, value)
+            db.flush()
+            updated += 1
+          else:
+            db.execute(Yappy.__table__.insert().values(**values))
+            inserted += 1
+      except Exception as row_error:
+        errors.append(f"Fila {row_number}: {str(row_error)}")
+
+    db.commit()
+
+    response = {
+      "message": "Carga de CSV procesada",
+      "inserted": inserted,
+      "updated": updated,
+      "warnings": warnings,
+      "errors": errors
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=201)
+  except Exception as e:
+    db.rollback()
     return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()
