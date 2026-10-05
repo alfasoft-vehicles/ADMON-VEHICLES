@@ -1,0 +1,100 @@
+/* Header */
+.dialog-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px 24px;
+}
+
+.dialog-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dialog-title {
+  margin: 0;
+  padding: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.25;
+}
+
+.dialog-subtitle {
+  margin: 0;
+  padding: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.close-button {
+  color: #64748b;
+}
+
+/* Loading Wrapper */
+.loading-wrapper {
+  padding-bottom: 24px;
+}
+
+/* Content Container */
+.dialog-content-custom {
+  padding: 20px 24px;
+  max-height: 70vh;
+  min-width: 380px;
+  overflow-y: auto;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.currency-prefix {
+  font-weight: 600;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.code-badge-small {
+  display: inline-block;
+  background-color: #e2e8f0;
+  color: #334155;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-right: 6px;
+}
+
+/* Actions */
+.dialog-actions-custom {
+  padding: 12px 24px 16px;
+  gap: 10px;
+}
+
+.action-btn {
+  font-weight: 600;
+  height: 40px;
+  padding: 0 18px;
+}
+
+.btn-confirm {
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.25);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .dialog-content-custom {
+    min-width: unset;
+    width: 100%;
+    padding: 16px 14px;
+  }
+}

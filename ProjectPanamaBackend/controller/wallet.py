@@ -1,6 +1,8 @@
-from anyio import current_time
-from fastapi.responses import JSONResponse
+from decimal import Decimal
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.encoders import jsonable_encoder
+from fastapi import BackgroundTasks
+from concurrent.futures import ThreadPoolExecutor
 from config.dbconnection import session
 from models.cartera import Cartera
 from models.conductores import Conductores
@@ -12,18 +14,29 @@ from models.centrales import Centrales
 from models.parametros import Parametros
 from models.condullamadas import Condullamadas
 from models.movienca import Movienca
+from models.cxctiposrecargos import CXCTiposRecargos
+from models.permisosusuario import PermisosUsuario
+from models.cajarecaudos import CajaRecaudos
+from models.infoempresas import InfoEmpresas
+from schemas.wallet import newSurcharge, Revenue, newRentReceipt
 from sqlalchemy import func
 from utils.panapass import get_txt_file, search_value_in_txt
+from utils.verify_values import verify_value
+from utils.cash_records import create_cash_record
+from utils.pdf import html2pdf_receipt
 from datetime import datetime, timedelta
 import pytz
 import os
+import jinja2
+import asyncio
+import tempfile
 from dotenv import load_dotenv
 
 load_dotenv()
 
 upload_directory = os.getenv('DIRECTORY_IMG')
 route_api = os.getenv('ROUTE_API')
-
+PDF_THREAD_POOL = ThreadPoolExecutor(max_workers=2)
 
 async def vehicle_wallet_info(company_code: str, vehicle_number: str, driver_number: str):
   db = session()
@@ -263,6 +276,785 @@ async def wallet_notifications(company_code: str, vehicle_number: str):
     }
 
     return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def create_surcharge(data: newSurcharge):
+  db = session()
+  try:
+    results = []
+
+    id_surcharges = [surcharge.id for surcharge in data.surcharges_list]
+
+    surcharges_types = db.query(CXCTiposRecargos).filter(
+      CXCTiposRecargos.EMPRESA == data.company_code,
+      CXCTiposRecargos.CODIGO.in_(id_surcharges)
+    ).all()
+
+    surcharges_types_map = {surcharge.CODIGO: surcharge.NOMBRE for surcharge in surcharges_types}
+
+    driver = db.query(Conductores).filter(
+      Conductores.EMPRESA == data.company_code,
+      Conductores.CODIGO == data.driver_number
+    ).first()
+
+    if not driver:
+      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+
+    vehicle = db.query(Vehiculos).filter(
+      Vehiculos.EMPRESA == data.company_code,
+      Vehiculos.NUMERO == data.vehicle_number
+    ).first()
+
+    if not vehicle:
+      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+
+    user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
+    user = user.CODIGO if user else ""
+
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    date = now_in_panama.strftime("%Y-%m-%d")
+    text_date = now_in_panama.strftime("%Y%m%d")
+
+    for surcharge in data.surcharges_list:
+      value = Decimal(surcharge.value)
+
+      current_entry = db.query(Cartera).filter(
+        Cartera.EMPRESA == data.company_code,
+        Cartera.CLIENTE == data.driver_number,
+        Cartera.UNIDAD == data.vehicle_number,
+        Cartera.TIPO == '12',
+        Cartera.TIPRECARGO == surcharge.id,
+        Cartera.FACTURA == '12-' + data.driver_number
+      ).first()
+
+      if current_entry:
+        current_entry.SALDO = (current_entry.SALDO or 0) + value
+        current_entry.VALOR = (current_entry.VALOR or 0) + value
+        current_entry.CAN_FACTU = (current_entry.CAN_FACTU or 0) + 1
+
+        results.append({
+          "id": surcharge.id,
+          "action": 'updated',
+          "new_balance": current_entry.SALDO
+        })
+
+      else:
+        new_entry = Cartera(
+          EMPRESA=data.company_code,
+          FACTURA='12-' + data.driver_number,
+          TIPO='12',
+          # NOMTIPO='',
+          TIPRECARGO=surcharge.id,
+          NOMTIPRECAR=surcharges_types_map.get(surcharge.id, ''),
+          CLIENTE=data.driver_number,
+          CEDULA=driver.CEDULA,
+          PLACA=vehicle.PLACA,
+          UNIDAD=vehicle.NUMERO,
+          PROPI_IDEN=vehicle.PROPI_IDEN,
+          FEC_ENTREG=date,
+          VALOR=value,
+          FECHA=date,
+          FEC_FACTU=date,
+          DOC_FACTU='12-' + data.driver_number,
+          # DETALLE='',
+          SALDO=value,
+          FEC_DOCUM=text_date,
+          CAN_FACTU=1,
+          FEC_CREADO=date,
+          USU_CREADO=user
+        )
+        db.add(new_entry)
+
+        results.append({
+          "id": surcharge.id,
+          "action": 'added',
+          "new_balance": value
+        })
+    
+    db.commit()
+
+    return JSONResponse(content=jsonable_encoder(results), status_code=201)
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def surcharges_list(company_code: str, vehicle_number: str, driver_number: str):
+  db = session()
+  try:
+    surcharges = db.query(
+      Cartera.TIPRECARGO.label('id'),
+      Cartera.NOMTIPRECAR.label('name'),
+      func.sum(Cartera.SALDO).label('balance')
+    ).filter(
+      Cartera.EMPRESA == company_code,
+      Cartera.UNIDAD == vehicle_number,
+      Cartera.CLIENTE == driver_number,
+      Cartera.TIPO == '12',
+      Cartera.TIPRECARGO.isnot(None),
+      Cartera.TIPRECARGO != '',
+      Cartera.SALDO.isnot(None),
+      Cartera.SALDO != 0
+    ).group_by(
+      Cartera.TIPRECARGO,
+      Cartera.NOMTIPRECAR
+    ).all()
+
+    results = [{
+      'id': surcharge.id,
+      'name': surcharge.name,
+      'balance': surcharge.balance or 0
+    } for surcharge in surcharges]
+
+    return JSONResponse(content=jsonable_encoder(results), status_code=200)
+  except Exception as e:
+    return JSONResponse(content=jsonable_encoder({'error': str(e)}), status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def verify_revenue_data(data: Revenue):
+  db = session()
+  try:
+    driver = db.query(Conductores).filter(
+      Conductores.EMPRESA == data.company_code,
+      Conductores.CODIGO == data.driver_number
+    ).first()
+
+    if not driver:
+      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+
+    vehicle = db.query(Vehiculos).filter(
+      Vehiculos.EMPRESA == data.company_code,
+      Vehiculos.NUMERO == data.vehicle_number
+    ).first()
+
+    if not vehicle:
+      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+
+    debts = (db.query(Cartera.TIPO, func.sum(Cartera.SALDO).label('total_saldo')).filter(
+      Cartera.EMPRESA == data.company_code,
+      Cartera.UNIDAD == data.vehicle_number,
+      Cartera.CLIENTE == data.driver_number,
+      Cartera.TIPO.in_(['01', '02', '10', '11', '12'])
+    ).group_by(Cartera.TIPO).all())
+    
+    debt_map = {debt.TIPO: debt.total_saldo or 0 for debt in debts}
+
+    registration = debt_map.get('01', 0)
+    savings = debt_map.get('02', 0)
+
+    daily_rent = debt_map.get('10', 0)
+    accidents = debt_map.get('11', 0)
+    other_debts = debt_map.get('12', 0)
+
+    valid = True
+    comments = []
+
+    if not verify_value(data.payment_method):
+      valid = False
+      comments.append("Debe seleccionar un método de pago.")
+    if not verify_value(data.mileage, 0):
+      valid = False
+      comments.append("El kilometraje debe ser mayor que 0.")
+    if not verify_value(data.mileage, vehicle.KILOMETRAJ):
+      valid = False
+      comments.append(f"El nuevo kilometraje debe ser mayor que el actual. {vehicle.KILOMETRAJ}")
+    if data.daily_rent and not verify_value(data.daily_rent, 0):
+      valid = False
+      comments.append("El valor de renta diaria debe ser mayor que 0.")
+    if data.accidents and not verify_value(data.accidents, 0):
+      valid = False
+      comments.append("El valor de siniestros debe ser mayor que 0.")
+    if data.accidents and data.accidents > accidents:
+      valid = False
+      comments.append("El valor de siniestros ingresado es mayor que el total de siniestros pendiente.")
+    if data.registration and not verify_value(data.registration, 0):
+      valid = False
+      comments.append("El valor de inscripción debe ser mayor que 0.")
+    if data.registration and data.registration > registration:
+      valid = False
+      comments.append("El valor de inscripción ingresado es mayor que el total de inscripción pendiente.")
+    if data.savings and not verify_value(data.savings, 0):
+      valid = False
+      comments.append("El valor de ahorros debe ser mayor que 0.")
+    if data.savings and data.savings > savings:
+      valid = False
+      comments.append("El valor de ahorros ingresado es mayor que el total de ahorros pendiente.")
+
+    total_surcharges = 0
+    for surcharge in data.surcharges_list or []:
+      total_surcharges += Decimal(surcharge.value)
+      if not verify_value(Decimal(surcharge.value), 0):
+        valid = False
+        comments.append(f"El recargo con id {surcharge.id} debe tener un valor mayor que 0.")
+
+    if total_surcharges > other_debts:
+      valid = False
+      comments.append("El valor total de recargos ingresado es mayor que el total de recargos pendiente.")
+
+    valid_rent = True
+    comments_rent = []
+
+    if data.daily_rent and data.daily_rent > daily_rent:
+      valid_rent = False
+      comments_rent.append("¿Crear Cuentas de Diario al Conductor (Anticipo de Cuenta)?")
+
+    response = {
+      "valid": valid,
+      "comments": comments,
+      "valid_rent": valid_rent,
+      "comments_rent": comments_rent
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def create_rent_receipt(data: newRentReceipt):
+  db = session()
+  try:
+    driver = db.query(Conductores).filter(
+      Conductores.EMPRESA == data.company_code,
+      Conductores.CODIGO == data.driver_number
+    ).first()
+
+    if not driver:
+      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+
+    vehicle = db.query(Vehiculos).filter(
+      Vehiculos.EMPRESA == data.company_code,
+      Vehiculos.NUMERO == data.vehicle_number
+    ).first()
+
+    if not vehicle:
+      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+
+    rent_due = db.query(func.coalesce(func.sum(Cartera.SALDO), 0)).filter(
+      Cartera.EMPRESA == data.company_code,
+      Cartera.UNIDAD == data.vehicle_number,
+      Cartera.CLIENTE == data.driver_number,
+      Cartera.TIPO == '10',
+      Cartera.SALDO != None,
+      Cartera.SALDO != 0
+    ).scalar()
+
+    rent_due = rent_due if rent_due is not None else 0
+
+    if data.amount <= rent_due:
+      return JSONResponse(content={"message": "The amount must be greater than the total rent due."}, status_code=400)
+
+    excess_amount = Decimal(data.amount) - rent_due
+
+    daily_rent = vehicle.CUO_DIARIA or 0
+
+    if daily_rent <= 0:
+      return JSONResponse(content={"message": "Daily rent amount is not set for the vehicle."}, status_code=400)
+
+    user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
+    user = user.CODIGO if user else ""
+
+    last_receipt = db.query(Cartera).filter(
+      Cartera.EMPRESA == data.company_code,
+      Cartera.UNIDAD == data.vehicle_number,
+      Cartera.CLIENTE == data.driver_number,
+      Cartera.TIPO == '10'
+    ).order_by(Cartera.FECHA.desc()).first()
+
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    date = now_in_panama.strftime("%Y-%m-%d")
+    text_date = now_in_panama.strftime("%Y%m%d")
+
+    if last_receipt and last_receipt.FECHA:
+      last_receipt_date = last_receipt.FECHA
+      if isinstance(last_receipt_date, str):
+        last_receipt_date = datetime.strptime(last_receipt_date, "%Y-%m-%d").date()
+      receipt_date = last_receipt_date + timedelta(days=1)
+    else:
+      receipt_date = now_in_panama.date()
+
+    receipts = []
+    remaining_amount = excess_amount
+
+    while remaining_amount > 0:
+      receipt_amount = min(daily_rent, remaining_amount)
+      date = receipt_date.strftime("%Y-%m-%d")
+      text_date = receipt_date.strftime("%Y%m%d")
+      bill = f"{text_date[2:]}-{data.driver_number}"
+      new_entry = Cartera(
+        EMPRESA=data.company_code,
+        FACTURA=bill,
+        TIPO='10',
+        CLIENTE=data.driver_number,
+        CEDULA=driver.CEDULA,
+        ZONA=vehicle.PROPI_IDEN,
+        PLACA=vehicle.PLACA,
+        UNIDAD=vehicle.NUMERO,
+        PROPI_IDEN=vehicle.PROPI_IDEN,
+        FEC_ENTREG=date,
+        VALOR=receipt_amount,
+        FECHA=date,
+        FEC_FACTU=date,
+        DOC_FACTU=bill,
+        CAN_FACTU=1,
+        SALDO=receipt_amount,
+        FEC_CUADRE=date,
+        FEC_DOC=text_date,
+        FEC_DOCUM=text_date,
+        FEC_CREADO=now_in_panama.strftime("%Y-%m-%d"),
+        USU_CREADO=user
+      )
+      db.add(new_entry)
+
+      receipts.append({
+        "date": date,
+        "type": "10 - RtaDiaria",
+        "invoice": bill,
+        "amount": receipt_amount
+      })
+
+      remaining_amount -= receipt_amount
+      receipt_date += timedelta(days=1)
+
+    db.commit()
+
+    response = {
+      "message": "Rent receipts created successfully",
+      "rent_due": rent_due,
+      "excess_amount": excess_amount,
+      "receipts": receipts
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=201)
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def collect_revenue(data: Revenue):
+  db = session()
+  try:
+    driver = db.query(Conductores).filter(
+      Conductores.EMPRESA == data.company_code,
+      Conductores.CODIGO == data.driver_number
+    ).first()
+
+    if not driver:
+      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+
+    vehicle = db.query(Vehiculos).filter(
+      Vehiculos.EMPRESA == data.company_code,
+      Vehiculos.NUMERO == data.vehicle_number
+    ).first()
+
+    if not vehicle:
+      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+
+    user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
+    user = user.CODIGO if user else ""
+
+    old_mileage = vehicle.KILOMETRAJ or 0
+
+    debts = (db.query(Cartera.TIPO, func.sum(Cartera.SALDO).label('total_saldo')).filter(
+      Cartera.EMPRESA == data.company_code,
+      Cartera.UNIDAD == data.vehicle_number,
+      Cartera.CLIENTE == data.driver_number,
+      Cartera.TIPO.in_(['01', '02', '10', '11', '12'])
+    ).group_by(Cartera.TIPO).all())
+    
+    debt_map = {debt.TIPO: debt.total_saldo or 0 for debt in debts}
+
+    registration = debt_map.get('01', 0)
+    savings = debt_map.get('02', 0)
+
+    daily_rent = debt_map.get('10', 0)
+    accidents = debt_map.get('11', 0)
+    other_debts = debt_map.get('12', 0)
+
+    response = {
+      "debts": {
+        "other_debts": other_debts,
+      }
+    }
+
+    valid = True
+    comments = []
+
+    if not verify_value(data.payment_method):
+      valid = False
+      comments.append("Debe seleccionar un método de pago.")
+    if not verify_value(data.mileage, 0):
+      valid = False
+      comments.append("El kilometraje debe ser mayor que 0.")
+    if not verify_value(data.mileage, vehicle.KILOMETRAJ):
+      valid = False
+      comments.append(f"El nuevo kilometraje debe ser mayor que el actual. {vehicle.KILOMETRAJ}")
+    if data.daily_rent and not verify_value(data.daily_rent, 0):
+      valid = False
+      comments.append("El valor de renta diaria debe ser mayor que 0.")
+    if data.accidents and not verify_value(data.accidents, 0):
+      valid = False
+      comments.append("El valor de siniestros debe ser mayor que 0.")
+    if data.accidents and data.accidents > accidents:
+      valid = False
+      comments.append("El valor de siniestros ingresado es mayor que el total de siniestros pendiente.")
+    if data.registration and not verify_value(data.registration, 0):
+      valid = False
+      comments.append("El valor de inscripción debe ser mayor que 0.")
+    if data.registration and data.registration > registration:
+      valid = False
+      comments.append("El valor de inscripción ingresado es mayor que el total de inscripción pendiente.")
+    if data.savings and not verify_value(data.savings, 0):
+      valid = False
+      comments.append("El valor de ahorros debe ser mayor que 0.")
+    if data.savings and data.savings > savings:
+      valid = False
+      comments.append("El valor de ahorros ingresado es mayor que el total de ahorros pendiente.")
+
+    total_surcharges = 0
+    for surcharge in data.surcharges_list or []:
+      total_surcharges += Decimal(surcharge.value)
+      if not verify_value(Decimal(surcharge.value), 0):
+        valid = False
+        comments.append(f"El recargo con id {surcharge.id} debe tener un valor mayor que 0.")
+
+    if total_surcharges > other_debts:
+      valid = False
+      comments.append("El valor total de recargos ingresado es mayor que el total de recargos pendiente.")
+
+    valid_rent = True
+    comments_rent = []
+
+    if data.daily_rent and data.daily_rent > daily_rent:
+      valid_rent = False
+      comments_rent.append("El valor de renta ingresado es mayor que el total de renta pendiente.")
+
+    if not valid or not valid_rent:
+      response = {
+        "valid": valid,
+        "comments": comments,
+        "valid_rent": valid_rent,
+        "comments_rent": comments_rent
+      }
+
+      return JSONResponse(content=jsonable_encoder(response), status_code=200)
+
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    date = now_in_panama.strftime("%Y-%m-%d")
+
+    last_record = db.query(CajaRecaudos).filter(CajaRecaudos.EMPRESA == data.company_code).order_by(CajaRecaudos.RECIBO.desc()).first()
+    new_record = str(int(last_record.RECIBO) + 1 if last_record else 1).zfill(8)
+
+    total_collected = Decimal("0")
+
+    try:
+      rent_entries = db.query(Cartera).filter(
+        Cartera.EMPRESA == data.company_code,
+        Cartera.UNIDAD == data.vehicle_number,
+        Cartera.CLIENTE == data.driver_number,
+        Cartera.TIPO == '10',
+        Cartera.SALDO != None,
+        Cartera.SALDO > 0
+      ).order_by(
+        Cartera.FECHA.asc()
+      ).all()
+
+      remaining_rent = Decimal(str(data.daily_rent or 0))
+
+      for entry in rent_entries:
+        if remaining_rent <= 0:
+          break
+
+        current_balance = Decimal(str(entry.SALDO or 0))
+        payment = min(current_balance, remaining_rent)
+        entry.SALDO = current_balance - payment
+        entry.ABONOS = payment
+        entry.FEC_ABONO = date
+        entry.DOC_ABONO = new_record
+        entry.CAN_ABONO = (entry.CAN_ABONO or 0) + 1
+
+        create_cash_record(db, data, vehicle, driver, old_mileage, payment, entry, new_record, user)
+
+        remaining_rent -= payment
+        total_collected += payment
+
+    except Exception as e:
+      valid_rent = False
+      comments_rent.append(f"Error al recaudar renta: {str(e)}")
+
+
+    try:
+      other_entries = db.query(Cartera).filter(
+        Cartera.EMPRESA == data.company_code,
+        Cartera.UNIDAD == data.vehicle_number,
+        Cartera.CLIENTE == data.driver_number,
+        Cartera.TIPO.in_(['11', '01', '02'])
+      ).all()
+
+      payments = {
+        '11': Decimal(str(data.accidents or 0)),
+        '01': Decimal(str(data.registration or 0)),
+        '02': Decimal(str(data.savings or 0))
+      }
+
+      for entry in other_entries:
+        payment_available = payments.get(entry.TIPO, Decimal("0"))
+
+        if payment_available <= 0:
+          continue
+
+        current_balance = Decimal(str(entry.SALDO or 0))
+
+        if current_balance <= 0:
+          continue
+
+        applied_payment = min(current_balance, payment_available)
+        entry.SALDO = current_balance - applied_payment
+        entry.ABONOS = applied_payment
+        entry.FEC_ABONO = date
+        entry.DOC_ABONO = new_record
+        entry.CAN_ABONO = (entry.CAN_ABONO or 0) + 1
+
+        create_cash_record(db, data, vehicle, driver, old_mileage, applied_payment, entry, new_record, user)
+
+        payments[entry.TIPO] -= applied_payment
+        total_collected += applied_payment
+
+
+      for surcharge in data.surcharges_list or []:
+        surcharge_payment = Decimal(str(surcharge.value or 0))
+
+        if surcharge_payment <= 0:
+          continue
+
+        surcharge_entry = db.query(Cartera).filter(
+          Cartera.EMPRESA == data.company_code,
+          Cartera.UNIDAD == data.vehicle_number,
+          Cartera.CLIENTE == data.driver_number,
+          Cartera.TIPO == '12',
+          Cartera.TIPRECARGO == surcharge.id
+        ).first()
+
+        if not surcharge_entry:
+          return JSONResponse(content={"message": f"Surcharge with ID {surcharge.id} not found"}, status_code=404)
+
+        current_balance = Decimal(str(surcharge_entry.SALDO or 0))
+        applied_payment = min(current_balance, surcharge_payment)
+        surcharge_entry.SALDO = (current_balance - applied_payment)
+        surcharge_entry.ABONOS = applied_payment
+        surcharge_entry.FEC_ABONO = date
+        surcharge_entry.DOC_ABONO = new_record
+        surcharge_entry.CAN_ABONO = (surcharge_entry.CAN_ABONO or 0) + 1
+
+        create_cash_record(db, data, vehicle, driver, old_mileage, applied_payment, surcharge_entry, new_record, user)
+
+        total_collected += applied_payment
+
+      vehicle.KILOMETRAJ = data.mileage
+    except Exception as e:
+      valid = False
+      comments.append(f"Error al recaudar otros conceptos: {str(e)}")
+
+    if valid and valid_rent:
+      db.commit()
+    else:
+      db.rollback()
+
+    response = {
+      "valid": valid,
+      "comments": comments,
+      "valid_rent": valid_rent,
+      "comments_rent": comments_rent,
+      "receipt_number": new_record,
+      "total_collected": float(total_collected)
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def generate_revenue_pdf(company_code: str, receipt_number: str):
+  db = session()
+  try:
+    receipt_entries = db.query(CajaRecaudos).filter(
+      CajaRecaudos.EMPRESA == company_code,
+      CajaRecaudos.RECIBO == receipt_number
+    ).order_by(CajaRecaudos.TIPO).all()
+
+    if not receipt_entries:
+      return JSONResponse(content={"message": "No entries found for the given receipt number"}, status_code=404)
+
+    wallet_entries = db.query(Cartera).filter(
+      Cartera.EMPRESA == company_code,
+      Cartera.DOC_ABONO == receipt_number
+    ).order_by(Cartera.FECHA).all()
+
+    driver = db.query(Conductores).filter(
+      Conductores.EMPRESA == company_code,
+      Conductores.CODIGO == receipt_entries[0].CONDUCTOR
+    ).first()
+
+    if not driver:
+      return JSONResponse(content={"message": "Driver not found for the given receipt entries"}, status_code=404)
+
+    vehicle = db.query(Vehiculos).filter(
+      Vehiculos.EMPRESA == company_code,
+      Vehiculos.NUMERO == receipt_entries[0].NUMERO
+    ).first()
+
+    if not vehicle:
+      return JSONResponse(content={"message": "Vehicle not found for the given receipt entries"}, status_code=404)
+
+    company = db.query(
+      InfoEmpresas.NOMBRE, InfoEmpresas.NIT, InfoEmpresas.DIRECCION, 
+      InfoEmpresas.CIUDAD, InfoEmpresas.TELEFONO, InfoEmpresas.CORREO, 
+      InfoEmpresas.LOGO).filter(InfoEmpresas.ID == company_code).first()
+
+    #? El usuario es el que hizo el recaudo o el que está imprimiendo el recibo?
+    user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == receipt_entries[0].USUARIO).first()
+    user = user.NOMBRE if user else ""
+
+    concepts = {
+      '10': {
+        'name': 'Rta.Diaria',
+        'previous': Decimal("0"),
+        'paid': Decimal("0"),
+        'balance': Decimal("0")
+      },
+      '11': {
+        'name': 'Accidentes',
+        'previous': Decimal("0"),
+        'paid': Decimal("0"),
+        'balance': Decimal("0")
+      },
+      '01': {
+        'name': 'Registro',
+        'previous': Decimal("0"),
+        'paid': Decimal("0"),
+        'balance': Decimal("0")
+      },
+      '02': {
+        'name': 'Ahorros',
+        'previous': Decimal("0"),
+        'paid': Decimal("0"),
+        'balance': Decimal("0")
+      },
+      '12': {
+        'name': 'Recargos',
+        'previous': Decimal("0"),
+        'paid': Decimal("0"),
+        'balance': Decimal("0")
+      }
+    }
+
+    rent_details = []
+
+    for entry in wallet_entries:
+      previous_balance = Decimal(str(entry.SALDO or 0)) + Decimal(str(entry.ABONOS or 0))
+      if entry.TIPO in concepts:
+        concepts[entry.TIPO]['previous'] += previous_balance
+        concepts[entry.TIPO]['paid'] += Decimal(str(entry.ABONOS or 0))
+        concepts[entry.TIPO]['balance'] += Decimal(str(entry.SALDO or 0))
+
+      if entry.TIPO == '10':
+        rent_details.append({
+          "date": entry.FECHA.strftime("%d/%m/%y"),
+          "amount": entry.ABONOS
+        })
+
+    rent_details.sort(key=lambda x: x['date'])
+
+    total_paid = sum(concept['paid'] for concept in concepts.values())
+
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    print_date = now_in_panama.strftime("%d-%m-%Y")
+    print_hour = now_in_panama.strftime("%H:%M:%S")
+
+    receipt = {
+      "number": receipt_number,
+      "date": receipt_entries[0].FEC_CREADO.strftime("%d/%m/%Y %H:%M:%S"),
+      "old_mileage": receipt_entries[0].KILO_ANTES,
+      "new_mileage": receipt_entries[0].KILOMETRAJ,
+      "payment_method": receipt_entries[0].NOMFORMAPA,
+    }
+
+    decimal_part = Decimal(str(driver.NROENTPAGO or 0)) % 1
+    quota = Decimal(str(driver.NROENTPAGO or 0)) - decimal_part
+    remaining_quotas = Decimal(str(driver.NROENTSDO or 0)) + decimal_part
+
+    data = {
+      "company": company,
+      "receipt": receipt,
+      "driver": driver,
+      "vehicle": vehicle,
+      "concepts": concepts,
+      "rent_details": rent_details,
+      "total_paid": total_paid,
+      "user": user,
+      "print_date": print_date,
+      "print_hour": print_hour,
+      "quota": quota,
+      "remaining_quotas": remaining_quotas
+    }
+
+    template_loader = jinja2.FileSystemLoader(searchpath="./templates")
+    template_env = jinja2.Environment(loader=template_loader)
+    template = template_env.get_template("Recaudo.html")
+    output_text = template.render(data=data)
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode='w') as temp_html_file:
+      temp_html_file.write(output_text)
+      temp_html_path = temp_html_file.name
+
+    pdf_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf").name
+
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(
+      PDF_THREAD_POOL,
+      html2pdf_receipt,
+      temp_html_path,
+      pdf_path,
+    )
+
+    # background_tasks = BackgroundTasks()
+    # background_tasks.add_task(os.remove, temp_html_path)
+    # background_tasks.add_task(os.remove, pdf_path)
+
+    response = FileResponse(
+      pdf_path, 
+      media_type='application/pdf', 
+      filename=f'RC_{receipt_number}.pdf', 
+      # background=background_tasks
+    )
+
+    return response
+
   except Exception as e:
     return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:

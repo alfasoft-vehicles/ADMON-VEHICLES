@@ -1060,7 +1060,7 @@
 .cr-consult-grid-main {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 10px;
 }
 
 .cr-consult-btn-main {
@@ -1068,30 +1068,143 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 8px 4px;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+  outline: none;
 }
 
 .cr-consult-btn-main:hover {
-  background: #f0f2f5;
-  border-color: #999;
-  transform: translateY(-1px);
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
 }
 
-.cr-consult-btn-main span {
-  font-size: 11px;
+.cr-consult-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.cr-consult-btn-main:hover .cr-consult-icon-box {
+  transform: scale(1.08);
+}
+
+.cr-consult-icon-box mat-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+.cr-consult-btn-label {
+  font-size: 0.8rem;
   font-weight: 600;
-  color: #444;
+  color: #334155;
   text-align: center;
+  line-height: 1.2;
 }
 
-.cr-consult-btn-main mat-icon {
-  font-size: 24px;
-  width: 24px;
-  height: 24px;
+/* Backgrounds pastel para los icon boxes de consultas */
+.cr-bg-orange-soft {
+  background-color: #ffedd5;
+}
+
+.cr-bg-green-soft {
+  background-color: #dcfce7;
+}
+
+.cr-bg-red-soft {
+  background-color: #fee2e2;
+}
+
+.cr-bg-indigo-soft {
+  background-color: #e0e7ff;
+}
+
+.cr-text-orange-600 {
+  color: #ea580c;
+}
+
+.cr-text-green-600 {
+  color: #16a34a;
+}
+
+.cr-text-red-600 {
+  color: #dc2626;
+}
+
+.cr-text-indigo-600 {
+  color: #4f46e5;
+}
+
+.cr-cursor-pointer {
+  cursor: pointer !important;
+}
+
+::ng-deep .cr-surcharges-field .mat-mdc-form-field-icon-suffix {
+  align-self: center !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+
+::ng-deep .cr-surcharges-field .cr-btn-add-surcharge {
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+::ng-deep
+  .cr-surcharges-field
+  .cr-btn-add-surcharge
+  .mat-mdc-button-touch-target {
+  width: 32px !important;
+  height: 32px !important;
+}
+
+::ng-deep
+  .cr-surcharges-field
+  .cr-btn-add-surcharge
+  .mat-mdc-button-persistent-ripple {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+}
+
+::ng-deep .cr-surcharges-field .cr-btn-add-surcharge mat-icon {
+  font-size: 20px !important;
+  width: 20px !important;
+  height: 20px !important;
+  line-height: 20px !important;
+  margin: 0 !important;
+}
+
+.cr-spin {
+  animation: cr-spin-keyframes 1.2s linear infinite;
+}
+
+@keyframes cr-spin-keyframes {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

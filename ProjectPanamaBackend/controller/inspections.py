@@ -43,8 +43,6 @@ load_dotenv()
 upload_directory = os.getenv('DIRECTORY_IMG')
 route_api = os.getenv('ROUTE_API')
 route_app = os.getenv('ROUTE_APP')
-path_10  = os.getenv('DROPBOX_INTEGRATION_PATH_10')
-path_58  = os.getenv('DROPBOX_INTEGRATION_PATH_58')
 qr_path = 'inspections'
 PDF_THREAD_POOL = ThreadPoolExecutor(max_workers=2)
 
@@ -544,9 +542,11 @@ async def create_inspection(data: NewInspection):
     if not vehicle:
       return JSONResponse(content={"message": "Vehiculo no encontrado"}, status_code=404)
 
-    driver = db.query(Conductores).filter(Conductores.CODIGO == vehicle.CONDUCTOR).first()
-    if not driver:
-      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
+    driver = None
+    if vehicle.CONDUCTOR:
+      driver = db.query(Conductores).filter(Conductores.CODIGO == vehicle.CONDUCTOR).first()
+      if not driver:
+        return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
 
     owner = db.query(Propietarios).filter(Propietarios.CODIGO == vehicle.PROPI_IDEN, Propietarios.EMPRESA == data.company_code).first()
     if not owner:
@@ -574,9 +574,9 @@ async def create_inspection(data: NewInspection):
       NRO_CUPO=vehicle.NRO_CUPO,
       PROPI_IDEN=vehicle.PROPI_IDEN,
       NOMPROPI=owner.NOMBRE,
-      CONDUCTOR=vehicle.CONDUCTOR,
-      CEDULA=driver.CEDULA,
-      NOMCONDU=driver.NOMBRE,
+      CONDUCTOR=vehicle.CONDUCTOR if vehicle.CONDUCTOR else "",
+      CEDULA=driver.CEDULA if driver else "",
+      NOMCONDU=driver.NOMBRE if driver else "",
       TIPO_INSPEC=inspection_type.CODIGO,
       NOMINSPEC=inspection_type.NOMBRE,
       MECANICO=mechanic.CODIGO,
@@ -622,22 +622,6 @@ async def create_inspection(data: NewInspection):
 
     db.add(new_inspection)
     db.commit()
-
-    base_path = None
-
-    if vehicle.EMPRESA == '10':
-      base_path = path_10
-    elif vehicle.EMPRESA == '58':
-      base_path = path_58
-
-    if base_path:
-      panama_timezone = pytz.timezone('America/Panama')
-      now_in_panama = datetime.now(panama_timezone)
-
-      text_file = os.path.join(base_path, f"inspeccion_{vehicle.NUMERO}.txt")
-      print(text_file)
-      with open(text_file, 'w') as file:
-        file.write(f"{vehicle.NUMERO},,{vehicle.CONDUCTOR},,,{data.mileage},{data.description},,{now_in_panama.strftime('%Y-%m-%d')},{clean_text(data.user)}")
 
     return JSONResponse(content={"id": new_inspection.ID}, status_code=201)
   except Exception as e:

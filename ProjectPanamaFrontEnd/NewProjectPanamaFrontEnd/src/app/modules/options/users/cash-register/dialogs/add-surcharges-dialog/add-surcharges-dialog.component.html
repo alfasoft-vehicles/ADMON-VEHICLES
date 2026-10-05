@@ -1,0 +1,92 @@
+<div class="dialog-header-container">
+  <div class="dialog-header-info">
+    <h2 class="dialog-title">Añadir Recargo</h2>
+    <p class="dialog-subtitle">
+      Registrar un nuevo cargo o concepto a la cuenta
+    </p>
+  </div>
+  <button
+    mat-icon-button
+    (click)="cancel()"
+    class="close-button"
+    matTooltip="Cerrar"
+    [disabled]="isSubmitting"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-divider></mat-divider>
+
+<div class="loading-wrapper" *ngIf="isLoading">
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+</div>
+
+<ng-container *ngIf="!isLoading">
+  <mat-progress-bar
+    mode="indeterminate"
+    *ngIf="isSubmitting"
+  ></mat-progress-bar>
+
+  <mat-dialog-content class="dialog-content-custom">
+    <div class="form-container">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Valor Recargo</mat-label>
+        <span matPrefix class="currency-prefix">$ &nbsp;</span>
+        <input
+          matInput
+          type="number"
+          [(ngModel)]="surchargeValue"
+          min="0"
+          step="0.01"
+          placeholder="0.00"
+          [disabled]="isSubmitting"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Motivo</mat-label>
+        <mat-select
+          [(ngModel)]="selectedSurchargeCode"
+          [disabled]="isSubmitting"
+        >
+          <mat-option *ngFor="let item of surchargesList" [value]="item.code">
+            <span class="code-badge-small">{{ item.code }}</span>
+            {{ item.name }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </mat-dialog-content>
+
+  <mat-divider></mat-divider>
+
+  <mat-dialog-actions align="end" class="dialog-actions-custom">
+    <button
+      mat-button
+      type="button"
+      (click)="cancel()"
+      class="action-btn"
+      [disabled]="isSubmitting"
+    >
+      <mat-icon>close</mat-icon> Cancelar
+    </button>
+    <button
+      mat-raised-button
+      color="primary"
+      type="button"
+      (click)="loadSurcharge()"
+      class="action-btn btn-confirm"
+      [disabled]="
+        isSubmitting ||
+        !selectedSurchargeCode ||
+        !surchargeValue ||
+        surchargeValue <= 0
+      "
+    >
+      <mat-icon *ngIf="!isSubmitting">check</mat-icon>
+      <span *ngIf="!isSubmitting">Cargar Recargo</span>
+      <span *ngIf="isSubmitting">Guardando...</span>
+    </button>
+  </mat-dialog-actions>
+</ng-container>
