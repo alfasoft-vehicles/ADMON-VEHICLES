@@ -13,7 +13,7 @@ import { TakeSignaturePhotoComponent } from 'src/app/modules/tasks/take-signatur
 @Component({
   selector: 'app-sidenav',
   templateUrl: './sidenav.component.html',
-  styleUrls: ['./sidenav.component.css']
+  styleUrls: ['./sidenav.component.css'],
 })
 export class SidenavComponent implements OnInit {
   @Input() isOpen = false;
@@ -33,7 +33,7 @@ export class SidenavComponent implements OnInit {
     private ownersGuard: OwnersGuard,
     private dialog: MatDialog,
     private breakpointObserver: BreakpointObserver,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
   ) {}
 
   ngOnInit() {
@@ -49,87 +49,88 @@ export class SidenavComponent implements OnInit {
   }
 
   logout(): void {
-    this.jwtService.logout(); 
+    this.jwtService.logout();
     this.apiService.postData('logout', {}).subscribe(
       (response) => {
         this.onItemClick();
         this.router.navigate(['/login']);
       },
       (error) => {
-        this.openSnackbar('Hubo un error al cerrar sesión. Por favor, inténtalo de nuevo.');
-      }
+        this.openSnackbar(
+          'Hubo un error al cerrar sesión. Por favor, inténtalo de nuevo.',
+        );
+      },
     );
   }
 
   initMenuItems() {
     this.menuItems = [
       {
-        icon: 'apartment', 
-        label: 'Propietarios', 
+        icon: 'apartment',
+        label: 'Propietarios',
         route: '/owners',
-        conditions: this.permisos.tarea01
+        conditions: this.permisos.tarea01,
       },
       {
-        icon: 'badge', 
-        label: 'Conductores', 
+        icon: 'badge',
+        label: 'Conductores',
         route: '/drivers',
-        conditions: this.permisos.tarea02
+        conditions: this.permisos.tarea02,
       },
       {
-        icon: 'local_taxi', 
-        label: 'Vehículos', 
+        icon: 'local_taxi',
+        label: 'Vehículos',
         route: '/vehicles',
-        conditions: this.permisos.tarea03
+        conditions: this.permisos.tarea03,
       },
       {
-        icon: 'car_rental', 
-        label: 'Vehículos en Reparación', 
+        icon: 'car_rental',
+        label: 'Vehículos en Reparación',
         route: '/vehicle-repair',
-        conditions: this.permisos.tarea09
+        conditions: this.permisos.tarea09,
       },
       {
-        icon: 'garage', 
-        label: 'Estado de Flota', 
+        icon: 'garage',
+        label: 'Estado de Flota',
         route: '/statevehiclefleet',
-        conditions: this.permisos.tarea04
+        conditions: this.permisos.tarea04,
       },
       {
-        icon: 'payments', 
-        label: 'Cuotas Pagas', 
+        icon: 'payments',
+        label: 'Cuotas Pagas',
         route: '/feespaid',
-        conditions: this.permisos.tarea05
+        conditions: this.permisos.tarea05,
       },
       {
         icon: 'card_travel',
         label: 'Inspecciones',
         route: '/inspections',
-        conditions: this.permisos.opcion18
+        conditions: this.permisos.opcion18,
       },
       {
         icon: 'insert_drive_file',
         label: 'Documentos',
         action: () => this.openDialogDocuments(),
-        conditions: this.permisos.opcion17
+        conditions: this.permisos.opcion17,
       },
       {
         icon: 'photo_camera',
         label: 'Firma / Foto',
         action: () => this.openDialogTakeSignaturePhoto(),
-        conditions: this.permisos.tarea10
-      }
+        conditions: this.permisos.tarea10,
+      },
     ];
   }
 
   getInfoCompany(): void {
     const userData = this.jwtService.getUserData();
     const idCompany = userData ? userData.empresa : null;
-    this.apiService.getData('info-company/'+idCompany).subscribe(
-      (response) => {
+    this.apiService
+      .getData('info-company/' + idCompany)
+      .subscribe((response) => {
         this.infoCompanyName = response.name;
-      }
-    );
+      });
   }
-
 
   convertirValoresBooleanos(obj: any) {
     for (const key in obj) {
@@ -143,10 +144,7 @@ export class SidenavComponent implements OnInit {
       }
     }
 
-    if (
-      this.permisos.opcion16 === true &&
-      !this.jwtService.isAdmin()
-    ) {
+    if (this.permisos.opcion16 === true) {
       this.ownerView = true;
     }
 
@@ -161,33 +159,27 @@ export class SidenavComponent implements OnInit {
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
     const dialogWidth = isSmallScreen ? '90vw' : '60%';
 
-    const dialogRef = this.dialog.open(OptionsDocumentsDialogComponent,
-      {
-        width: dialogWidth,
-      }
-    );
+    const dialogRef = this.dialog.open(OptionsDocumentsDialogComponent, {
+      width: dialogWidth,
+    });
   }
 
   openDialogInfoCompany(): void {
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
     const dialogWidth = isSmallScreen ? '90vw' : '60%';
 
-    const dialogRef = this.dialog.open(InfoCompanyComponent,
-      {
-        width: dialogWidth,
-      }
-    );
+    const dialogRef = this.dialog.open(InfoCompanyComponent, {
+      width: dialogWidth,
+    });
   }
 
   openDialogTakeSignaturePhoto(): void {
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
     const dialogWidth = isSmallScreen ? '90vw' : '60%';
 
-    const dialogRef = this.dialog.open(TakeSignaturePhotoComponent,
-      {
-        width: dialogWidth,
-      }
-    );
+    const dialogRef = this.dialog.open(TakeSignaturePhotoComponent, {
+      width: dialogWidth,
+    });
   }
 
   openSnackbar(message: string) {
@@ -195,7 +187,7 @@ export class SidenavComponent implements OnInit {
       duration: 3000,
       horizontalPosition: 'center',
       verticalPosition: 'top',
-    })
+    });
   }
 
   onItemClick(): void {

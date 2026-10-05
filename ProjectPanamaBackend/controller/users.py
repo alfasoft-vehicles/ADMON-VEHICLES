@@ -23,68 +23,9 @@ async def get_user():
   finally:
     db.close()
 
-# ---------------------------------------------------------------------------------------------------------------
-
-async def get_user2():
-  db = session()
-  try:
-    users = db.query(PermisosUsuario.CODIGO, PermisosUsuario.NOMBRE, PermisosUsuario.ESTADO, PermisosUsuario.OPCION01, PermisosUsuario.OPCION02, PermisosUsuario.OPCION03, PermisosUsuario.OPCION04, PermisosUsuario.OPCION05, PermisosUsuario.OPCION06, PermisosUsuario.OPCION07, PermisosUsuario.OPCION08, PermisosUsuario.OPCION09, PermisosUsuario.OPCION10, PermisosUsuario.OPCION11, PermisosUsuario.OPCION12, PermisosUsuario.OPCION13, PermisosUsuario.TAREA01, PermisosUsuario.TAREA02, PermisosUsuario.TAREA03, PermisosUsuario.TAREA04, PermisosUsuario.PASSSWORD).all()
-    users_list = [{'codigo': user.CODIGO, 'nombre': user.NOMBRE, 'estado': user.ESTADO, 'opcion01': user.OPCION01, 'opcion02': user.OPCION02, 'opcion03': user.OPCION03, 'opcion04': user.OPCION04, 'opcion05': user.OPCION05, 'opcion06': user.OPCION06, 'opcion07': user.OPCION07, 'opcion08': user.OPCION08, 'opcion09': user.OPCION09, 'opcion10': user.OPCION10, 'tarea01': user.TAREA01, 'tarea02': user.TAREA02, 'tarea03': user.TAREA03, 'tarea04': user.TAREA04, 'password': user.PASSSWORD} for user in users]
-
-    return JSONResponse(content=jsonable_encoder(users_list))
-  except Exception as e:
-    return JSONResponse(content=jsonable_encoder({'error': str(e)}))
-  finally:
-    db.close()
-
-# ---------------------------------------------------------------------------------------------------------------
-
 async def process_login(data: userLogin):
   db = session()
-  user_admin = os.getenv('USER_ADMIN')
-  password_admin = os.getenv('PASSWORD_ADMIN')
   try:
-    
-    if data.user == user_admin and data.password == password_admin:
-      user_data_cookie = {
-        "codigo": user_admin,
-      }
-      user_data_localStorage = {
-        "id": user_admin,
-        "nombre": "Administrador",
-        "opcion01": "T",
-        "opcion02": "T",
-        "opcion03": "T",
-        "opcion04": "T",
-        "opcion05": "T",
-        "opcion06": "T",
-        "opcion07": "T",
-        "opcion08": "T",
-        "opcion09": "T",
-        "opcion10": "T",
-        "opcion11": "T",
-        "opcion12": "T",
-        "opcion13": "T",
-        "opcion14": "T",
-        "opcion15": "T",
-        "opcion16": "T",
-        "opcion17": "T",
-        "opcion18": "T",
-        "tarea01": "T",
-        "tarea02": "T",
-        "tarea03": "T",
-        "tarea04": "T",
-        "tarea05": "T",
-        "tarea09": "T",
-        "tarea10": "T",
-        "foto": "../../../../assets/img/taxi.jpg",
-        "empresa": "A"
-      }
-      token_cookie = encode_jwt(user_data_cookie)
-      token_localStorage = encode_jwt(user_data_localStorage)
-      
-      return {'token_cookie': token_cookie, 'token_localStorage': token_localStorage, 'status_code':200}
-    
     user = db.query(PermisosUsuario.CODIGO, 
                     PermisosUsuario.NOMBRE, 
                     PermisosUsuario.PASSSWORD, 

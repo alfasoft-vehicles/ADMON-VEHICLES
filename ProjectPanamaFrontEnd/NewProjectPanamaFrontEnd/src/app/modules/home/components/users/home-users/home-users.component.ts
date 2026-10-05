@@ -15,8 +15,6 @@ export class HomeUsersComponent {
 
   options: any[] = [];
 
-  isAdmin: boolean = false;
-
   logoutIcon: string = '../../../../assets/icons/logout.svg';
   rightIcon: string = '../../../../assets/icons/rightArrow.svg';
 
@@ -45,7 +43,7 @@ export class HomeUsersComponent {
     // private apiService: ApiService,
     private router: Router,
     private globalStatesService: GlobalStatesService,
-    public dialog: MatDialog
+    public dialog: MatDialog,
   ) {
     effect(() => {
       this.infoCompanyVisible = this.globalStatesService.displayInfoCompany();
@@ -60,7 +58,6 @@ export class HomeUsersComponent {
 
   obtenerUsuario() {
     this.permisos = this.jwtService.getUserData();
-    this.isAdmin = this.jwtService.isAdmin();
 
     this.convertirValoresBooleanos(this.permisos);
 
@@ -230,13 +227,12 @@ export class HomeUsersComponent {
   openDialogCobros() {
     const dialogRef = this.dialog.open(CobrosComponent, {
       minWidth: 'min(600px, 90vw)',
-      maxHeight: '100vh'
-      }
-    );
+      maxHeight: '100vh',
+    });
 
     dialogRef.afterClosed().subscribe((result) => {
-      if(result){
-         this.router.navigate(['/cobros'])
+      if (result) {
+        this.router.navigate(['/cobros']);
       }
     });
   }

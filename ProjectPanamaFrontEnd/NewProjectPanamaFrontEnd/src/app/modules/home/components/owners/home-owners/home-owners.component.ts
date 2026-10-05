@@ -17,8 +17,6 @@ export class HomeOwnersComponent {
 
   options: any[] = [];
 
-  isAdmin: boolean = false;
-
   logoutIcon: string = '../../../../assets/icons/logout.svg';
   rightIcon: string = '../../../../assets/icons/rightArrow.svg';
 
@@ -57,7 +55,7 @@ export class HomeOwnersComponent {
     // private router: Router,
     private globalStatesService: GlobalStatesService,
     private dialog: MatDialog,
-    private breakpointObserver: BreakpointObserver
+    private breakpointObserver: BreakpointObserver,
   ) {
     effect(() => {
       this.infoCompanyVisible = this.globalStatesService.displayInfoCompany();
@@ -72,8 +70,6 @@ export class HomeOwnersComponent {
 
   obtenerUsuario() {
     this.permisos = this.jwtService.getUserData();
-
-    this.isAdmin = this.jwtService.isAdmin();
 
     this.convertirValoresBooleanos(this.permisos);
 
@@ -224,7 +220,7 @@ export class HomeOwnersComponent {
       {
         width: dialogWidth,
         disableClose: true,
-      }
+      },
     );
 
     dialogRef.afterClosed().subscribe((result) => {

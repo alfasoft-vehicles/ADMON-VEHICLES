@@ -453,11 +453,7 @@ async def collection_accounts_pdf(companies_list):
     fecha = now_in_panama.strftime("%d/%m/%Y")
     hora_actual = now_in_panama.strftime("%I:%M:%S %p")
 
-    user_admin = os.getenv("USER_ADMIN")
-    if companies_list.usuario == user_admin:
-      usuario = "Administrador"
-    else:
-      usuario = companies_list.usuario
+    usuario = companies_list.usuario
 
     titulo = 'Cobros'
 

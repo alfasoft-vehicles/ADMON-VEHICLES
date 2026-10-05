@@ -2,7 +2,7 @@ from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from schemas.users import userLogin
-from controller.users import get_user, get_user2, process_login, process_logout
+from controller.users import get_user, process_login, process_logout
 
 users_router = APIRouter()
 
@@ -11,13 +11,6 @@ users_router = APIRouter()
 @users_router.get('/users/', tags=["Users"])
 async def get_users():
   return await get_user()
-# ---------------------------------------------------------------------------------------------------------------
-
-# Petición base de datos
-# ---------------------------------------------------------------------------------------------------------------
-@users_router.get('/users_2', tags=["Users"])
-async def get_users2():
-  return await get_user2()
 # ---------------------------------------------------------------------------------------------------------------
 
 @users_router.post('/login/', tags=["Users"])
