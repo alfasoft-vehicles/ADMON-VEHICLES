@@ -105,7 +105,7 @@
       *ngIf="!hasData && !isLoadingAutocompletes"
       class="cr-bulk-upload-btn"
       matRipple
-      routerLink="/cash-register/bulk-upload/yappy"
+      (click)="openBulkUploadDialog()"
     >
       <div class="cr-consult-icon-box cr-bg-orange-soft">
         <mat-icon class="cr-text-orange-600">cloud_upload</mat-icon>
@@ -582,7 +582,7 @@
             <button
               class="cr-consult-btn-main"
               matRipple
-              routerLink="/cash-register/bulk-upload"
+              (click)="openBulkUploadDialog()"
             >
               <div class="cr-consult-icon-box cr-bg-orange-soft">
                 <mat-icon class="cr-text-orange-600">cloud_upload</mat-icon>

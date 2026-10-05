@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs';
 import { BulkUploadRecord } from '../models/bulk-upload-record.interface';
 import {
   BulkUploadBadgeConfig,
@@ -17,6 +18,14 @@ export interface BulkUploadStrategy {
 
   /** Configuración de la card bancaria en el dashboard inferior */
   readonly bankCardConfig: BulkUploadBankCardConfig;
+
+  /** Endpoint para la carga masiva (cuando esté disponible en backend) */
+  readonly uploadEndpoint: string;
+
+  /** Sube el archivo correspondiente a este tipo de carga (mock o HTTP) */
+  uploadFile(
+    file: File | null,
+  ): Observable<{ success: boolean; message?: string }>;
 
   /** Obtiene la lista de registros cargados */
   getRecords(): BulkUploadRecord[];

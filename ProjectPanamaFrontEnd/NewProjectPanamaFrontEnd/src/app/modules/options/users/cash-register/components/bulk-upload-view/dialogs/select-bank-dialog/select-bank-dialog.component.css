@@ -1,0 +1,631 @@
+/* ==========================================================================
+   Header del Diálogo
+   ========================================================================== */
+.dialog-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px 14px;
+  background-color: #ffffff;
+}
+
+.dialog-header-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dialog-badge-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0077c8 0%, #00a4e4 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 6px rgba(0, 119, 200, 0.25);
+}
+
+.dialog-badge-icon mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.dialog-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.dialog-subtitle {
+  margin: 3px 0 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.3;
+}
+
+.close-button {
+  color: #94a3b8;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.close-button:hover {
+  color: #ef4444;
+  transform: rotate(90deg);
+}
+
+/* ==========================================================================
+   Stepper Bar (Pills de paso)
+   ========================================================================== */
+.stepper-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 24px 14px;
+  background-color: #f8fafc;
+}
+
+.step-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background-color: #e2e8f0;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.step-pill.active {
+  background-color: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25);
+}
+
+.step-pill.completed {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.step-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.step-pill.active .step-num {
+  background-color: #ffffff;
+  color: #0284c7;
+}
+
+.step-check {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.step-connector {
+  width: 32px;
+  height: 2px;
+  background-color: #cbd5e1;
+  transition: background-color 0.2s ease;
+}
+
+.step-connector.active {
+  background-color: #0284c7;
+}
+
+.upload-progress-bar {
+  height: 3px;
+}
+
+/* ==========================================================================
+   Contenido Principal
+   ========================================================================== */
+.dialog-content-custom {
+  padding: 20px 24px;
+  max-height: 68vh;
+  min-width: 580px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.section-instruction {
+  font-size: 0.86rem;
+  color: #475569;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+/* ==========================================================================
+   PASO 1: Grid de Tarjetas de Bancos
+   ========================================================================== */
+.banks-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.bank-card {
+  position: relative;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.bank-card:hover {
+  transform: translateY(-2px);
+  border-color: #93c5fd;
+  box-shadow: 0 6px 16px rgba(0, 119, 200, 0.1);
+}
+
+.bank-card.selected {
+  border-color: #0077c8;
+  background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 100%);
+  box-shadow: 0 4px 14px rgba(0, 119, 200, 0.16);
+}
+
+.bank-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bank-icon-container {
+  width: 62px;
+  height: 62px;
+  border-radius: 14px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  transition:
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.25s ease;
+}
+
+.bank-card:hover .bank-icon-container {
+  transform: scale(1.06);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+}
+
+.bank-icon-container mat-icon {
+  font-size: 34px;
+  width: 34px;
+  height: 34px;
+}
+
+.select-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.select-indicator .check-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: #ffffff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.bank-card.selected .select-indicator {
+  border-color: #0077c8;
+  background-color: #0077c8;
+  box-shadow: 0 2px 5px rgba(0, 119, 200, 0.4);
+}
+
+.bank-card.selected .select-indicator .check-icon {
+  opacity: 1;
+}
+
+.bank-card-body {
+  display: flex;
+  flex-direction: column;
+  padding-top: 4px;
+}
+
+.bank-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -0.2px;
+}
+
+/* ==========================================================================
+   PASO 2: Resumen de Banco Seleccionado & Dropzone
+   ========================================================================== */
+.selected-bank-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+
+.summary-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.summary-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.summary-icon mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.summary-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-tag {
+  font-size: 0.66rem;
+  font-weight: 800;
+  color: #0284c7;
+  letter-spacing: 0.5px;
+}
+
+.summary-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.btn-change-bank {
+  color: #0284c7 !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+}
+
+.btn-change-bank mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+}
+
+/* Dropzone */
+.upload-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  background-color: #f8fafc;
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-dropzone:hover {
+  border-color: #0284c7;
+  background-color: #f0f9ff;
+}
+
+.upload-dropzone.dragging {
+  border-color: #0077c8;
+  background-color: #e0f2fe;
+  transform: scale(1.01);
+}
+
+.upload-dropzone.has-file {
+  border: 2px solid #22c55e;
+  background-color: #f0fdf4;
+  cursor: default;
+  padding: 16px 20px;
+}
+
+.dropzone-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.dropzone-icon-box {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background-color: #e0f2fe;
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.upload-dropzone:hover .dropzone-icon-box {
+  transform: translateY(-3px);
+}
+
+.dropzone-icon {
+  font-size: 30px;
+  width: 30px;
+  height: 30px;
+}
+
+.dropzone-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dropzone-main-text {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.dropzone-browse {
+  color: #0284c7;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.dropzone-hint {
+  margin: 0;
+  font-size: 0.76rem;
+  color: #64748b;
+}
+
+/* Previsualización del archivo */
+.file-preview-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.file-icon-box {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background-color: #dcfce7;
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-main-icon {
+  font-size: 26px;
+  width: 26px;
+  height: 26px;
+}
+
+.file-ext-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background-color: #16a34a;
+  color: #ffffff;
+  font-size: 0.55rem;
+  font-weight: 800;
+  padding: 1px 3px;
+  border-radius: 3px;
+}
+
+.file-info-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  margin: 0 16px;
+  overflow: hidden;
+}
+
+.file-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.file-size {
+  font-size: 0.76rem;
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.file-actions-col {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.file-ready-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #dcfce7;
+  color: #16a34a;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.file-ready-chip mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.btn-remove-file {
+  color: #94a3b8;
+  transition: color 0.2s ease;
+}
+
+.btn-remove-file:hover {
+  color: #ef4444;
+}
+
+/* Banner de entorno de desarrollo */
+.dev-info-banner {
+  margin-top: 16px;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.info-banner-icon {
+  color: #2563eb;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.info-banner-text {
+  font-size: 0.78rem;
+  color: #1e40af;
+  line-height: 1.45;
+}
+
+/* ==========================================================================
+   Botones de Acción (mat-dialog-actions)
+   ========================================================================== */
+.dialog-actions-custom {
+  padding: 14px 24px;
+  background-color: #ffffff;
+  display: flex;
+  gap: 10px;
+}
+
+.action-btn {
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  letter-spacing: 0.3px !important;
+  padding: 0 18px !important;
+  height: 38px !important;
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-cancel,
+.btn-back {
+  color: #64748b !important;
+}
+
+.btn-cancel:hover,
+.btn-back:hover {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+}
+
+.btn-next,
+.btn-submit {
+  background: linear-gradient(135deg, #0077c8 0%, #00a4e4 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(0, 119, 200, 0.3) !important;
+}
+
+.btn-next:hover,
+.btn-submit:hover {
+  box-shadow: 0 4px 10px rgba(0, 119, 200, 0.4) !important;
+  transform: translateY(-1px);
+}
+
+.btn-next[disabled],
+.btn-submit[disabled] {
+  background: #cbd5e1 !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.spin-icon {
+  animation: spin 1s infinite linear;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .dialog-content-custom {
+    min-width: 100%;
+    padding: 16px;
+  }
+  .banks-grid {
+    grid-template-columns: 1fr;
+  }
+  .stepper-bar {
+    padding: 10px 16px;
+  }
+  .step-label {
+    font-size: 0.72rem;
+  }
+}

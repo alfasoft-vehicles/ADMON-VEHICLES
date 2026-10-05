@@ -15,6 +15,7 @@ import {
   SurchargePayItem,
 } from '../../dialogs/pay-surcharges-dialog/pay-surcharges-dialog.component';
 import { ConfirmActionDialogComponent } from 'src/app/modules/shared/components/confirm-action-dialog/confirm-action-dialog.component';
+import { SelectBankDialogComponent } from '../bulk-upload-view/dialogs/select-bank-dialog/select-bank-dialog.component';
 
 export interface drivers {
   codigo_conductor: string;
@@ -738,6 +739,16 @@ export class CashRegisterViewComponent implements OnInit {
       (this.surchargesPayment || 0) +
       (this.registrationPayment || 0) +
       (this.savingsPayment || 0);
+  }
+
+  openBulkUploadDialog() {
+    this.dialog.open(SelectBankDialogComponent, {
+      width: '660px',
+      maxWidth: '92vw',
+      disableClose: true,
+      panelClass: 'custom-dialog-container',
+      autoFocus: false,
+    });
   }
 
   openQueriesDialog() {

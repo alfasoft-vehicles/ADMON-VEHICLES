@@ -44,6 +44,17 @@ export class BulkUploadService {
   }
 
   /**
+   * Sube el archivo delegando a la estrategia correspondiente según el tipo.
+   */
+  uploadFile(
+    type: string,
+    file: File | null,
+  ): Observable<{ success: boolean; message?: string }> {
+    const strategy = this.strategyFactory.getStrategy(type);
+    return strategy.uploadFile(file);
+  }
+
+  /**
    * Obtiene los registros para la estrategia actual.
    * (Preparado para conectar con endpoints cuando estén disponibles)
    */

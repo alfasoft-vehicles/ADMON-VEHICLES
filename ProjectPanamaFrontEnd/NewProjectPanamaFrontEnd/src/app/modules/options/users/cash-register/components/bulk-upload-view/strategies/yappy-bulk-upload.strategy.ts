@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { Observable, of } from 'rxjs';
+import { delay } from 'rxjs/operators';
 import { BulkUploadStrategy } from './bulk-upload.strategy';
 import { BulkUploadRecord } from '../models/bulk-upload-record.interface';
 import {
@@ -25,6 +27,20 @@ export class YappyBulkUploadStrategy implements BulkUploadStrategy {
     icon: 'account_balance',
     label: 'T. BANCO',
   };
+
+  readonly uploadEndpoint = 'cash_register/bulk_upload/yappy';
+
+  uploadFile(
+    file: File | null,
+  ): Observable<{ success: boolean; message?: string }> {
+    // Simulación de carga hacia el endpoint de Yappy (preparado para HTTP client)
+    return of({
+      success: true,
+      message: file
+        ? `Archivo "${file.name}" cargado exitosamente en Yappy.`
+        : 'Lote de Yappy preparado correctamente.',
+    }).pipe(delay(350));
+  }
 
   getRecords(): BulkUploadRecord[] {
     return [
