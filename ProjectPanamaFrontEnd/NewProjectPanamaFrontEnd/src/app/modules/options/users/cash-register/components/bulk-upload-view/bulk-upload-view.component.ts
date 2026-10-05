@@ -1,11 +1,13 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { Subscription } from 'rxjs';
 import { BulkUploadService } from './services/bulk-upload.service';
 import { BulkUploadStrategy } from './strategies/bulk-upload.strategy';
 import { BulkUploadRecord } from './models/bulk-upload-record.interface';
 import { BulkUploadSummaryMetrics } from './models/bulk-upload-config.interface';
+import { ConfirmActionDialogComponent } from 'src/app/modules/shared/components/confirm-action-dialog/confirm-action-dialog.component';
 
 @Component({
   selector: 'app-bulk-upload-view',
@@ -54,6 +56,7 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
     private router: Router,
     private bulkUploadService: BulkUploadService,
     private snackBar: MatSnackBar,
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit(): void {
@@ -118,5 +121,48 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
 
   isRecordReady(record: BulkUploadRecord): boolean {
     return this.bulkUploadService.isRecordReady(record);
+  }
+
+  confirmRecaudo(): void {
+    const pendingRecords = this.records.filter((r) => this.isRecordInReview(r));
+    const pendingCount = pendingRecords.length;
+    const validCount = this.records.length - pendingCount;
+
+    let dialogMessage: string;
+
+    if (pendingCount === 0) {
+      dialogMessage = `Todos los registros se encuentran validados correctamente. ¿Está seguro de procesar el recaudo total del lote por un monto de $${this.metrics.creditos}?`;
+    } else {
+      dialogMessage = `Se encontraron ${pendingCount} registro(s) que requieren revisión. Solo se recaudarán los ${validCount} registros válidos y los pendientes se dejarán sin procesar para su posterior verificación. ¿Desea continuar con el recaudo?`;
+    }
+
+    const dialogRef = this.dialog.open(ConfirmActionDialogComponent, {
+      width: '480px',
+      maxWidth: '92vw',
+      data: {
+        documentName: 'Confirmar Recaudo de Carga Masiva',
+        message: dialogMessage,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (confirmed) {
+        this.snackBar.open(
+          `Recaudo procesado exitosamente (${validCount} registros conciliados).`,
+          'Entendido',
+          {
+            duration: 4000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top',
+          },
+        );
+      } else {
+        this.snackBar.open('No se han realizado recaudos', 'Entendido', {
+          duration: 3500,
+          horizontalPosition: 'center',
+          verticalPosition: 'top',
+        });
+      }
+    });
   }
 }
