@@ -41,9 +41,11 @@ export class SidenavComponent implements OnInit {
   }
 
   obtenerUsuario() {
-    this.permisos = this.jwtService.getUserData();
-    // this.imgUser = this.permisos.foto; // Cuando se tengan las rutas de las imágenes
-    this.convertirValoresBooleanos(this.permisos);
+    this.permisos = this.jwtService.getUserPermissions();
+    if (this.permisos?.opcion16 === true) {
+      this.ownerView = true;
+    }
+    this.initMenuItems();
     this.getInfoCompany();
     // this.subscribirEventosDeRuta();
   }
@@ -130,25 +132,6 @@ export class SidenavComponent implements OnInit {
       .subscribe((response) => {
         this.infoCompanyName = response.name;
       });
-  }
-
-  convertirValoresBooleanos(obj: any) {
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        const value = obj[key];
-        if (value === 'T') {
-          obj[key] = true;
-        } else if (value === 'F' || value === null) {
-          obj[key] = false;
-        }
-      }
-    }
-
-    if (this.permisos.opcion16 === true) {
-      this.ownerView = true;
-    }
-
-    this.initMenuItems();
   }
 
   onBackdropClick(): void {

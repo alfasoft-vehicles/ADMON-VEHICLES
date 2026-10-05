@@ -69,44 +69,42 @@ export class HomeOwnersComponent {
   }
 
   obtenerUsuario() {
-    this.permisos = this.jwtService.getUserData();
-
-    this.convertirValoresBooleanos(this.permisos);
+    this.permisos = this.jwtService.getUserPermissions();
 
     this.options = [
       {
         name: 'Estado de Flota',
-        url: 'hoalalalal',
+        url: 'devvvvv',
         disabled: false,
         click: () => this.openStatusFleetOptionsDialog(),
       },
       {
         name: 'Valores de Compra y Piquera',
-        url: 'hoalalalal',
+        url: 'devvvvv',
         disabled: false,
         click: () => this.showModalOwnersPurchasevalueandpiquera(),
       },
       {
         name: 'Relación Ingresos',
-        url: 'hoalalalal',
+        url: 'devvvvv',
         disabled: false,
         click: () => this.openRelationshipOptionsDialog(),
       },
       {
         name: 'Relación Piezas',
-        url: 'hoalalalal',
+        url: 'devvvvv',
         disabled: false,
         click: () => this.showModalOwnersPartsRelationship(),
       },
       {
         name: 'Estado de P y G',
-        url: 'hoalalalal',
+        url: 'devvvvv',
         disabled: false,
         click: () => this.openPyGStatusOptionsDialog(),
       },
       {
         name: 'Cuotas Pagas por Conductor',
-        url: 'hoalalalal',
+        url: 'devvvvv',
         disabled: false,
         click: () => this.showModalOwnersFeespaid(),
       },
@@ -137,19 +135,6 @@ export class HomeOwnersComponent {
     this.currentVideo = this.videos[this.currentVideoIndex];
     this.videoPlayer.nativeElement.load(); // Cargar el nuevo video
     // this.videoPlayer.nativeElement.muted = true;
-  }
-
-  convertirValoresBooleanos(obj: any) {
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        const value = obj[key];
-        if (value === 'T') {
-          obj[key] = true;
-        } else if (value === 'F' || value === null) {
-          obj[key] = false;
-        }
-      }
-    }
   }
 
   showModalOwnersStatusfleetsummary() {

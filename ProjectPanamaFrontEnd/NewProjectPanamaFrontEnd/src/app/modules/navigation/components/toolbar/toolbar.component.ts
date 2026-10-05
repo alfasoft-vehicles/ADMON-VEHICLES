@@ -31,25 +31,8 @@ export class ToolbarComponent implements OnInit {
   }
 
   getUser() {
-    this.permissions = this.jwtService.getUserData(); // getUserData() ahora es la fuente de verdad.
-    // this.imgUser = this.permissions.foto; // Cuando se tengan las rutas de las imágenes
-    this.convertBooleanValues(this.permissions);
-    // this.subscribirEventosDeRuta();
-  }
-
-  convertBooleanValues(obj: any) {
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        const value = obj[key];
-        if (value === 'T') {
-          obj[key] = true;
-        } else if (value === 'F' || value === null) {
-          obj[key] = false;
-        }
-      }
-    }
-
-    if (this.permissions.opcion16 === true) {
+    this.permissions = this.jwtService.getUserPermissions();
+    if (this.permissions?.opcion16 === true) {
       this.ownerView = true;
     }
   }

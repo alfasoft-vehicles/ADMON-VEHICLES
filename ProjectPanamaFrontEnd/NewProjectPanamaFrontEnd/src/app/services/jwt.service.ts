@@ -83,7 +83,12 @@ export class JwtService {
   }
 
   getUserData() {
-    return this.isAuthenticated() ? this.decodedToken!.user_data : null;
+    return this.isAuthenticated() ? { ...this.decodedToken!.user_data } : null;
+  }
+
+  getUserPermissions(): any {
+    if (!this.isAuthenticated()) return null;
+    return this.convertBooleanValues(this.decodedToken!.user_data);
   }
 
   getPermissionUser(permission: string): boolean {

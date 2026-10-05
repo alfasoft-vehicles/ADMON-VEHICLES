@@ -57,9 +57,7 @@ export class HomeUsersComponent {
   }
 
   obtenerUsuario() {
-    this.permisos = this.jwtService.getUserData();
-
-    this.convertirValoresBooleanos(this.permisos);
+    this.permisos = this.jwtService.getUserPermissions();
 
     this.options = [
       {
@@ -209,19 +207,6 @@ export class HomeUsersComponent {
     this.currentVideo = this.videos[this.currentVideoIndex];
     this.videoPlayer.nativeElement.load(); // Cargar el nuevo video
     // this.videoPlayer.nativeElement.muted = true;
-  }
-
-  convertirValoresBooleanos(obj: any) {
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        const value = obj[key];
-        if (value === 'T') {
-          obj[key] = true;
-        } else if (value === 'F' || value === null) {
-          obj[key] = false;
-        }
-      }
-    }
   }
 
   openDialogCobros() {
