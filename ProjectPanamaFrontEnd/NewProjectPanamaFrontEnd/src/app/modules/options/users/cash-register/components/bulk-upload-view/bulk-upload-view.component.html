@@ -83,20 +83,11 @@
     <div class="bu-table-toolbar">
       <div class="bu-toolbar-left">
         <span class="bu-table-legend-title">Detalle de Transacciones</span>
-        <div class="bu-legend-group">
-          <span class="bu-legend-item bu-legend-ok">
-            <span class="bu-dot bu-dot-ok"></span>
-            {{ metrics.registrosValidados }} Asignados
-          </span>
-          <span class="bu-legend-item bu-legend-warn">
-            <span class="bu-dot bu-dot-warn"></span>
-            {{ metrics.registrosPendientes }} Requieren Revisión
-          </span>
-        </div>
       </div>
       <div class="bu-toolbar-right">
-        <span class="bu-toolbar-stat">
-          Crédito Total Lote: <strong>${{ metrics.creditos }}</strong>
+        <span class="bu-legend-item bu-legend-warn">
+          <span class="bu-dot bu-dot-warn"></span>
+          {{ metrics.registrosPendientes }} Requieren Revisión
         </span>
       </div>
     </div>
