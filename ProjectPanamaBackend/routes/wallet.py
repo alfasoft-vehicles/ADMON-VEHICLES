@@ -52,6 +52,6 @@ async def post_collect_revenue(revenue_data: Revenue):
 async def get_revenue_pdf(company_code: str, receipt_number: str):
   return await generate_revenue_pdf(company_code, receipt_number)
 
-@wallet_router.post("/wallet/upload-yappy/{company_code}/", tags=["Wallet"])
+@wallet_router.post("/wallet/bulk-upload/yappy/{company_code}/", tags=["Wallet"])
 async def post_upload_yappy_csv(company_code: str, file: UploadFile = File(...)):
   return await upload_yappy_csv(company_code, file)
