@@ -1189,3 +1189,20 @@ async def upload_yappy_csv(company_code: str, file: UploadFile = File(...)):
     return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def yappy_has_records():
+  db = session()
+  try:
+    exists = db.query(Yappy.REFERENCIA).first() is not None
+
+    response = {
+      "has_records": 1 if exists else 0
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
