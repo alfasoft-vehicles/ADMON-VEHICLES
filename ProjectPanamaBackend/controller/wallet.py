@@ -25,6 +25,7 @@ from utils.panapass import get_txt_file, search_value_in_txt
 from utils.verify_values import verify_value
 from utils.cash_records import create_cash_record
 from utils.pdf import html2pdf_receipt
+from utils.phone import normalize_phone
 from datetime import datetime, timedelta
 import pytz
 import os
@@ -1202,6 +1203,47 @@ async def yappy_has_records():
     }
 
     return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def yappy_records(company_code: str):
+  db = session()
+  try:
+    drivers = db.query(
+      Conductores.CODIGO, Conductores.NOMBRE, Conductores.TELEFONO,
+      Conductores.CELULAR, Conductores.UND_NRO
+    ).filter(Conductores.EMPRESA == company_code).all()
+
+    drivers_by_phone = {}
+    for driver in drivers:
+      for phone in (driver.TELEFONO, driver.CELULAR):
+        phone = normalize_phone(phone)
+        if phone:
+          drivers_by_phone.setdefault(phone, {})[driver.CODIGO] = driver
+
+    records = db.query(Yappy).filter(Yappy.EMPRESA == company_code).all()
+
+    results = []
+    for record in records:
+      item = {column.name: getattr(record, column.name) for column in Yappy.__table__.columns}
+
+      matches = drivers_by_phone.get(normalize_phone(record.CELULAR, remove_country_code=True), {})
+
+      if len(matches) == 1:
+        driver = next(iter(matches.values()))
+        item['IDENTIFICA'] = driver.UND_NRO or item['IDENTIFICA']
+        item['NOMBRE'] = driver.NOMBRE or item['NOMBRE']
+        item['review'] = 0
+      else:
+        item['review'] = 1
+
+      results.append(item)
+
+    return JSONResponse(content=jsonable_encoder(results), status_code=200)
   except Exception as e:
     return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:

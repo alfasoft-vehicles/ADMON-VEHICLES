@@ -59,3 +59,7 @@ async def post_upload_yappy_csv(company_code: str, file: UploadFile = File(...))
 @wallet_router.get("/wallet/has-records/yappy/", tags=["Wallet"])
 async def get_yappy_has_records():
   return await yappy_has_records()
+
+@wallet_router.get("/wallet/get-records/yappy/{company_code}/", tags=["Wallet"])
+async def get_yappy_records(company_code: str):
+  return await yappy_records(company_code)
