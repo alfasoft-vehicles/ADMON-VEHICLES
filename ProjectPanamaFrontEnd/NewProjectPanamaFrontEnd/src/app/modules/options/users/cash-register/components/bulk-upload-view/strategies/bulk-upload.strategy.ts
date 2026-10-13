@@ -25,7 +25,10 @@ export interface BulkUploadStrategy {
   /** Sube el archivo correspondiente a este tipo de carga (mock o HTTP) */
   uploadFile(
     file: File | null,
-  ): Observable<{ success: boolean; message?: string }>;
+  ): Observable<{ success: boolean; message?: string; data?: any }>;
+
+  /** Verifica si existen registros en base de datos para esta estrategia */
+  hasRecords?(): Observable<boolean>;
 
   /** Obtiene la lista de registros cargados */
   getRecords(): BulkUploadRecord[];

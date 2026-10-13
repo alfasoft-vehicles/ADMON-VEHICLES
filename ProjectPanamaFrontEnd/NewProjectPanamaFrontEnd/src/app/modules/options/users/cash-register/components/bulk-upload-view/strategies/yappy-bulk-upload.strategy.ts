@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { Observable, throwError, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { BulkUploadStrategy } from './bulk-upload.strategy';
 import { BulkUploadRecord } from '../models/bulk-upload-record.interface';
 import {
@@ -8,6 +8,8 @@ import {
   BulkUploadBankCardConfig,
   BulkUploadSummaryMetrics,
 } from '../models/bulk-upload-config.interface';
+import { ApiService } from 'src/app/services/api.service';
+import { JwtService } from 'src/app/services/jwt.service';
 
 @Injectable({
   providedIn: 'root',
@@ -28,18 +30,67 @@ export class YappyBulkUploadStrategy implements BulkUploadStrategy {
     label: 'T. BANCO',
   };
 
-  readonly uploadEndpoint = 'cash_register/bulk_upload/yappy';
+  readonly uploadEndpoint = 'wallet/bulk-upload/yappy';
+
+  constructor(
+    private apiService: ApiService,
+    private jwtService: JwtService,
+  ) {}
 
   uploadFile(
     file: File | null,
-  ): Observable<{ success: boolean; message?: string }> {
-    // Simulación de carga hacia el endpoint de Yappy (preparado para HTTP client)
-    return of({
-      success: true,
-      message: file
-        ? `Archivo "${file.name}" cargado exitosamente en Yappy.`
-        : 'Lote de Yappy preparado correctamente.',
-    }).pipe(delay(350));
+  ): Observable<{ success: boolean; message?: string; data?: any }> {
+    if (!file) {
+      return throwError(
+        () => new Error('Debe seleccionar un archivo .CSV válido.'),
+      );
+    }
+
+    const userData = this.jwtService.getUserData();
+    const companyCode = (userData?.empresa || '10').trim();
+
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+
+    return this.apiService
+      .postData(`wallet/bulk-upload/yappy/${companyCode}`, formData)
+      .pipe(
+        map((res: any) => {
+          const message =
+            res?.message || 'Carga de CSV procesada exitosamente.';
+          const stats = [];
+          if (res?.inserted !== undefined) {
+            stats.push(`${res.inserted} insertados`);
+          }
+          if (res?.updated !== undefined) {
+            stats.push(`${res.updated} actualizados`);
+          }
+          const details = stats.length > 0 ? ` (${stats.join(', ')})` : '';
+
+          return {
+            success: true,
+            message: `${message}${details}`,
+            data: res,
+          };
+        }),
+      );
+  }
+
+  /**
+   * Consulta al backend si existen registros de Yappy disponibles en la BD.
+   * Endpoint: GET wallet/has-records/yappy/ -> { "has_records": 1 | 0 }
+   */
+  hasRecords(): Observable<boolean> {
+    return this.apiService.getData('wallet/has-records/yappy').pipe(
+      map((res: any) => Number(res?.has_records) === 1),
+      catchError((error) => {
+        console.error(
+          '[YappyBulkUploadStrategy] Error al verificar registros existentes:',
+          error,
+        );
+        return of(false);
+      }),
+    );
   }
 
   getRecords(): BulkUploadRecord[] {

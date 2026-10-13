@@ -1257,8 +1257,9 @@
   margin: 0 !important;
 }
 
-.cr-spin {
-  animation: cr-spin-keyframes 1.2s linear infinite;
+.cr-spin,
+.spin-icon {
+  animation: cr-spin-keyframes 1s linear infinite;
 }
 
 @keyframes cr-spin-keyframes {

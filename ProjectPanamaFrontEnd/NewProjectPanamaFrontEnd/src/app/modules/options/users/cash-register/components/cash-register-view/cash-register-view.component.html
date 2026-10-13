@@ -106,11 +106,19 @@
       class="cr-bulk-upload-btn"
       matRipple
       (click)="openBulkUploadDialog()"
+      [disabled]="isCheckingRecords"
     >
       <div class="cr-consult-icon-box cr-bg-orange-soft">
-        <mat-icon class="cr-text-orange-600">cloud_upload</mat-icon>
+        <mat-icon *ngIf="!isCheckingRecords" class="cr-text-orange-600"
+          >cloud_upload</mat-icon
+        >
+        <mat-icon *ngIf="isCheckingRecords" class="cr-text-orange-600 spin-icon"
+          >sync</mat-icon
+        >
       </div>
-      <span class="cr-consult-btn-label">Carga Masiva</span>
+      <span class="cr-consult-btn-label">{{
+        isCheckingRecords ? "Verificando..." : "Carga Masiva"
+      }}</span>
     </button>
 
     <div
@@ -583,11 +591,21 @@
               class="cr-consult-btn-main"
               matRipple
               (click)="openBulkUploadDialog()"
+              [disabled]="isCheckingRecords"
             >
               <div class="cr-consult-icon-box cr-bg-orange-soft">
-                <mat-icon class="cr-text-orange-600">cloud_upload</mat-icon>
+                <mat-icon *ngIf="!isCheckingRecords" class="cr-text-orange-600"
+                  >cloud_upload</mat-icon
+                >
+                <mat-icon
+                  *ngIf="isCheckingRecords"
+                  class="cr-text-orange-600 spin-icon"
+                  >sync</mat-icon
+                >
               </div>
-              <span class="cr-consult-btn-label">Carga Masiva</span>
+              <span class="cr-consult-btn-label">{{
+                isCheckingRecords ? "Verificando..." : "Carga Masiva"
+              }}</span>
             </button>
             <button class="cr-consult-btn-main" matRipple>
               <div class="cr-consult-icon-box cr-bg-green-soft">

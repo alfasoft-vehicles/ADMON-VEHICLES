@@ -76,7 +76,36 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
         this.router.navigate(['/cash-register']);
         return;
       }
-      this.initStrategy(type);
+      this.validateAndInitStrategy(type);
+    });
+  }
+
+  /**
+   * Valida existencia de registros antes de inicializar la estrategia
+   */
+  private validateAndInitStrategy(type: string): void {
+    this.bulkUploadService.hasRecords(type).subscribe({
+      next: (hasRecords) => {
+        if (!hasRecords) {
+          this.snackBar.open(
+            'No se encontraron registros pendientes de procesar. Debe subir un archivo .CSV primero.',
+            'Cerrar',
+            {
+              duration: 4000,
+              horizontalPosition: 'center',
+              verticalPosition: 'top',
+            },
+          );
+          this.router.navigate(['/cash-register'], {
+            queryParams: { openUpload: 'true' },
+          });
+          return;
+        }
+        this.initStrategy(type);
+      },
+      error: () => {
+        this.initStrategy(type);
+      },
     });
   }
 

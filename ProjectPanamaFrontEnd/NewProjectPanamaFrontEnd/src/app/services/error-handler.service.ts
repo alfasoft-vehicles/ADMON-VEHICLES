@@ -3,11 +3,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { throwError } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ErrorHandlerService {
-
-  constructor() { }
+  constructor() {}
 
   handleError(error: HttpErrorResponse) {
     let errorMessage = 'An error occurred';
@@ -16,10 +15,16 @@ export class ErrorHandlerService {
       errorMessage = `Client-side error: ${error.error.message}`;
     } else {
       // Servidor-side error
-      errorMessage = `Server-side error: ${error.status} - ${error.message}`;
+      errorMessage =
+        error.error?.message ||
+        `Server-side error: ${error.status} - ${error.message}`;
     }
 
     console.error(errorMessage);
-    return throwError({ status: error.status, message: errorMessage });
+    return throwError({
+      status: error.status,
+      message: errorMessage,
+      error: error.error,
+    });
   }
 }

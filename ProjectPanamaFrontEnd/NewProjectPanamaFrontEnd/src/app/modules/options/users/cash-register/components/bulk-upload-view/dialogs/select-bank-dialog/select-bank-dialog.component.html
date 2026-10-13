@@ -18,12 +18,13 @@
 </div>
 
 <!-- Barra de Pasos / Stepper Pills -->
-<div class="stepper-bar">
+<div class="stepper-bar" [class.uploading-disabled]="isUploading">
   <div
     class="step-pill"
     [class.active]="currentStep === 1"
     [class.completed]="currentStep === 2"
-    (click)="currentStep = 1"
+    [class.disabled-step]="isUploading"
+    (click)="goToStep(1)"
   >
     <span class="step-num">1</span>
     <span class="step-label">Selección de Banco</span>
@@ -108,13 +109,14 @@
       (dragover)="onDragOver($event)"
       (dragleave)="onDragLeave($event)"
       (drop)="onFileDropped($event)"
-      (click)="!selectedFile && fileInput.click()"
+      (click)="!selectedFile && !isUploading && fileInput.click()"
     >
       <input
         #fileInput
         type="file"
         accept=".csv"
         style="display: none"
+        [disabled]="isUploading"
         (change)="onFileSelected($event)"
       />
 
@@ -171,14 +173,24 @@
       </div>
     </div>
 
-    <!-- Banner informativo de simulación / sin endpoint -->
-    <div class="dev-info-banner">
-      <mat-icon class="info-banner-icon">info</mat-icon>
-      <div class="info-banner-text">
-        <strong>Modo de Desarrollo:</strong> Aún no hay endpoints configurados
-        en el servidor. Puedes hacer clic en
-        <strong>"Subir y Procesar"</strong> directamente, con o sin archivo,
-        para continuar con la conciliación.
+    <!-- Banner de advertencia y seguridad de la transacción -->
+    <div
+      class="processing-notice-banner"
+      [class.processing-active]="isUploading"
+    >
+      <mat-icon class="notice-banner-icon" [class.spin-icon]="isUploading">
+        {{ isUploading ? "sync" : "warning_amber" }}
+      </mat-icon>
+      <div class="notice-banner-text">
+        <strong *ngIf="!isUploading">Aviso de seguridad:</strong>
+        <strong *ngIf="isUploading">¡Procesamiento en progreso!</strong>
+        <span>
+          {{
+            isUploading
+              ? " Por favor NO cierre este diálogo, NO recargue la página y NO cierre el navegador o pestaña mientras se guardan y validan las transacciones en el servidor."
+              : " Al iniciar la carga, no cierre el diálogo, la pestaña ni el navegador para garantizar que todos los registros se procesen y concilien correctamente."
+          }}
+        </span>
       </div>
     </div>
   </div>
@@ -195,6 +207,7 @@
       type="button"
       (click)="close()"
       class="action-btn btn-cancel"
+      [disabled]="isUploading"
     >
       <mat-icon>close</mat-icon> Cancelar
     </button>
@@ -228,7 +241,7 @@
       type="button"
       (click)="submitUpload()"
       class="action-btn btn-submit"
-      [disabled]="isUploading"
+      [disabled]="isUploading || !selectedFile"
     >
       <mat-icon *ngIf="!isUploading">cloud_upload</mat-icon>
       <mat-icon *ngIf="isUploading" class="spin-icon">sync</mat-icon>

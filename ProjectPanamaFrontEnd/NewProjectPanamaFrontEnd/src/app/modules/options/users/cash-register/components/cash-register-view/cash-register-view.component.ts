@@ -5,7 +5,7 @@ import { ApiService } from 'src/app/services/api.service';
 import { JwtService } from 'src/app/services/jwt.service';
 import { MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { QueriesDialogComponent } from '../../dialogs/queries-dialog/queries-dialog.component';
 import { AddSurchargesDialogComponent } from '../../dialogs/add-surcharges-dialog/add-surcharges-dialog.component';
@@ -16,6 +16,7 @@ import {
 } from '../../dialogs/pay-surcharges-dialog/pay-surcharges-dialog.component';
 import { ConfirmActionDialogComponent } from 'src/app/modules/shared/components/confirm-action-dialog/confirm-action-dialog.component';
 import { SelectBankDialogComponent } from '../bulk-upload-view/dialogs/select-bank-dialog/select-bank-dialog.component';
+import { BulkUploadService } from '../bulk-upload-view/services/bulk-upload.service';
 
 export interface drivers {
   codigo_conductor: string;
@@ -130,6 +131,7 @@ export class CashRegisterViewComponent implements OnInit {
   isCreatingRentReceipt: boolean = false;
   isCollecting: boolean = false;
   isVerified: boolean = false;
+  isCheckingRecords: boolean = false;
 
   constructor(
     private fb: FormBuilder,
@@ -137,7 +139,9 @@ export class CashRegisterViewComponent implements OnInit {
     private jwtService: JwtService,
     private snackBar: MatSnackBar,
     private router: Router,
+    private route: ActivatedRoute,
     private dialog: MatDialog,
+    private bulkUploadService: BulkUploadService,
   ) {}
 
   ngOnInit() {
@@ -148,6 +152,18 @@ export class CashRegisterViewComponent implements OnInit {
 
     this.getDataAutoCompletes();
     this.setupListeners();
+
+    // Si viene redirigido con queryParam openUpload=true (por ejemplo, desde el guard)
+    this.route.queryParams.subscribe((params) => {
+      if (params['openUpload'] === 'true') {
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: {},
+          replaceUrl: true,
+        });
+        this.openUploadDialog();
+      }
+    });
   }
 
   getDataAutoCompletes() {
@@ -742,6 +758,30 @@ export class CashRegisterViewComponent implements OnInit {
   }
 
   openBulkUploadDialog() {
+    if (this.isCheckingRecords) {
+      return;
+    }
+
+    this.isCheckingRecords = true;
+    this.bulkUploadService.hasRecords('yappy').subscribe({
+      next: (hasRecords) => {
+        this.isCheckingRecords = false;
+        if (hasRecords) {
+          // Si hay información en la tabla de yappy, entra directamente al componente
+          this.router.navigate(['/cash-register/bulk-upload', 'yappy']);
+        } else {
+          // Si no hay información, abre el dialog para que suban el archivo
+          this.openUploadDialog();
+        }
+      },
+      error: (err) => {
+        this.isCheckingRecords = false;
+        this.openUploadDialog();
+      },
+    });
+  }
+
+  openUploadDialog() {
     this.dialog.open(SelectBankDialogComponent, {
       width: '660px',
       maxWidth: '92vw',

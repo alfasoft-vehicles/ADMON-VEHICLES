@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 import { BulkUploadStrategy } from '../strategies/bulk-upload.strategy';
 import { BulkUploadStrategyFactory } from '../strategies/bulk-upload-strategy.factory';
 import { BulkUploadRecord } from '../models/bulk-upload-record.interface';
@@ -44,12 +44,23 @@ export class BulkUploadService {
   }
 
   /**
+   * Consulta si existen registros disponibles en la base de datos para la estrategia.
+   */
+  hasRecords(type?: string | null): Observable<boolean> {
+    const strategy = this.strategyFactory.getStrategy(type);
+    if (strategy.hasRecords) {
+      return strategy.hasRecords();
+    }
+    return of(false);
+  }
+
+  /**
    * Sube el archivo delegando a la estrategia correspondiente según el tipo.
    */
   uploadFile(
     type: string,
     file: File | null,
-  ): Observable<{ success: boolean; message?: string }> {
+  ): Observable<{ success: boolean; message?: string; data?: any }> {
     const strategy = this.strategyFactory.getStrategy(type);
     return strategy.uploadFile(file);
   }

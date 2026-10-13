@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -20,7 +20,7 @@ export interface BankOption {
   templateUrl: './select-bank-dialog.component.html',
   styleUrls: ['./select-bank-dialog.component.css'],
 })
-export class SelectBankDialogComponent {
+export class SelectBankDialogComponent implements OnInit {
   currentStep: 1 | 2 = 1;
 
   // Opciones de pasarelas / bancos (4 variantes iniciales basadas en Yappy)
@@ -79,33 +79,77 @@ export class SelectBankDialogComponent {
     private bulkUploadService: BulkUploadService,
   ) {}
 
+  ngOnInit(): void {
+    // Evita cerrar el diálogo haciendo clic afuera o presionando tecla ESC
+    this.dialogRef.disableClose = true;
+  }
+
+  /**
+   * Previene salir o recargar la pestaña / ventana mientras se está procesando la subida
+   */
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.isUploading) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
+
   selectBank(bank: BankOption): void {
+    if (this.isUploading) {
+      return;
+    }
     this.selectedBank = bank;
   }
 
+  goToStep(step: 1 | 2): void {
+    if (this.isUploading) {
+      return;
+    }
+    if (step === 2 && !this.selectedBank) {
+      return;
+    }
+    this.currentStep = step;
+  }
+
   nextStep(): void {
+    if (this.isUploading) {
+      return;
+    }
     if (this.selectedBank) {
       this.currentStep = 2;
     }
   }
 
   previousStep(): void {
+    if (this.isUploading) {
+      return;
+    }
     this.currentStep = 1;
   }
 
   onDragOver(event: DragEvent): void {
+    if (this.isUploading) {
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     this.isDragging = true;
   }
 
   onDragLeave(event: DragEvent): void {
+    if (this.isUploading) {
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     this.isDragging = false;
   }
 
   onFileDropped(event: DragEvent): void {
+    if (this.isUploading) {
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     this.isDragging = false;
@@ -116,6 +160,9 @@ export class SelectBankDialogComponent {
   }
 
   onFileSelected(event: Event): void {
+    if (this.isUploading) {
+      return;
+    }
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.handleFile(input.files[0]);
@@ -123,6 +170,9 @@ export class SelectBankDialogComponent {
   }
 
   private handleFile(file: File): void {
+    if (this.isUploading) {
+      return;
+    }
     if (file.name.toLowerCase().endsWith('.csv') || file.type.includes('csv')) {
       this.selectedFile = file;
     } else {
@@ -132,6 +182,9 @@ export class SelectBankDialogComponent {
   }
 
   removeFile(event?: Event): void {
+    if (this.isUploading) {
+      return;
+    }
     if (event) {
       event.stopPropagation();
     }
@@ -152,6 +205,19 @@ export class SelectBankDialogComponent {
       return;
     }
 
+    if (!this.selectedFile) {
+      this.snackBar.open(
+        'Por favor seleccione un archivo .CSV para continuar.',
+        'Cerrar',
+        {
+          duration: 3500,
+          horizontalPosition: 'center',
+          verticalPosition: 'top',
+        },
+      );
+      return;
+    }
+
     this.isUploading = true;
 
     // Delegamos al patrón strategy a través del servicio
@@ -168,32 +234,36 @@ export class SelectBankDialogComponent {
             this.selectedBank!.type,
           ]);
 
-          this.snackBar.open(
-            `Banco ${this.selectedBank!.name} seleccionado. Conciliación lista.`,
-            'Entendido',
-            {
-              duration: 3500,
-              horizontalPosition: 'center',
-              verticalPosition: 'top',
-            },
-          );
+          const successMessage =
+            result?.message ||
+            `Banco ${this.selectedBank!.name} procesado exitosamente. Conciliación lista.`;
+
+          this.snackBar.open(successMessage, 'Entendido', {
+            duration: 4000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top',
+          });
         },
         error: (err) => {
           this.isUploading = false;
-          this.snackBar.open(
-            'Ocurrió un error al procesar el archivo. Inténtelo nuevamente.',
-            'Cerrar',
-            {
-              duration: 4000,
-              horizontalPosition: 'center',
-              verticalPosition: 'top',
-            },
-          );
+          const errorMessage =
+            err?.message ||
+            err?.error?.message ||
+            'Ocurrió un error al procesar el archivo. Inténtelo nuevamente.';
+
+          this.snackBar.open(errorMessage, 'Cerrar', {
+            duration: 5000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top',
+          });
         },
       });
   }
 
   close(): void {
+    if (this.isUploading) {
+      return;
+    }
     this.dialogRef.close(false);
   }
 }
