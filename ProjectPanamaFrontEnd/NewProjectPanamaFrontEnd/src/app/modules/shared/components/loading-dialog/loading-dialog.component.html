@@ -1,0 +1,34 @@
+<div class="loading-dialog-container">
+  <div class="spinner-wrapper">
+    <mat-progress-spinner
+      mode="indeterminate"
+      [diameter]="56"
+      [strokeWidth]="4"
+      color="primary"
+      class="custom-spinner"
+    ></mat-progress-spinner>
+    <div class="spinner-center-icon">
+      <mat-icon>hourglass_top</mat-icon>
+    </div>
+  </div>
+
+  <div class="loading-dialog-text">
+    <h3 class="loading-title">{{ data?.title || "Cargando información" }}</h3>
+    <p class="loading-message">
+      {{
+        data?.message || "Por favor espere mientras se obtienen los datos..."
+      }}
+    </p>
+    <span class="loading-submessage" *ngIf="data?.submessage">
+      {{ data?.submessage }}
+    </span>
+  </div>
+
+  <div class="progress-bar-wrapper">
+    <mat-progress-bar
+      mode="indeterminate"
+      color="primary"
+      class="loading-progress-bar"
+    ></mat-progress-bar>
+  </div>
+</div>

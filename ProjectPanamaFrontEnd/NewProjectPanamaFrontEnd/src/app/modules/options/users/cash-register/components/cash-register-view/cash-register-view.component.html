@@ -4,11 +4,6 @@
   </div>
 
   <div class="cr-search-section-wrapper" [formGroup]="searchForm">
-    <mat-progress-bar
-      mode="indeterminate"
-      *ngIf="isLoadingAutocompletes"
-    ></mat-progress-bar>
-
     <div
       *ngIf="!isLoadingAutocompletes"
       class="cr-search-controls"
@@ -143,10 +138,6 @@
         <p class="cr-receipt-value-sm">{{ closingDateInfo?.time }}</p>
       </div>
     </div>
-  </div>
-
-  <div class="cr-search-section-wrapper" *ngIf="isLoading">
-    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
   </div>
 
   <div

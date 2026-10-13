@@ -9,6 +9,7 @@ import { BulkUploadRecord } from './models/bulk-upload-record.interface';
 import { BulkUploadSummaryMetrics } from './models/bulk-upload-config.interface';
 import { ConfirmActionDialogComponent } from 'src/app/modules/shared/components/confirm-action-dialog/confirm-action-dialog.component';
 import { SearchUnitDialogComponent } from './dialogs/search-unit-dialog/search-unit-dialog.component';
+import { LoadingService } from 'src/app/services/loading.service';
 
 @Component({
   selector: 'app-bulk-upload-view',
@@ -58,6 +59,7 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
     private bulkUploadService: BulkUploadService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
+    private loadingService: LoadingService,
   ) {}
 
   ngOnInit(): void {
@@ -84,8 +86,15 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
    * Valida existencia de registros antes de inicializar la estrategia
    */
   private validateAndInitStrategy(type: string): void {
+    this.loadingService.show({
+      title: 'Cargando Conciliación',
+      message: 'Obteniendo y verificando información de los registros...',
+      submessage: 'Por favor espere un momento',
+    });
+
     this.bulkUploadService.hasRecords(type).subscribe({
       next: (hasRecords) => {
+        this.loadingService.hide();
         if (!hasRecords) {
           this.snackBar.open(
             'No se encontraron registros pendientes de procesar. Debe subir un archivo .CSV primero.',
@@ -104,12 +113,14 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
         this.initStrategy(type);
       },
       error: () => {
+        this.loadingService.hide();
         this.initStrategy(type);
       },
     });
   }
 
   ngOnDestroy(): void {
+    this.loadingService.hide();
     if (this.routeSub) {
       this.routeSub.unsubscribe();
     }

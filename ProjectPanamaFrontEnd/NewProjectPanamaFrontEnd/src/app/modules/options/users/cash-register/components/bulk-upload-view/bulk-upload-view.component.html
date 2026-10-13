@@ -418,3 +418,17 @@
     </div>
   </footer>
 </div>
+
+<!-- Loader de respaldo en caso de carga inicial -->
+<div class="bu-loading-backdrop" *ngIf="!activeStrategy">
+  <div class="bu-loading-content">
+    <mat-progress-spinner
+      mode="indeterminate"
+      [diameter]="54"
+      [strokeWidth]="4"
+      color="primary"
+    ></mat-progress-spinner>
+    <h3 class="bu-loading-title">Cargando conciliación</h3>
+    <p class="bu-loading-subtitle">Obteniendo información del servidor...</p>
+  </div>
+</div>

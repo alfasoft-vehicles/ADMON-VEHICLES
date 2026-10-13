@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { Observable, map, startWith, forkJoin } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
@@ -17,6 +17,7 @@ import {
 import { ConfirmActionDialogComponent } from 'src/app/modules/shared/components/confirm-action-dialog/confirm-action-dialog.component';
 import { SelectBankDialogComponent } from '../bulk-upload-view/dialogs/select-bank-dialog/select-bank-dialog.component';
 import { BulkUploadService } from '../bulk-upload-view/services/bulk-upload.service';
+import { LoadingService } from 'src/app/services/loading.service';
 
 export interface drivers {
   codigo_conductor: string;
@@ -86,7 +87,7 @@ export interface VehicleDriverDetail {
   templateUrl: './cash-register-view.component.html',
   styleUrls: ['./cash-register-view.component.css'],
 })
-export class CashRegisterViewComponent implements OnInit {
+export class CashRegisterViewComponent implements OnInit, OnDestroy {
   searchForm!: FormGroup;
 
   @ViewChild('triggerDriver', { read: MatAutocompleteTrigger })
@@ -142,6 +143,7 @@ export class CashRegisterViewComponent implements OnInit {
     private route: ActivatedRoute,
     private dialog: MatDialog,
     private bulkUploadService: BulkUploadService,
+    private loadingService: LoadingService,
   ) {}
 
   ngOnInit() {
@@ -168,6 +170,12 @@ export class CashRegisterViewComponent implements OnInit {
 
   getDataAutoCompletes() {
     this.isLoadingAutocompletes = true;
+    this.loadingService.show({
+      title: 'Cargando Caja',
+      message:
+        'Obteniendo datos de vehículos, conductores y fecha de cierre...',
+      submessage: 'Por favor espere un momento',
+    });
     const company = this.getCompany();
 
     const driversObs = this.apiService.getData('drivers_data/' + company);
@@ -198,8 +206,10 @@ export class CashRegisterViewComponent implements OnInit {
 
         this.closingDateInfo = closingDateData;
         this.isLoadingAutocompletes = false;
+        this.loadingService.hide();
       },
       error: (error) => {
+        this.loadingService.hide();
         this.openSnackbar(
           'Error al cargar la información. Vuelve a intentarlo.',
         );
@@ -317,6 +327,12 @@ export class CashRegisterViewComponent implements OnInit {
 
   fetchWalletData(vehicleNumber: string, driverCode: string) {
     this.isLoading = true;
+    this.loadingService.show({
+      title: 'Cargando Información',
+      message:
+        'Obteniendo estados de cuenta, cartera y detalles de la unidad...',
+      submessage: 'Por favor espere un momento',
+    });
     const company = this.getCompany();
 
     const walletObs = this.apiService.getData(
@@ -357,6 +373,7 @@ export class CashRegisterViewComponent implements OnInit {
         this.notificationMessage = notifications.maintenance_message;
         this.hasData = true;
         this.isLoading = false;
+        this.loadingService.hide();
 
         const km = detail?.mileage;
         this.baseMileage =
@@ -369,6 +386,7 @@ export class CashRegisterViewComponent implements OnInit {
         this.calculateTotal();
       },
       error: (err) => {
+        this.loadingService.hide();
         this.openSnackbar(
           'Error al cargar la información de la unidad. Intente de nuevo.',
         );
@@ -901,5 +919,9 @@ export class CashRegisterViewComponent implements OnInit {
           }
         }
       });
+  }
+
+  ngOnDestroy(): void {
+    this.loadingService.hide();
   }
 }

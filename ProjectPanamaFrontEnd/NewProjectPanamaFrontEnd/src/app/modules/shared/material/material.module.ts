@@ -11,6 +11,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatListModule } from '@angular/material/list';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -42,6 +43,7 @@ const materialModules = [
   MatDialogModule,
   MatListModule,
   MatProgressBarModule,
+  MatProgressSpinnerModule,
   MatSnackBarModule,
   MatToolbarModule,
   MatSidenavModule,

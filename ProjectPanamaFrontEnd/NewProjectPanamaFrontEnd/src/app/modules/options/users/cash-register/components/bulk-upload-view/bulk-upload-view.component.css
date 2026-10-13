@@ -1489,3 +1489,41 @@
     justify-content: space-between;
   }
 }
+
+/* ==========================================================================
+   Fallback Loader inicial cuando la vista está inicializando
+   ========================================================================== */
+.bu-loading-backdrop {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background: #f8fafc;
+}
+
+.bu-loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  padding: 36px 44px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.bu-loading-title {
+  margin: 10px 0 0 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.bu-loading-subtitle {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #64748b;
+}

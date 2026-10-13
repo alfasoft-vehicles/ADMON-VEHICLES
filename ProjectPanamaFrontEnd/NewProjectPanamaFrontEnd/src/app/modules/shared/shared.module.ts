@@ -9,6 +9,7 @@ import { SignaturePadComponent } from './components/signature-pad/signature-pad.
 import { CameraComponent } from './components/camera/camera/camera.component';
 import { CameraPreviewComponent } from './components/camera/camera-preview/camera-preview.component';
 import { FingerprintComponent } from './components/fingerprint/fingerprint.component';
+import { LoadingDialogComponent } from './components/loading-dialog/loading-dialog.component';
 
 @NgModule({
   declarations: [
@@ -18,6 +19,7 @@ import { FingerprintComponent } from './components/fingerprint/fingerprint.compo
     CameraComponent,
     CameraPreviewComponent,
     FingerprintComponent,
+    LoadingDialogComponent,
   ],
   imports: [CommonModule, RouterModule, FormsModule, MaterialModule],
   exports: [
@@ -26,6 +28,7 @@ import { FingerprintComponent } from './components/fingerprint/fingerprint.compo
     SignaturePadComponent,
     CameraComponent,
     FingerprintComponent,
+    LoadingDialogComponent,
   ],
 })
 export class SharedModule {}
