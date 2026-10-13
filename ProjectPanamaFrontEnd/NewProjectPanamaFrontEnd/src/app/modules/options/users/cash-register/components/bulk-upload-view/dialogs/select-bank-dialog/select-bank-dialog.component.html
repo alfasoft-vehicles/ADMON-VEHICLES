@@ -101,6 +101,27 @@
       </button>
     </div>
 
+    <!-- Banner de advertencia y seguridad de la transacción -->
+    <div
+      class="processing-notice-banner"
+      [class.processing-active]="isUploading"
+    >
+      <mat-icon class="notice-banner-icon" [class.spin-icon]="isUploading">
+        {{ isUploading ? "sync" : "warning_amber" }}
+      </mat-icon>
+      <div class="notice-banner-text">
+        <strong *ngIf="!isUploading">Aviso de seguridad:</strong>
+        <strong *ngIf="isUploading">¡Procesamiento en progreso!</strong>
+        <span>
+          {{
+            isUploading
+              ? " Por favor NO cierre este diálogo, NO recargue la página y NO cierre el navegador o pestaña mientras se guardan y validan las transacciones en el servidor."
+              : " Al iniciar la carga, no cierre el diálogo, la pestaña ni el navegador para garantizar que todos los registros se procesen y concilien correctamente."
+          }}
+        </span>
+      </div>
+    </div>
+
     <!-- Dropzone / Área de Subida -->
     <div
       class="upload-dropzone"
@@ -170,27 +191,6 @@
             <mat-icon>close</mat-icon>
           </button>
         </div>
-      </div>
-    </div>
-
-    <!-- Banner de advertencia y seguridad de la transacción -->
-    <div
-      class="processing-notice-banner"
-      [class.processing-active]="isUploading"
-    >
-      <mat-icon class="notice-banner-icon" [class.spin-icon]="isUploading">
-        {{ isUploading ? "sync" : "warning_amber" }}
-      </mat-icon>
-      <div class="notice-banner-text">
-        <strong *ngIf="!isUploading">Aviso de seguridad:</strong>
-        <strong *ngIf="isUploading">¡Procesamiento en progreso!</strong>
-        <span>
-          {{
-            isUploading
-              ? " Por favor NO cierre este diálogo, NO recargue la página y NO cierre el navegador o pestaña mientras se guardan y validan las transacciones en el servidor."
-              : " Al iniciar la carga, no cierre el diálogo, la pestaña ni el navegador para garantizar que todos los registros se procesen y concilien correctamente."
-          }}
-        </span>
       </div>
     </div>
   </div>
