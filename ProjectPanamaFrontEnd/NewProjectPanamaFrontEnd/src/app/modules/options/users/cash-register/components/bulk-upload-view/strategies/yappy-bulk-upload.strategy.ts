@@ -93,388 +93,157 @@ export class YappyBulkUploadStrategy implements BulkUploadStrategy {
     );
   }
 
-  getRecords(): BulkUploadRecord[] {
-    return [
-      {
-        id: 1,
-        fecha: '2026-09-17',
-        hora: '23:57:09',
-        nombre: 'Luis Moreno',
-        celular: '50765225610',
-        comentario: 'Luis moreno',
-        credito: '33.50',
-        comision: '0.50',
-        inscripcion: '0.00',
-        multas: '0.00',
-        panapass: '0.00',
-        siniestros: '0.00',
-        cedula: '8764853',
-        codigo: '10396',
-        unidad: 'FG67',
-        otraUnd: '',
-        estado: 'Activos',
-        identifica: 'Fg67',
-        pendiente: '0.00',
-        hasAlert: false,
-      },
-      {
-        id: 2,
-        fecha: '2026-09-17',
-        hora: '23:52:26',
-        nombre: 'Bernardo Abrego',
-        celular: '50767770575',
-        comentario: '8-917-1771',
-        credito: '36.00',
-        comision: '0.50',
-        inscripcion: '0.00',
-        multas: '0.00',
-        panapass: '0.00',
-        siniestros: '0.00',
-        cedula: '89171771',
-        codigo: '10694',
-        unidad: 'FA35',
-        otraUnd: '',
-        estado: 'Activos',
-        identifica: 'Fa35',
-        pendiente: '0.00',
-        hasAlert: false,
-      },
-      {
-        id: 3,
-        fecha: '2026-09-17',
-        hora: '23:51:04',
-        nombre: 'Demetrio Sanjur',
-        celular: '50763626271',
-        comentario: 'Demetrio sanjur 4 217 440',
-        credito: '34.50',
-        comision: '0.50',
-        inscripcion: '0.00',
-        multas: '0.00',
-        panapass: '0.00',
-        siniestros: '0.00',
-        cedula: '4217440',
-        codigo: '10414',
-        unidad: 'FG73',
-        otraUnd: '',
-        estado: 'Activos',
-        identifica: 'Fg773',
-        pendiente: '0.00',
-        hasAlert: false,
-      },
-      {
-        id: 4,
-        fecha: '2026-09-17',
-        hora: '23:48:11',
-        nombre: 'Stephany Saldaña',
-        celular: '50767675459',
-        comentario: '8-875-2451',
-        credito: '36.00',
-        comision: '0.50',
-        inscripcion: '0.00',
-        multas: '0.00',
-        panapass: '0.00',
-        siniestros: '0.00',
-        cedula: '88752451',
-        codigo: '10055',
-        unidad: 'AS51',
-        otraUnd: '',
-        estado: 'Activos',
-        identifica: 'as51',
-        pendiente: '0.00',
-        hasAlert: false,
-      },
-      {
-        id: 5,
-        fecha: '2026-09-17',
-        hora: '23:37:29',
-        nombre: 'Juan Abrego',
-        celular: '50765410308',
-        comentario: '',
-        credito: '35.00',
-        comision: '0.50',
-        inscripcion: '0.00',
-        multas: '0.00',
-        panapass: '0.00',
-        siniestros: '0.00',
-        cedula: '8-749-2294',
-        codigo: '11039',
-        unidad: 'ASM40',
-        otraUnd: '',
-        estado: 'Activos',
-        identifica: 'asm40',
-        pendiente: '0.00',
-        hasAlert: false,
-      },
-      {
-        id: 6,
-        fecha: '2026-09-17',
-        hora: '23:33:07',
-        nombre: 'Yorlenis Guillen',
-        celular: '50765071378',
-        comentario: '4788547',
-        credito: '39.00',
-        comision: '0.50',
-        inscripcion: '0.00',
-        multas: '0.00',
-        panapass: '0.00',
-        siniestros: '0.00',
-        cedula: '4788547',
-        codigo: '10007',
-        unidad: 'FA17',
-        otraUnd: '',
-        estado: 'Activos',
-        identifica: 'fa17',
-        pendiente: '0.00',
-        hasAlert: false,
-      },
-      {
-        id: 7,
-        fecha: '2026-09-17',
-        hora: '23:31:48',
-        nombre: 'Elvis Macias',
-        celular: '50765155557',
-        comentario: 'Miercoles',
-        credito: '29.75',
-        comision: '0.50',
-        inscripcion: '0.00',
-        multas: '0.00',
-        panapass: '0.00',
-        siniestros: '0.00',
-        cedula: '8933813',
-        codigo: '10671',
-        unidad: '0314',
-        otraUnd: '',
-        estado: 'Activos',
-        identifica: '314',
-        pendiente: '0.00',
-        hasAlert: false,
-      },
-      {
-        id: 8,
-        fecha: '2026-09-17',
-        hora: '23:29:54',
-        nombre: 'Rebeca Sanjur',
-        celular: '50767063190',
-        comentario: 'Cuotadeldia16/9',
-        credito: '36.00',
-        comision: '0.50',
-        inscripcion: '0.00',
-        multas: '0.00',
-        panapass: '0.00',
-        siniestros: '0.00',
-        cedula: '',
-        codigo: '',
-        unidad: '',
-        otraUnd: '',
-        estado: '',
-        identifica: '373',
-        pendiente: '5.00',
-        hasAlert: true,
-      },
-      {
-        id: 9,
-        fecha: '2026-09-17',
-        hora: '23:29:40',
-        nombre: 'Alexis Quintero',
-        celular: '50766994774',
-        comentario: 'Alexis Quintero 4-226-267',
-        credito: '36.00',
-        comision: '0.50',
-        inscripcion: '0.00',
-        multas: '0.00',
-        panapass: '0.00',
-        siniestros: '0.00',
-        cedula: '4226267',
-        codigo: '10533',
-        unidad: 'ASM62',
-        otraUnd: '',
-        estado: 'Activos',
-        identifica: 'asm62',
-        pendiente: '0.00',
-        hasAlert: false,
-      },
-      {
-        id: 10,
-        fecha: '2026-09-17',
-        hora: '23:28:42',
-        nombre: 'Edgardo Mena',
-        celular: '50764796540',
-        comentario: '2 - 762 - 302',
-        credito: '44.00',
-        comision: '0.50',
-        inscripcion: '0.00',
-        multas: '0.00',
-        panapass: '0.00',
-        siniestros: '0.00',
-        cedula: '2762302',
-        codigo: '10491',
-        unidad: 'MA35',
-        otraUnd: '',
-        estado: 'Activos',
-        identifica: 'ma35',
-        pendiente: '0.00',
-        hasAlert: false,
-      },
-      {
-        id: 11,
-        fecha: '2026-09-17',
-        hora: '23:27:36',
-        nombre: 'Eleazar Guardado',
-        celular: '50767259504',
-        comentario: 'Eleazar Guardado',
-        credito: '39.50',
-        comision: '0.50',
-        inscripcion: '0.00',
-        multas: '0.00',
-        panapass: '0.00',
-        siniestros: '0.00',
-        cedula: '87012331',
-        codigo: '10618',
-        unidad: 'AR497',
-        otraUnd: '',
-        estado: 'Bacupk',
-        identifica: 'AR497',
-        pendiente: '0.00',
-        hasAlert: false,
-      },
-      {
-        id: 12,
-        fecha: '2026-09-17',
-        hora: '23:25:45',
-        nombre: 'Roberto Carrasquilla',
-        celular: '50762881347',
-        comentario: '8-864-1877',
-        credito: '30.00',
-        comision: '0.50',
-        inscripcion: '0.00',
-        multas: '0.00',
-        panapass: '0.00',
-        siniestros: '0.00',
-        cedula: '8-864-1877',
-        codigo: '10959',
-        unidad: 'SH27',
-        otraUnd: '',
-        estado: 'Activos',
-        identifica: 'sh27',
-        pendiente: '0.00',
-        hasAlert: false,
-      },
-      {
-        id: 13,
-        fecha: '2026-09-17',
-        hora: '23:21:11',
-        nombre: 'Robert Asyn',
-        celular: '50768872914',
-        comentario: '8-781-2125',
-        credito: '36.00',
-        comision: '0.50',
-        inscripcion: '0.00',
-        multas: '0.00',
-        panapass: '0.00',
-        siniestros: '0.00',
-        cedula: '87812125',
-        codigo: '9585',
-        unidad: 'LA282',
-        otraUnd: '',
-        estado: 'Activos',
-        identifica: 'la282',
-        pendiente: '0.00',
-        hasAlert: false,
-      },
-      {
-        id: 14,
-        fecha: '2026-09-17',
-        hora: '23:20:26',
-        nombre: 'Adrian Murillo',
-        celular: '50760675859',
-        comentario: '',
-        credito: '36.00',
-        comision: '0.50',
-        inscripcion: '0.00',
-        multas: '0.00',
-        panapass: '0.00',
-        siniestros: '0.00',
-        cedula: '8798967',
-        codigo: '10741',
-        unidad: 'UBT1091',
-        otraUnd: '',
-        estado: 'Activos',
-        identifica: '1091',
-        pendiente: '0.00',
-        hasAlert: false,
-      },
-      {
-        id: 15,
-        fecha: '2026-09-17',
-        hora: '23:18:19',
-        nombre: 'Eyuzkia De La Cruz',
-        celular: '50764984356',
-        comentario: 'Manuel Barría',
-        credito: '37.00',
-        comision: '0.50',
-        inscripcion: '0.00',
-        multas: '0.00',
-        panapass: '0.00',
-        siniestros: '0.00',
-        cedula: '',
-        codigo: '',
-        unidad: '',
-        otraUnd: '',
-        estado: '',
-        identifica: '334',
-        pendiente: '5.00',
-        hasAlert: true,
-      },
-      {
-        id: 16,
-        fecha: '2026-09-17',
-        hora: '23:17:58',
-        nombre: 'Juan Castillo',
-        celular: '50762569113',
-        comentario: 'Pago 16 de septiembre de Juan Castillo',
-        credito: '19.50',
-        comision: '0.50',
-        inscripcion: '0.00',
-        multas: '0.00',
-        panapass: '0.00',
-        siniestros: '0.00',
-        cedula: '8-527-2494',
-        codigo: '10994',
-        unidad: '0426',
-        otraUnd: '',
-        estado: 'Activos',
-        identifica: '426',
-        pendiente: '0.00',
-        hasAlert: false,
-      },
-    ];
+  getRecords(): Observable<BulkUploadRecord[]> {
+    const userData = this.jwtService.getUserData();
+    const companyCode = (userData?.empresa || '10').trim();
+
+    return this.apiService
+      .getData(`wallet/get-records/yappy/${companyCode}`)
+      .pipe(
+        map((items: any[]) => {
+          if (!Array.isArray(items)) {
+            return [];
+          }
+          return items.map((item, index) => this.mapToRecord(item, index + 1));
+        }),
+      );
   }
 
-  getSummaryMetrics(): BulkUploadSummaryMetrics {
+  private mapToRecord(item: any, id: number): BulkUploadRecord {
+    const isReview = Number(item.review) === 1;
+
+    const creditoVal =
+      item.CREDITO != null && !isNaN(Number(item.CREDITO))
+        ? Number(item.CREDITO)
+        : item.TOTAL != null && !isNaN(Number(item.TOTAL))
+          ? Number(item.TOTAL)
+          : 0;
+
+    const comisionVal =
+      item.COMISION != null && !isNaN(Number(item.COMISION))
+        ? Number(item.COMISION)
+        : 0;
+
+    const debitoVal =
+      item.DEBITO != null && !isNaN(Number(item.DEBITO))
+        ? Number(item.DEBITO)
+        : 0;
+
+    const formatNum = (val: any) => {
+      if (val === null || val === undefined || val === '') return '0.00';
+      const n = Number(val);
+      return isNaN(n) ? '0.00' : n.toFixed(2);
+    };
+
     return {
-      totalRegistros: 222,
-      registrosValidados: 220,
-      registrosPendientes: 2,
-      montoPendiente: '10.00',
-      porcentajeConciliado: 99.1,
-      debitos: '0.00',
-      creditos: '8,349.75',
-      totalBanco: '8,590.25',
-      comision: '111.00',
-      inscripcion: '100.00',
-      multas: '0.00',
-      panapass: '0.00',
-      siniestros: '29.50',
-      netoRecaudable: '8,238.75',
+      id,
+      fecha: (item.FECHA || '').trim(),
+      hora: (item.HORA || '').trim(),
+      nombre: (item.NOMBRE || '').trim(),
+      celular: (item.CELULAR || '').trim(),
+      comentario: (item.COMENTARIO || '').trim(),
+      credito: creditoVal.toFixed(2),
+      debito: debitoVal.toFixed(2),
+      comision: comisionVal.toFixed(2),
+      inscripcion: formatNum(item.INSCRIPCIO),
+      multas: formatNum(item.MULTA),
+      panapass: formatNum(item.PANAPASS),
+      siniestros: formatNum(item.SINIESTROS),
+      cedula: (item.CEDULA || '').trim(),
+      codigo: (item.CODIGO || '').trim(),
+      unidad: (item.UNIDAD || (!isReview ? item.IDENTIFICA : '') || '').trim(),
+      otraUnd: (item.UNIDAD2 || '').trim(),
+      estado: (item.NOMESTADO || item.ESTADO || '').trim(),
+      identifica: (item.IDENTIFICA || '').trim(),
+      pendiente: isReview ? creditoVal.toFixed(2) : '0.00',
+      hasAlert: isReview,
+      review: isReview ? 1 : 0,
+      referencia: (item.REFERENCIA || '').trim(),
+      rawData: item,
+    };
+  }
+
+  getSummaryMetrics(
+    records: BulkUploadRecord[] = [],
+  ): BulkUploadSummaryMetrics {
+    const totalRegistros = records.length;
+    const pendientes = records.filter((r) => this.isRecordInReview(r));
+    const registrosPendientes = pendientes.length;
+    const registrosValidados = totalRegistros - registrosPendientes;
+
+    const montoPendienteNum = pendientes.reduce(
+      (sum, r) => sum + (parseFloat(r.pendiente || '0') || 0),
+      0,
+    );
+
+    const creditosNum = records.reduce(
+      (sum, r) => sum + (parseFloat(r.credito || '0') || 0),
+      0,
+    );
+
+    const debitosNum = records.reduce(
+      (sum, r) => sum + (parseFloat(r.debito || '0') || 0),
+      0,
+    );
+
+    const comisionNum = records.reduce(
+      (sum, r) => sum + (parseFloat(r.comision || '0') || 0),
+      0,
+    );
+
+    const inscripcionNum = records.reduce(
+      (sum, r) => sum + (parseFloat(r.inscripcion || '0') || 0),
+      0,
+    );
+
+    const multasNum = records.reduce(
+      (sum, r) => sum + (parseFloat(r.multas || '0') || 0),
+      0,
+    );
+
+    const panapassNum = records.reduce(
+      (sum, r) => sum + (parseFloat(r.panapass || '0') || 0),
+      0,
+    );
+
+    const siniestrosNum = records.reduce(
+      (sum, r) => sum + (parseFloat(r.siniestros || '0') || 0),
+      0,
+    );
+
+    const formatMoney = (val: number) =>
+      val.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+
+    return {
+      totalRegistros,
+      registrosValidados,
+      registrosPendientes,
+      montoPendiente: formatMoney(montoPendienteNum),
+      porcentajeConciliado:
+        totalRegistros > 0
+          ? parseFloat(((registrosValidados / totalRegistros) * 100).toFixed(1))
+          : 0,
+      debitos: formatMoney(debitosNum),
+      creditos: formatMoney(creditosNum),
+      totalBanco: formatMoney(creditosNum),
+      comision: formatMoney(comisionNum),
+      inscripcion: formatMoney(inscripcionNum),
+      multas: formatMoney(multasNum),
+      panapass: formatMoney(panapassNum),
+      siniestros: formatMoney(siniestrosNum),
+      netoRecaudable: formatMoney(creditosNum - comisionNum),
     };
   }
 
   isRecordInReview(record: BulkUploadRecord): boolean {
-    return !!record.hasAlert || !record.unidad;
+    return Number(record.review) === 1;
   }
 
   isRecordReady(record: BulkUploadRecord): boolean {
-    return !this.isRecordInReview(record);
+    return Number(record.review) === 0;
   }
 
   sortRecords(

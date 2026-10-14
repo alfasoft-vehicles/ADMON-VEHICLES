@@ -94,8 +94,8 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
 
     this.bulkUploadService.hasRecords(type).subscribe({
       next: (hasRecords) => {
-        this.loadingService.hide();
         if (!hasRecords) {
+          this.loadingService.hide();
           this.snackBar.open(
             'No se encontraron registros pendientes de procesar. Debe subir un archivo .CSV primero.',
             'Cerrar',
@@ -113,7 +113,6 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
         this.initStrategy(type);
       },
       error: () => {
-        this.loadingService.hide();
         this.initStrategy(type);
       },
     });
@@ -127,13 +126,34 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Inicializa la vista con la estrategia correspondiente al tipo
+   * Inicializa la vista con la estrategia correspondiente al tipo y carga los registros del backend
    */
   private initStrategy(type?: string | null): void {
     this.activeStrategy = this.bulkUploadService.setStrategyByType(type);
-    this.records = this.bulkUploadService.getRecords();
-    this.metrics = this.bulkUploadService.getSummaryMetrics();
-    this.applySort();
+    this.bulkUploadService.getRecords().subscribe({
+      next: (records) => {
+        this.loadingService.hide();
+        this.records = records;
+        this.metrics = this.bulkUploadService.getSummaryMetrics(this.records);
+        this.applySort();
+      },
+      error: (err) => {
+        this.loadingService.hide();
+        console.error(
+          '[BulkUploadViewComponent] Error al obtener registros:',
+          err,
+        );
+        this.snackBar.open(
+          'Error al obtener los registros del servidor.',
+          'Cerrar',
+          {
+            duration: 4000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top',
+          },
+        );
+      },
+    });
   }
 
   selectRow(id: number): void {
@@ -236,21 +256,6 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
   }
 
   recalculateMetrics(): void {
-    const pendientes = this.records.filter((r) => this.isRecordInReview(r));
-    const pendientesCount = pendientes.length;
-    const validadosCount = this.records.length - pendientesCount;
-
-    const montoPendienteNum = pendientes.reduce(
-      (sum, r) => sum + (parseFloat(r.pendiente) || 0),
-      0,
-    );
-
-    this.metrics.registrosPendientes = pendientesCount;
-    this.metrics.registrosValidados = validadosCount;
-    this.metrics.montoPendiente = montoPendienteNum.toFixed(2);
-    this.metrics.porcentajeConciliado =
-      this.records.length > 0
-        ? parseFloat(((validadosCount / this.records.length) * 100).toFixed(1))
-        : 0;
+    this.metrics = this.bulkUploadService.getSummaryMetrics(this.records);
   }
 }

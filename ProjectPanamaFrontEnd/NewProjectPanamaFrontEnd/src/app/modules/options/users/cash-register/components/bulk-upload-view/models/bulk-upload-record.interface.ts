@@ -6,6 +6,7 @@ export interface BulkUploadRecord {
   celular?: string;
   comentario?: string;
   credito: string;
+  debito?: string;
   comision?: string;
   inscripcion?: string;
   multas?: string;
@@ -19,5 +20,8 @@ export interface BulkUploadRecord {
   identifica?: string;
   pendiente: string;
   hasAlert?: boolean;
+  review?: number;
+  referencia?: string;
+  rawData?: any;
   [key: string]: any;
 }

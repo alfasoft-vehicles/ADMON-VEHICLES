@@ -31,10 +31,10 @@ export interface BulkUploadStrategy {
   hasRecords?(): Observable<boolean>;
 
   /** Obtiene la lista de registros cargados */
-  getRecords(): BulkUploadRecord[];
+  getRecords(): Observable<BulkUploadRecord[]>;
 
   /** Obtiene las métricas de resumen y conciliación */
-  getSummaryMetrics(): BulkUploadSummaryMetrics;
+  getSummaryMetrics(records?: BulkUploadRecord[]): BulkUploadSummaryMetrics;
 
   /** Determina si un registro requiere revisión */
   isRecordInReview(record: BulkUploadRecord): boolean;

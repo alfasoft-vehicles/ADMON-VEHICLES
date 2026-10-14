@@ -258,6 +258,7 @@ export class SearchUnitDialogComponent implements OnInit, AfterViewInit {
             codigo: vehicle.codigoConductor,
             estado: vehicle.estado,
             hasAlert: false,
+            review: 0,
             pendiente: '0.00',
           },
         });

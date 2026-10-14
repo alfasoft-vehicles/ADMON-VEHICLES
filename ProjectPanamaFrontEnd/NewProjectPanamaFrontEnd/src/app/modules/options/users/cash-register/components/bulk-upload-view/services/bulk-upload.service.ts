@@ -66,18 +66,17 @@ export class BulkUploadService {
   }
 
   /**
-   * Obtiene los registros para la estrategia actual.
-   * (Preparado para conectar con endpoints cuando estén disponibles)
+   * Obtiene los registros para la estrategia actual desde el backend.
    */
-  getRecords(): BulkUploadRecord[] {
+  getRecords(): Observable<BulkUploadRecord[]> {
     return this.getActiveStrategy().getRecords();
   }
 
   /**
-   * Obtiene las métricas para la estrategia actual.
+   * Obtiene las métricas para la estrategia actual a partir de los registros provistos.
    */
-  getSummaryMetrics(): BulkUploadSummaryMetrics {
-    return this.getActiveStrategy().getSummaryMetrics();
+  getSummaryMetrics(records?: BulkUploadRecord[]): BulkUploadSummaryMetrics {
+    return this.getActiveStrategy().getSummaryMetrics(records);
   }
 
   /**
