@@ -75,6 +75,17 @@
           </mat-button-toggle>
         </mat-button-toggle-group>
       </div>
+
+      <!-- Botón para limpiar todos los registros de la tabla -->
+      <button
+        mat-icon-button
+        class="bu-btn-clear-table"
+        matTooltip="Limpiar todos los registros"
+        (click)="clearAllRecords()"
+        aria-label="Limpiar todos los registros"
+      >
+        <mat-icon>delete</mat-icon>
+      </button>
     </div>
   </header>
 

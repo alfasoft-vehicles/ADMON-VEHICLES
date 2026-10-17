@@ -155,6 +155,48 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
     this.searchTerm = '';
   }
 
+  clearAllRecords(): void {
+    if (!this.records || this.records.length === 0) {
+      this.snackBar.open(
+        'No hay registros en la tabla para limpiar.',
+        'Entendido',
+        {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'top',
+        },
+      );
+      return;
+    }
+
+    const dialogRef = this.dialog.open(ConfirmActionDialogComponent, {
+      width: '480px',
+      maxWidth: '92vw',
+      data: {
+        documentName: 'Limpiar Registros de la Tabla',
+        message:
+          '¿Está seguro de que desea limpiar todos los registros de la tabla? Esta acción removerá todas las transacciones cargadas.',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (confirmed) {
+        this.records = [];
+        this.recalculateMetrics();
+        this.selectedRowId = null;
+        this.snackBar.open(
+          'Se han limpiado todos los registros de la tabla.',
+          'Entendido',
+          {
+            duration: 4000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top',
+          },
+        );
+      }
+    });
+  }
+
   onSortChange(value: 'default' | 'revision' | 'ready'): void {
     this.sortOrder = value || 'default';
     this.applySort();
