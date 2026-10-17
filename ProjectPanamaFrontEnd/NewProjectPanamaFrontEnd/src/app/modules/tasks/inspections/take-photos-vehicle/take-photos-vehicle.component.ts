@@ -40,7 +40,7 @@ export class TakePhotosVehicleComponent implements OnInit, OnDestroy {
     private sanitizer: DomSanitizer,
     private apiService: ApiService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
   ) {}
 
   ngOnInit(): void {
@@ -80,7 +80,7 @@ export class TakePhotosVehicleComponent implements OnInit, OnDestroy {
           const newPhoto: Photo = {
             blob: blob,
             previewUrl: this.sanitizer.bypassSecurityTrustUrl(
-              URL.createObjectURL(blob)
+              URL.createObjectURL(blob),
             ),
           };
           this.photos.push(newPhoto);
@@ -90,7 +90,7 @@ export class TakePhotosVehicleComponent implements OnInit, OnDestroy {
         }
       },
       'image/jpeg',
-      0.9
+      0.9,
     );
   }
 
@@ -121,7 +121,7 @@ export class TakePhotosVehicleComponent implements OnInit, OnDestroy {
         'Error: Faltan datos para la subida (código, vehículo o ID de inspección).';
       console.error(this.uploadStatus);
       this.openSnackbar(
-        'Realiza la captura de las fotos para guardar la inspección'
+        'Realiza la captura de las fotos para guardar la inspección',
       );
       return throwError(this.uploadStatus);
     }
@@ -145,14 +145,13 @@ export class TakePhotosVehicleComponent implements OnInit, OnDestroy {
         catchError((err) => {
           this.uploadStatus =
             err.error?.detail ||
-            'Error al enviar las fotos. Inténtalo de nuevo.';
+            'Error al subir las fotos. Inténtalo de nuevo.';
           console.error('Error en la subida:', err);
-          this.openSnackbar('Error al subir las fotos. Inténtalo de nuevo.');
-          return throwError(err);
+          return throwError(() => err);
         }),
         finalize(() => {
           this.isUploading = false;
-        })
+        }),
       );
   }
 

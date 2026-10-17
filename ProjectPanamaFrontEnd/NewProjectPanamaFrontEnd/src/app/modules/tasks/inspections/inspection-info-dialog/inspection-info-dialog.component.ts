@@ -70,7 +70,7 @@ export class InspectionInfoDialogComponent {
     public dialogRef: MatDialogRef<InspectionInfoDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: InspectionDialogData,
     private apiService: ApiService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
   ) {}
 
   ngOnInit(): void {
@@ -87,7 +87,6 @@ export class InspectionInfoDialogComponent {
         },
         error: (error) => {
           console.error('Error fetching inspection details:', error);
-          this.openSnackbar('Error al obtener los detalles de la inspección.');
           this.closeDialog('');
         },
       });

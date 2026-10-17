@@ -42,7 +42,7 @@ export class InfoDocumentsDialogComponent implements OnInit {
     private apiService: ApiService,
     private snackBar: MatSnackBar,
     private clipboard: Clipboard,
-    private jwtService: JwtService
+    private jwtService: JwtService,
   ) {}
 
   ngOnInit(): void {
@@ -66,11 +66,8 @@ export class InfoDocumentsDialogComponent implements OnInit {
         this.isLoading = false;
       },
       (error) => {
-        this.openSnackbar(
-          'Error al obtener la información, vuelve a intentarlo más tarde.'
-        );
         this.closeModal();
-      }
+      },
     );
   }
 

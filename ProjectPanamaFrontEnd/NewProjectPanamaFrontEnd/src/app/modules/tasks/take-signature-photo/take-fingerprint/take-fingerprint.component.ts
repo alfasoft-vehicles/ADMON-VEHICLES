@@ -106,9 +106,6 @@ export class TakeFingerprintComponent implements OnInit {
       },
       (error) => {
         console.error('Error fetching vehicles:', error);
-        this.openSnackbar(
-          'Error al obtener las unidades. Inténtalo de nuevo más tarde.',
-        );
         this.closeDialog();
       },
     );
@@ -183,9 +180,6 @@ export class TakeFingerprintComponent implements OnInit {
           },
           (error) => {
             console.error('Error fetching driver vehicle data:', error);
-            this.openSnackbar(
-              'Error al obtener la información. Inténtalo de nuevo con otra unidad.',
-            );
             this.isLoadingvehicleFingerprintInfo = false;
             this.resetInfo();
             this.resetVehicleAutocomplete();
@@ -241,9 +235,6 @@ export class TakeFingerprintComponent implements OnInit {
           },
           (error) => {
             console.error('Error saving fingerprint:', error);
-            this.openSnackbar(
-              'Error al guardar la huella. Inténtalo de nuevo.',
-            );
             this.closeDialog();
           },
         );

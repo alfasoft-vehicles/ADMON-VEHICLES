@@ -6,6 +6,7 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { map, Observable, startWith } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { JwtService } from 'src/app/services/jwt.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 interface mechanics {
   code: string;
@@ -59,6 +60,7 @@ export class VehicleStatesFormComponent {
     private breakpointObserver: BreakpointObserver,
     private apiService: ApiService,
     private jwtService: JwtService,
+    private snackBar: MatSnackBar,
   ) {}
 
   ngOnInit(): void {
@@ -85,9 +87,8 @@ export class VehicleStatesFormComponent {
 
   getMechanics() {
     const company = this.getCompany();
-    this.apiService
-      .getData('mechanics/' + company)
-      .subscribe((data: mechanics[]) => {
+    this.apiService.getData('mechanics/' + company).subscribe({
+      next: (data: mechanics[]) => {
         this.allMechanics = data; // Guardar todos los mecánicos
         this.mechanics = [...data]; // Inicializar con todos los datos
         this.optionsMechanics = this.vehicleForm
@@ -96,7 +97,19 @@ export class VehicleStatesFormComponent {
             startWith(''),
             map((value) => this._filterMechanics(value || '')),
           );
-      });
+      },
+      error: (error) => {
+        console.error('Error fetching mechanics:', error);
+      },
+    });
+  }
+
+  openSnackbar(message: string) {
+    this.snackBar.open(message, 'Cerrar', {
+      duration: 3000,
+      horizontalPosition: 'center',
+      verticalPosition: 'top',
+    });
   }
 
   private _filterMechanics(value: string | mechanics): mechanics[] {

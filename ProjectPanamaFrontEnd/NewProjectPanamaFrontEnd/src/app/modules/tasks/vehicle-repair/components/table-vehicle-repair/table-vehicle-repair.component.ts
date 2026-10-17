@@ -462,11 +462,6 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
         },
         error: (error) => {
           console.error('Error fetching vehicles to repair:', error);
-          if (error.status === 404) {
-            this.openSnackbar('No se encontraron registros.');
-          } else {
-            this.openSnackbar('Error al cargar los registros.');
-          }
           this.isLoadingData = false;
         },
       });
@@ -623,7 +618,6 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
         },
         error: (error) => {
           console.error('Error fetching PDF URL:', error);
-          this.openSnackbar('Error al obtener el documento.');
         },
       });
   }
@@ -665,7 +659,6 @@ export class TableVehicleRepairComponent implements OnInit, AfterViewInit {
                 },
                 error: (error) => {
                   console.error('Error finishing repair:', error);
-                  this.openSnackbar('Error al retirar el vehículo.');
                 },
               });
           }

@@ -4,29 +4,45 @@
     <span *ngIf="!isDesktop && !pdfLoadError">Preparando visualización...</span>
   </div>
 
-  <div *ngIf="!isLoading && pdfLoadError" class="status-message error-message">
-    {{ pdfLoadError }}
+  <div
+    *ngIf="!isLoading && pdfLoadError"
+    id="pdf-viewer-error"
+    class="status-message error-message"
+    role="alert"
+  >
+    <span class="material-symbols-outlined error-icon" translate="no"
+      >error</span
+    >
+    <h1 class="error-title">No fue posible mostrar el PDF</h1>
+    <p class="error-detail">{{ pdfLoadError }}</p>
   </div>
 
   <!-- Botón de descarga para móviles, visible cuando el PDF está listo -->
-  <div *ngIf="!isLoading && !pdfLoadError && !isDesktop && pdfBlob" class="download-button-container">
+  <div
+    *ngIf="!isLoading && !pdfLoadError && !isDesktop && pdfBlob"
+    class="download-button-container"
+  >
     <button (click)="downloadPdf()" class="download-button">
-      <span class="material-symbols-outlined" translate="no">
-        download
-      </span>
+      <span class="material-symbols-outlined" translate="no"> download </span>
       <p class="option-text">Descargar PDF</p>
     </button>
   </div>
 
   <!-- Para PC: Usar iframe para el visor nativo del navegador -->
-  <iframe *ngIf="!isLoading && !pdfLoadError && isDesktop && safePdfUrl"
-          [src]="safePdfUrl"
-          class="pdf-iframe"
-          title="PDF Viewer">
+  <iframe
+    *ngIf="!isLoading && !pdfLoadError && isDesktop && safePdfUrl"
+    [src]="safePdfUrl"
+    class="pdf-iframe"
+    title="PDF Viewer"
+  >
   </iframe>
 
   <!-- Para Móvil: Contenedor para renderizar con PDF.js en canvas -->
-  <div *ngIf="!isLoading && !pdfLoadError && !isDesktop" #pdfPagesContainer class="pdf-pages-container">
+  <div
+    *ngIf="!isLoading && !pdfLoadError && !isDesktop"
+    #pdfPagesContainer
+    class="pdf-pages-container"
+  >
     <!-- Canvases for PDF pages will be appended here by the component -->
   </div>
 </div>

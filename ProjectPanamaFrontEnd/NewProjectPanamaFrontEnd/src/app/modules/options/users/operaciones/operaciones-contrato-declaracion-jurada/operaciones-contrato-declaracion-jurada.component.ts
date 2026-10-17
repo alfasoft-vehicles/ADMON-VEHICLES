@@ -136,9 +136,6 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
       },
       (error) => {
         console.error('Error fetching vehicles:', error);
-        this.openSnackbar(
-          'Error al obtener las unidades. Inténtalo de nuevo más tarde.',
-        );
         this.closeDialog();
       },
     );
@@ -227,9 +224,6 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
           },
           (error) => {
             console.error('Error fetching contract info:', error);
-            this.openSnackbar(
-              'Error al obtener la información. Inténtalo de nuevo con otra unidad.',
-            );
             this.isLoadingContractInfo = false;
             this.resetInfo();
             this.resetVehicleAutocomplete();

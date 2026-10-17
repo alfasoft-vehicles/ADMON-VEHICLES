@@ -144,13 +144,6 @@ export class AddSurchargesDialogComponent implements OnInit {
       error: (err) => {
         console.error('Error al crear recargo:', err);
         this.isSubmitting = false;
-        const msg =
-          err?.error?.message ||
-          'Error al crear el recargo. Intente nuevamente.';
-        this.snackBar.open(msg, 'Cerrar', {
-          duration: 4000,
-          verticalPosition: 'top',
-        });
       },
     });
   }

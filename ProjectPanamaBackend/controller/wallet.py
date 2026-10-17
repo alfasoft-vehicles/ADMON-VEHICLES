@@ -102,7 +102,7 @@ async def vehicle_and_driver_info(company_code: str, vehicle_number: str):
     ).first()
 
     if not information:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     txt_file_path = get_txt_file(company_code)
     if txt_file_path:
@@ -211,7 +211,7 @@ async def closing_date(company_code: str):
     date = db.query(Parametros.FEC_CIERRE).filter(Parametros.EMPRESA == company_code).first()
 
     if not date or not date.FEC_CIERRE:
-      return JSONResponse(content={"message": "No closing date found"}, status_code=404)
+      return JSONResponse(content={"message": "No se encontró fecha de cierre"}, status_code=404)
 
     response = {
       "date": date.FEC_CIERRE,
@@ -307,7 +307,7 @@ async def create_surcharge(data: newSurcharge):
     ).first()
 
     if not driver:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
 
     vehicle = db.query(Vehiculos).filter(
       Vehiculos.EMPRESA == data.company_code,
@@ -315,7 +315,7 @@ async def create_surcharge(data: newSurcharge):
     ).first()
 
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
 
     user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
     user = user.CODIGO if user else ""
@@ -436,7 +436,7 @@ async def verify_revenue_data(data: Revenue):
     ).first()
 
     if not driver:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
 
     vehicle = db.query(Vehiculos).filter(
       Vehiculos.EMPRESA == data.company_code,
@@ -444,7 +444,7 @@ async def verify_revenue_data(data: Revenue):
     ).first()
 
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
 
     debts = (db.query(Cartera.TIPO, func.sum(Cartera.SALDO).label('total_saldo')).filter(
       Cartera.EMPRESA == data.company_code,
@@ -538,7 +538,7 @@ async def create_rent_receipt(data: newRentReceipt):
     ).first()
 
     if not driver:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
 
     vehicle = db.query(Vehiculos).filter(
       Vehiculos.EMPRESA == data.company_code,
@@ -546,7 +546,7 @@ async def create_rent_receipt(data: newRentReceipt):
     ).first()
 
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
 
     rent_due = db.query(func.coalesce(func.sum(Cartera.SALDO), 0)).filter(
       Cartera.EMPRESA == data.company_code,
@@ -560,14 +560,14 @@ async def create_rent_receipt(data: newRentReceipt):
     rent_due = rent_due if rent_due is not None else 0
 
     if data.amount <= rent_due:
-      return JSONResponse(content={"message": "The amount must be greater than the total rent due."}, status_code=400)
+      return JSONResponse(content={"message": "El monto debe ser mayor que el total de renta adeudada."}, status_code=400)
 
     excess_amount = Decimal(data.amount) - rent_due
 
     daily_rent = vehicle.CUO_DIARIA or 0
 
     if daily_rent <= 0:
-      return JSONResponse(content={"message": "Daily rent amount is not set for the vehicle."}, status_code=400)
+      return JSONResponse(content={"message": "El monto de renta diaria no está configurado para el vehículo."}, status_code=400)
 
     user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
     user = user.CODIGO if user else ""
@@ -638,7 +638,7 @@ async def create_rent_receipt(data: newRentReceipt):
     db.commit()
 
     response = {
-      "message": "Rent receipts created successfully",
+      "message": "Recibos de renta creados exitosamente",
       "rent_due": rent_due,
       "excess_amount": excess_amount,
       "receipts": receipts
@@ -662,7 +662,7 @@ async def collect_revenue(data: Revenue):
     ).first()
 
     if not driver:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
 
     vehicle = db.query(Vehiculos).filter(
       Vehiculos.EMPRESA == data.company_code,
@@ -670,7 +670,7 @@ async def collect_revenue(data: Revenue):
     ).first()
 
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
 
     user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
     user = user.CODIGO if user else ""
@@ -859,7 +859,7 @@ async def collect_revenue(data: Revenue):
         ).first()
 
         if not surcharge_entry:
-          return JSONResponse(content={"message": f"Surcharge with ID {surcharge.id} not found"}, status_code=404)
+          return JSONResponse(content={"message": f"Recargo con ID {surcharge.id} no encontrado"}, status_code=404)
 
         current_balance = Decimal(str(surcharge_entry.SALDO or 0))
         applied_payment = min(current_balance, surcharge_payment)
@@ -911,7 +911,7 @@ async def generate_revenue_pdf(company_code: str, receipt_number: str):
     ).order_by(CajaRecaudos.TIPO).all()
 
     if not receipt_entries:
-      return JSONResponse(content={"message": "No entries found for the given receipt number"}, status_code=404)
+      return JSONResponse(content={"message": "No se encontraron registros para el número de recibo proporcionado."}, status_code=404)
 
     wallet_entries = db.query(Cartera).filter(
       Cartera.EMPRESA == company_code,
@@ -924,7 +924,7 @@ async def generate_revenue_pdf(company_code: str, receipt_number: str):
     ).first()
 
     if not driver:
-      return JSONResponse(content={"message": "Driver not found for the given receipt entries"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado para el recibo."}, status_code=404)
 
     vehicle = db.query(Vehiculos).filter(
       Vehiculos.EMPRESA == company_code,
@@ -932,7 +932,7 @@ async def generate_revenue_pdf(company_code: str, receipt_number: str):
     ).first()
 
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found for the given receipt entries"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado para el recibo."}, status_code=404)
 
     company = db.query(
       InfoEmpresas.NOMBRE, InfoEmpresas.NIT, InfoEmpresas.DIRECCION, 

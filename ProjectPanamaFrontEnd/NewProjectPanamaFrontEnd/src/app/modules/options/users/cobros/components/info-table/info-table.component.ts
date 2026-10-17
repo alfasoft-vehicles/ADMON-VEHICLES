@@ -120,8 +120,9 @@ interface DebtOption {
   // ],
 })
 export class InfoTableComponent implements AfterViewInit, OnDestroy {
-  isIOS: boolean = /iPhone|iPad|iPod/.test(navigator.userAgent) && !('MSStream' in window);
-  
+  isIOS: boolean =
+    /iPhone|iPad|iPod/.test(navigator.userAgent) && !('MSStream' in window);
+
   private originalData: VehicleInfoData[] = [];
   dataIsZero: boolean = false;
 
@@ -156,7 +157,7 @@ export class InfoTableComponent implements AfterViewInit, OnDestroy {
       text: 'Todos',
       color: '#ADD8E6',
       hoverColor: '#90CAF9',
-      id: 0
+      id: 0,
     },
   ];
 
@@ -192,7 +193,7 @@ export class InfoTableComponent implements AfterViewInit, OnDestroy {
     private router: Router,
     private documentsService: DocumentsService,
     private snackBar: MatSnackBar,
-    @Inject(DOCUMENT) private document: Document
+    @Inject(DOCUMENT) private document: Document,
   ) {
     this.dataSource = new MatTableDataSource<VehicleInfoData>([]);
 
@@ -223,7 +224,9 @@ export class InfoTableComponent implements AfterViewInit, OnDestroy {
   }
 
   getSelectedDebtText(): string {
-    const selectedDebt = this.debtList.find(debt => debt.id === this.debts.value);
+    const selectedDebt = this.debtList.find(
+      (debt) => debt.id === this.debts.value,
+    );
     return selectedDebt ? selectedDebt.text : 'Todos';
   }
 
@@ -261,37 +264,45 @@ export class InfoTableComponent implements AfterViewInit, OnDestroy {
     this.selectedDebtLevel = event.value;
     this.filterByDebtLevel(this.selectedDebtLevel);
   }
-  
+
   filterByDebtLevel(debtLevelId: number) {
     // Usar originalData en lugar de dataSource.data
     let filteredData: VehicleInfoData[];
-  
+
     switch (debtLevelId) {
       case 1: // Menor o Igual a 1 Cuota
-        filteredData = this.originalData.filter(row => (row.CuotasPendientes || 0) <= 1);
+        filteredData = this.originalData.filter(
+          (row) => (row.CuotasPendientes || 0) <= 1,
+        );
         break;
-      
+
       case 2: // Menor o Igual a 2 Cuotas
-        filteredData = this.originalData.filter(row => (row.CuotasPendientes || 0) <= 2);
+        filteredData = this.originalData.filter(
+          (row) => (row.CuotasPendientes || 0) <= 2,
+        );
         break;
-      
+
       case 3: // Más de 3 Cuotas
-        filteredData = this.originalData.filter(row => (row.CuotasPendientes || 0) > 3);
+        filteredData = this.originalData.filter(
+          (row) => (row.CuotasPendientes || 0) > 3,
+        );
         break;
-      
+
       case 4: // Sin Deuda
-        filteredData = this.originalData.filter(row => (row.CuotasPendientes || 0) === 0);
+        filteredData = this.originalData.filter(
+          (row) => (row.CuotasPendientes || 0) === 0,
+        );
         break;
-      
+
       case 0: // Todos
       default:
         filteredData = this.originalData;
         break;
     }
-  
+
     // Aplicar los datos filtrados
     this.dataSource.data = filteredData;
-    
+
     // Resetear el paginador a la primera página
     if (this.dataSource.paginator) {
       this.dataSource.paginator.firstPage();
@@ -334,16 +345,15 @@ export class InfoTableComponent implements AfterViewInit, OnDestroy {
               CuotasPendientes: item.cuotas_pendientes || 0,
               PanaPass: item.panapass || '',
               MantenimientoFecha: item.mantenimiento_fecha,
-              MantenimientoDiasRestantes:
-                item.mantenimiento_dias_restantes,
+              MantenimientoDiasRestantes: item.mantenimiento_dias_restantes,
             };
-          }
+          },
         );
 
         // Guardar datos originales y aplicar al dataSource
         this.originalData = [...mappedData];
         this.dataSource.data = mappedData;
-        
+
         if (this.paginator) {
           this.dataSource.paginator = this.paginator;
         }
@@ -362,7 +372,6 @@ export class InfoTableComponent implements AfterViewInit, OnDestroy {
       error: (error) => {
         console.error('Error fetching data:', error);
         this.dataIsZero = true;
-        this.openSnackbar('Error al cargar los datos. Por favor, inténtelo de nuevo más tarde.');
       },
     });
   }
@@ -371,7 +380,7 @@ export class InfoTableComponent implements AfterViewInit, OnDestroy {
     if (diasRestantes === null || diasRestantes === undefined) {
       return 'transparent'; // Sin color si no hay datos
     }
-    
+
     if (diasRestantes <= 0) {
       return '#FFCDD2'; // Fecha actual o más (vencido)
     } else if (diasRestantes <= 5) {
@@ -394,60 +403,70 @@ export class InfoTableComponent implements AfterViewInit, OnDestroy {
     const selectedOwners = this.globalStates.getSelectedOwners();
     if (selectedOwners.owners.length === 0) {
       console.error('No owners selected for XLS download');
-      this.openSnackbar('No hay propietarios seleccionados para descargar el reporte.');
+      this.openSnackbar(
+        'No hay propietarios seleccionados para descargar el reporte.',
+      );
       return;
     }
 
-    this.openSnackbar('En un momento se descargará el reporte de cuentas de cobro.');
+    this.openSnackbar(
+      'En un momento se descargará el reporte de cuentas de cobro.',
+    );
 
-    this.documentsService.downloadDocument(
-      'collection-accounts/download', 
-      selectedOwners, 
-      'reporte_cuentas_cobro.xlsx'
-    ).subscribe({
-      next: () => {
-      },
-      error: (error) => {
-        console.error('Download failed:', error);
-        this.openSnackbar('Error al descargar el reporte de cuentas de cobro.');
-      }
-    });
+    this.documentsService
+      .downloadDocument(
+        'collection-accounts/download',
+        selectedOwners,
+        'reporte_cuentas_cobro.xlsx',
+      )
+      .subscribe({
+        next: () => {},
+        error: (error) => {
+          console.error('Download failed:', error);
+        },
+      });
   }
 
   downloadCollectionAccountsPDF() {
     const selectedOwners = this.globalStates.getSelectedOwners();
     if (selectedOwners.owners.length === 0) {
       console.error('No owners selected for PDF download');
-      this.openSnackbar('No hay propietarios seleccionados para descargar el reporte.');
+      this.openSnackbar(
+        'No hay propietarios seleccionados para descargar el reporte.',
+      );
       return;
     }
 
-    this.openSnackbar('En un momento se descargará el reporte de cuentas de cobro.');
+    this.openSnackbar(
+      'En un momento se descargará el reporte de cuentas de cobro.',
+    );
 
     // -- LÓGICA ESPECIAL PARA iOS --
     if (this.isIOS) {
-      this.openSnackbar('Descargando reporte de cuentas de cobro en PDF iOS...');
+      this.openSnackbar(
+        'Descargando reporte de cuentas de cobro en PDF iOS...',
+      );
       // almacenamos endpoint y data para el PdfViewerComponent
       localStorage.setItem('pdfEndpoint', 'collection-accounts/download-pdf');
       localStorage.setItem('pdfData', JSON.stringify(selectedOwners));
       // navegamos a la ruta donde tienes <app-pdf-viewer>
       window.open(`/pdf`, '_blank');
-      return; 
+      return;
     }
 
     // -- COMPORTAMIENTO POR DEFECTO para Android y demás --
-    this.documentsService.downloadDocument(
-      'collection-accounts/download-pdf',
-      selectedOwners,
-      'reporte_cuentas_cobro.pdf'
-    ).subscribe({
-      next: () => {
-      },
-      error: (error) => {
-        console.error('Download failed:', error);
-        this.openSnackbar('Error al descargar el reporte de cuentas de cobro.');
-      }
-    });
+    this.documentsService
+      .downloadDocument(
+        'collection-accounts/download-pdf',
+        selectedOwners,
+        'reporte_cuentas_cobro.pdf',
+      )
+      .subscribe({
+        next: () => {},
+        error: (error) => {
+          console.error('Download failed:', error);
+        },
+      });
   }
 
   nextFeatures() {
@@ -459,7 +478,7 @@ export class InfoTableComponent implements AfterViewInit, OnDestroy {
       duration: 3000,
       horizontalPosition: 'center',
       verticalPosition: 'top',
-    })
+    });
   }
 
   ngOnDestroy() {

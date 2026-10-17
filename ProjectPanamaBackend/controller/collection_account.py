@@ -81,7 +81,7 @@ async def get_collection_accounts(companies_list: list):
                         ).all()
     
     if not collectionAccounts:
-      return JSONResponse(content=jsonable_encoder({'message': 'No collection accounts found'}), status_code=404)
+      return JSONResponse(content=jsonable_encoder({'message': 'No se encontraron cuentas de cobro'}), status_code=404)
     
     conductor_placa_set = {(collectionAccount.conductores_codigo, collectionAccount.vehiculos_numero) for collectionAccount in collectionAccounts}
 
@@ -223,7 +223,7 @@ async def download_collection_accounts(companies_list: list):
                         ).all()
     
     if not collectionAccounts:
-      return JSONResponse(content=jsonable_encoder({'message': 'No collection accounts found'}), status_code=404)
+      return JSONResponse(content=jsonable_encoder({'message': 'No se encontraron cuentas de cobro'}), status_code=404)
     
     conductor_placa_set = {(collectionAccount.conductores_codigo, collectionAccount.vehiculos_numero) for collectionAccount in collectionAccounts}
 
@@ -374,7 +374,7 @@ async def collection_accounts_pdf(companies_list):
                         ).all()
     
     if not collectionAccounts:
-      return JSONResponse(content=jsonable_encoder({'message': 'No collection accounts found'}), status_code=404)
+      return JSONResponse(content=jsonable_encoder({'message': 'No se encontraron cuentas de cobro'}), status_code=404)
     
     conductor_placa_set = {(collectionAccount.conductores_codigo, collectionAccount.vehiculos_numero) for collectionAccount in collectionAccounts}
 

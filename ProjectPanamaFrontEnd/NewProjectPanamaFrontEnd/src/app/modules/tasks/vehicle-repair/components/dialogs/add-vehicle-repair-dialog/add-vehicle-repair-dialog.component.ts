@@ -178,7 +178,6 @@ export class AddVehicleRepairDialogComponent implements OnInit {
       },
       (error) => {
         console.error('Error al cargar datos de reparación:', error);
-        this.openSnackbar('Error al cargar los datos de la reparación.');
         this.isLoading = false;
         this.closeDialog();
       },
@@ -396,9 +395,6 @@ export class AddVehicleRepairDialogComponent implements OnInit {
         },
         (error) => {
           console.error('Error fetching vehicle info:', error);
-          this.openSnackbar(
-            'Error al obtener la información del vehículo seleccionado. Vuelve a intentarlo más tarde.',
-          );
           this.loadingVehicleInfo = false;
           this.selectedVehicle = false;
         },
@@ -454,7 +450,6 @@ export class AddVehicleRepairDialogComponent implements OnInit {
           },
           error: (err) => {
             this.isLoading = false;
-            this.openSnackbar('Error al actualizar el registro.');
           },
         });
     } else {
@@ -509,7 +504,6 @@ export class AddVehicleRepairDialogComponent implements OnInit {
           this.openQRPdf();
         },
         error: (err) => {
-          this.openSnackbar('Error al subir las fotos.');
           this.isLoading = false;
         },
       });

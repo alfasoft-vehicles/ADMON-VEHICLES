@@ -143,15 +143,6 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
           '[BulkUploadViewComponent] Error al obtener registros:',
           err,
         );
-        this.snackBar.open(
-          'Error al obtener los registros del servidor.',
-          'Cerrar',
-          {
-            duration: 4000,
-            horizontalPosition: 'center',
-            verticalPosition: 'top',
-          },
-        );
       },
     });
   }

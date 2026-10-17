@@ -210,9 +210,6 @@ export class CashRegisterViewComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         this.loadingService.hide();
-        this.openSnackbar(
-          'Error al cargar la información. Vuelve a intentarlo.',
-        );
         this.isLoadingAutocompletes = false;
         this.router.navigate(['']);
       },
@@ -387,9 +384,6 @@ export class CashRegisterViewComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.loadingService.hide();
-        this.openSnackbar(
-          'Error al cargar la información de la unidad. Intente de nuevo.',
-        );
         this.isLoading = false;
         this.router.navigate(['']);
       },
@@ -609,10 +603,6 @@ export class CashRegisterViewComponent implements OnInit, OnDestroy {
         this.isVerifying = false;
         this.isVerified = false;
         console.error('Error al verificar recaudo:', err);
-        const errMsg =
-          err?.error?.message ||
-          'Error al verificar la información. Intente nuevamente.';
-        this.openSnackbar(errMsg);
       },
     });
   }
@@ -663,10 +653,6 @@ export class CashRegisterViewComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.isCreatingRentReceipt = false;
         console.error('Error al crear cuentas de diario:', err);
-        const errMsg =
-          err?.error?.message ||
-          'Error al crear las cuentas de diario. Intente nuevamente.';
-        this.openSnackbar(errMsg);
       },
     });
   }
@@ -743,10 +729,6 @@ export class CashRegisterViewComponent implements OnInit, OnDestroy {
         this.isCollecting = false;
         this.isVerified = false;
         console.error('Error al procesar recaudo:', err);
-        const errMsg =
-          err?.error?.message ||
-          'Error al procesar el recaudo. Intente nuevamente.';
-        this.openSnackbar(errMsg);
       },
     });
   }

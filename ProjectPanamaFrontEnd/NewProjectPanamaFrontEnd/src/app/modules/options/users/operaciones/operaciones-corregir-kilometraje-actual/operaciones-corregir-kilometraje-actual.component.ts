@@ -104,7 +104,7 @@ export class OperacionesCorregirKilometrajeActualComponent {
     private snackBar: MatSnackBar,
     private dialogRef: MatDialogRef<OperacionesCorregirKilometrajeActualComponent>,
     private breakpointObserver: BreakpointObserver,
-    private dialog: MatDialog
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit() {
@@ -121,7 +121,7 @@ export class OperacionesCorregirKilometrajeActualComponent {
       },
       {
         validators: this.mileageValidator,
-      }
+      },
     );
   }
 
@@ -148,17 +148,14 @@ export class OperacionesCorregirKilometrajeActualComponent {
         this.options = response;
         this.filteredOptions = this.vehicles.valueChanges.pipe(
           startWith(''),
-          map((value) => this._filter(value || ''))
+          map((value) => this._filter(value || '')),
         );
         this.isLoadingVehicles = false;
       },
       (error) => {
         console.error('Error fetching vehicles:', error);
-        this.openSnackbar(
-          'Error al obtener las unidades. Inténtalo de nuevo más tarde.'
-        );
         this.closeDialog();
-      }
+      },
     );
   }
 
@@ -170,7 +167,7 @@ export class OperacionesCorregirKilometrajeActualComponent {
         option.placa.toLowerCase().includes(filterValue) ||
         option.unidad.toLowerCase().includes(filterValue) ||
         option.propietario.toLowerCase().includes(filterValue) ||
-        option.nro_cupo.toLowerCase().includes(filterValue)
+        option.nro_cupo.toLowerCase().includes(filterValue),
     );
   }
 
@@ -180,7 +177,9 @@ export class OperacionesCorregirKilometrajeActualComponent {
     if (vehicleValue !== '') {
       this.isLoadingVehicleInfo = true;
       this.apiService
-        .getData(`operations/deliveryvehicledriver/vehicle/${this.getCompany()}/${vehicleValue}`)
+        .getData(
+          `operations/deliveryvehicledriver/vehicle/${this.getCompany()}/${vehicleValue}`,
+        )
         .subscribe({
           next: (data: vehicleInfo) => {
             this.vehicleData = data;
@@ -191,13 +190,6 @@ export class OperacionesCorregirKilometrajeActualComponent {
           error: (error: HttpErrorResponse) => {
             this.isLoadingVehicleInfo = false;
             this.selectedVehicle = false;
-            if (error.status === 404) {
-              this.openSnackbar('Vehículo no encontrado. Intenta con otro.');
-            } else {
-              this.openSnackbar(
-                'Error al obtener la información del vehículo. Inténtalo de nuevo más tarde.'
-              );
-            }
           },
         });
     }
@@ -206,7 +198,9 @@ export class OperacionesCorregirKilometrajeActualComponent {
   driverSearch(driverValue: string) {
     if (driverValue !== '') {
       this.apiService
-        .getData(`operations/deliveryvehicledriver/driver/${this.getCompany()}/${driverValue}`)
+        .getData(
+          `operations/deliveryvehicledriver/driver/${this.getCompany()}/${driverValue}`,
+        )
         .subscribe({
           next: (data: driverInfo) => {
             this.driverData = data;
@@ -216,15 +210,6 @@ export class OperacionesCorregirKilometrajeActualComponent {
           error: (error: HttpErrorResponse) => {
             this.isLoadingVehicleInfo = false;
             this.selectedVehicle = true;
-            if (error.status === 404) {
-              this.openSnackbar(
-                'No se encontró el conductor para esta unidad.'
-              );
-            } else {
-              this.openSnackbar(
-                'Error al obtener la información del conductor. Inténtalo de nuevo más tarde.'
-              );
-            }
           },
         });
       return;
@@ -239,7 +224,7 @@ export class OperacionesCorregirKilometrajeActualComponent {
 
       this.apiService
         .getData(
-          `operations/vehicle-mileage/${company}/${this.vehicleData.numero}`
+          `operations/vehicle-mileage/${company}/${this.vehicleData.numero}`,
         )
         .subscribe({
           next: (data: vehicleMileageResponse) => {
@@ -249,9 +234,6 @@ export class OperacionesCorregirKilometrajeActualComponent {
           },
           error: (error: HttpErrorResponse) => {
             console.error('Error fetching current mileage:', error);
-            this.openSnackbar(
-              'Error al obtener el kilometraje actual. Inténtalo de nuevo más tarde.'
-            );
             this.closeDialog();
           },
         });
@@ -320,7 +302,7 @@ export class OperacionesCorregirKilometrajeActualComponent {
 
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.Small);
     const isXsmallScreen = this.breakpointObserver.isMatched(
-      Breakpoints.XSmall
+      Breakpoints.XSmall,
     );
     const dialogWidth = isSmallScreen || isXsmallScreen ? '90vw' : '60%';
 
@@ -348,22 +330,20 @@ export class OperacionesCorregirKilometrajeActualComponent {
     const valuesSave = {
       company_code: company,
       vehicle_number: this.vehicleData.numero,
-      mileage: this.infoChangeMileage.get('newMileage')?.value
-    }
+      mileage: this.infoChangeMileage.get('newMileage')?.value,
+    };
 
-    this.apiService.postData('operations/update-vehicle-mileage', valuesSave).subscribe({
-      next: (response) => {
-        this.openSnackbar('Kilometraje actualizado correctamente.');
-        this.closeDialog();
-      }
-      ,
-      error: (error: HttpErrorResponse) => {
-        this.isLoadingChange = false;
-        this.openSnackbar(
-          'Error al actualizar el kilometraje. Inténtalo de nuevo más tarde.'
-        );
-      }
-    });
+    this.apiService
+      .postData('operations/update-vehicle-mileage', valuesSave)
+      .subscribe({
+        next: (response) => {
+          this.openSnackbar('Kilometraje actualizado correctamente.');
+          this.closeDialog();
+        },
+        error: (error: HttpErrorResponse) => {
+          this.isLoadingChange = false;
+        },
+      });
   }
 
   resetAutocomplete() {

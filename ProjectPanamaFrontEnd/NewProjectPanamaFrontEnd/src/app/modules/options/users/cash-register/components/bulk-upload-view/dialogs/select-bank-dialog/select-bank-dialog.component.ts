@@ -246,16 +246,6 @@ export class SelectBankDialogComponent implements OnInit {
         },
         error: (err) => {
           this.isUploading = false;
-          const errorMessage =
-            err?.message ||
-            err?.error?.message ||
-            'Ocurrió un error al procesar el archivo. Inténtelo nuevamente.';
-
-          this.snackBar.open(errorMessage, 'Cerrar', {
-            duration: 5000,
-            horizontalPosition: 'center',
-            verticalPosition: 'top',
-          });
         },
       });
   }

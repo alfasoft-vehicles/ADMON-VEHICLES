@@ -95,7 +95,6 @@ export class OperacionesAperturaCuentaComponent implements OnInit {
         },
         error: (error: HttpErrorResponse) => {
           this.isLoading = false;
-          this.openSnackbar('Error al obtener la información de la cuenta.');
           this.close();
         },
       });
@@ -129,9 +128,7 @@ export class OperacionesAperturaCuentaComponent implements OnInit {
             value: 0,
           }));
         },
-        error: (error: HttpErrorResponse) => {
-          this.openSnackbar('Error al obtener los items de CXP.');
-        },
+        error: (error: HttpErrorResponse) => {},
       });
   }
 

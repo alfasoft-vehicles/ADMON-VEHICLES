@@ -11,7 +11,6 @@ import { ApiService } from 'src/app/services/api.service';
 import { JwtService } from 'src/app/services/jwt.service';
 import { InspectionsAddDialogComponent } from '../inspections-add-dialog/inspections-add-dialog.component';
 import { InspectionFinishImagesDialogComponent } from '../inspection-finish-images-dialog/inspection-finish-images-dialog.component';
-import { TakePhotosVehicleComponent } from '../take-photos-vehicle/take-photos-vehicle.component';
 import { InspectionInfoDialogComponent } from '../inspection-info-dialog/inspection-info-dialog.component';
 import { ActivatedRoute, Router } from '@angular/router';
 import { InspectionsGenerateQrDialogComponent } from '../inspections-generate-qr-dialog/inspections-generate-qr-dialog.component';
@@ -232,13 +231,6 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
         error: (error) => {
           console.error('Error fetching inspections:', error);
 
-          if (error.status === 404) {
-            this.openSnackbar('No se encontraron inspecciones.');
-          } else {
-            this.openSnackbar(
-              'Error al cargar las inspecciones. Por favor, inténtelo de nuevo más tarde.',
-            );
-          }
           this.isLoadingData = false;
         },
       });
@@ -283,15 +275,20 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
 
   getDataOwners() {
     const company = this.getCompany();
-    this.apiService.getData('owners/' + company).subscribe((data: owners[]) => {
-      // Filtrar elementos con id vacío antes de almacenarlos
-      this.owners = data.filter((owner) => owner.id);
-      this.optionsOwners = this.inspectionForm
-        .get('propietario')!
-        .valueChanges.pipe(
-          startWith(''),
-          map((value) => this._filterOwners(value || '')),
-        );
+    this.apiService.getData('owners/' + company).subscribe({
+      next: (data: owners[]) => {
+        // Filtrar elementos con id vacío antes de almacenarlos
+        this.owners = data.filter((owner) => owner.id);
+        this.optionsOwners = this.inspectionForm
+          .get('propietario')!
+          .valueChanges.pipe(
+            startWith(''),
+            map((value) => this._filterOwners(value || '')),
+          );
+      },
+      error: (error) => {
+        console.error('Error fetching owners:', error);
+      },
     });
   }
 
@@ -427,9 +424,8 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
 
   getDataDrivers() {
     const company = this.getCompany();
-    this.apiService
-      .getData('drivers_data/' + company)
-      .subscribe((data: drivers[]) => {
+    this.apiService.getData('drivers_data/' + company).subscribe({
+      next: (data: drivers[]) => {
         this.allDrivers = data; // Guardar todos los conductores
         this.drivers = [...data]; // Inicializar con todos los datos
         this.optionsDrivers = this.inspectionForm
@@ -438,14 +434,17 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
             startWith(''),
             map((value) => this._filterDrivers(value || '')),
           );
-      });
+      },
+      error: (error) => {
+        console.error('Error fetching drivers:', error);
+      },
+    });
   }
 
   getDataVehicles() {
     const company = this.getCompany();
-    this.apiService
-      .getData('vehicles_data/' + company)
-      .subscribe((data: vehicles[]) => {
+    this.apiService.getData('vehicles_data/' + company).subscribe({
+      next: (data: vehicles[]) => {
         this.allVehicles = data; // Guardar todos los vehículos
         this.vehicles = [...data]; // Inicializar con todos los datos
         this.optionsVehicles = this.inspectionForm
@@ -470,7 +469,11 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
             this.router.navigate(['/inspections']);
           }
         }
-      });
+      },
+      error: (error) => {
+        console.error('Error fetching vehicles:', error);
+      },
+    });
   }
 
   private _filterOwners(value: string | owners): owners[] {
@@ -616,15 +619,6 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
         error: (error) => {
           console.error('Error fetching inspections:', error);
 
-          if (error.status === 404) {
-            this.openSnackbar(
-              'No se encontraron inspecciones para los criterios seleccionados.',
-            );
-          } else {
-            this.openSnackbar(
-              'Error al cargar las inspecciones. Por favor, inténtelo de nuevo más tarde.',
-            );
-          }
           this.isLoadingData = false;
         },
       });

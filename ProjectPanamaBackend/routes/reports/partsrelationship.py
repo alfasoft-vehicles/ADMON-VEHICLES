@@ -26,7 +26,7 @@ async def partsrelationship_report(company_code: str, data: PartsRelationshipRep
   db = session()
   try:
     if data.primeraFecha > data.ultimaFecha:
-      return JSONResponse(content={"error": "La primera fecha no puede ser mayor a la última fecha"}, status_code=400)
+      return JSONResponse(content={"message": "La primera fecha no puede ser mayor a la última fecha"}, status_code=400)
 
     if data.unidad == "" or data.unidad == "TODOS":
       empresa = data.empresa
@@ -128,7 +128,7 @@ async def partsrelationship_report(company_code: str, data: PartsRelationshipRep
       ).all()
 
     if len(conteo_reporte_piezas) == 0:
-      return JSONResponse(content={"error": "No se encontraron registros"}, status_code=400)
+      return JSONResponse(content={"message": "No se encontraron registros"}, status_code=404)
     
     id_empresa = conteo_reporte_piezas[0].codigo_empresa
   
@@ -163,7 +163,7 @@ async def partsrelationship_report(company_code: str, data: PartsRelationshipRep
         })
 
     if len(data_view_temp) == 0:
-      return JSONResponse(content={"error": "No se encontraron registros"}, status_code=400)
+      return JSONResponse(content={"message": "No se encontraron registros"}, status_code=404)
     
     # Ordenar facturas por número de unidad
     facturas_ordenadas = sorted(data_view_temp.items(), key=lambda x: x[0])
@@ -272,5 +272,7 @@ async def partsrelationship_report(company_code: str, data: PartsRelationshipRep
     response = FileResponse(pdf_path, media_type='application/pdf', filename='templates/relacion-piezas.pdf', headers=headers)
 
     return response
+  except Exception as e:
+    return JSONResponse(content={"message": f"Error al generar reporte: {str(e)}"}, status_code=500)
   finally:
     db.close()

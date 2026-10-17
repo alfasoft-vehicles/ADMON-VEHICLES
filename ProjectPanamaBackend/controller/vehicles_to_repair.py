@@ -53,7 +53,7 @@ async def get_repair_edit_data(entry_id: int):
   try:
     entry = db.query(VehiculosReparacion).filter(VehiculosReparacion.ID == entry_id).first()
     if not entry:
-      return JSONResponse(content={"message": "Record not found"}, status_code=404)
+      return JSONResponse(content={"message": "Registro no encontrado"}, status_code=404)
 
     vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == entry.UNIDAD, Vehiculos.EMPRESA == entry.EMPRESA).first()
     driver = db.query(Conductores).filter(Conductores.CODIGO == entry.CONDUCTOR).first()
@@ -104,21 +104,21 @@ async def update_repair_entry(entry_id: int, data: UpdateVehicleRepair):
   try:
     entry = db.query(VehiculosReparacion).filter(VehiculosReparacion.ID == entry_id).first()
     if not entry:
-      return JSONResponse(content={"message": "Record not found"}, status_code=404)
+      return JSONResponse(content={"message": "Registro no encontrado"}, status_code=404)
 
     if entry.ESTADO != "PEN":
-      return JSONResponse(content={"message": "Only pending records can be edited"}, status_code=400)
+      return JSONResponse(content={"message": "Solo los registros pendientes pueden ser editados"}, status_code=400)
 
     if entry.USUARIO != data.user:
-      return JSONResponse(content={"message": "No permission to edit this record"}, status_code=403)
+      return JSONResponse(content={"message": "No tiene permisos para editar este registro"}, status_code=403)
 
     yard = db.query(Patios).filter(Patios.CODIGO == data.patio_id, Patios.EMPRESA == entry.EMPRESA).first()
     if not yard:
-      return JSONResponse(content={"message": "Yard not found"}, status_code=404)
+      return JSONResponse(content={"message": "Patio no encontrado"}, status_code=404)
 
     repair_type = db.query(TiposReparaciones).filter(TiposReparaciones.CODIGO == data.repair_type, TiposReparaciones.EMPRESA == entry.EMPRESA).first()
     if not repair_type:
-      return JSONResponse(content={"message": "Repair type not found"}, status_code=404)
+      return JSONResponse(content={"message": "Tipo de reparación no encontrado"}, status_code=404)
 
     entry.PATIO = yard.CODIGO
     entry.NOMPATIO = yard.NOMBRE
@@ -129,7 +129,7 @@ async def update_repair_entry(entry_id: int, data: UpdateVehicleRepair):
 
     db.commit()
 
-    return JSONResponse(content={"message": "Record updated successfully"}, status_code=200)
+    return JSONResponse(content={"message": "Registro actualizado con éxito"}, status_code=200)
   except Exception as e:
     db.rollback()
     return JSONResponse(content={"message": str(e)}, status_code=500)
@@ -143,7 +143,7 @@ async def new_vehicle_entry_data(company_code: str, vehicle_number: str):
   try:
     vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == vehicle_number, Vehiculos.EMPRESA == company_code).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     driver = db.query(Conductores).filter(Conductores.CODIGO == vehicle.CONDUCTOR).first()
 
@@ -192,23 +192,23 @@ async def create_vehicle_entry(data: NewVehicleEntry):
   try:
     vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == data.vehicle_number, Vehiculos.EMPRESA == data.company_code).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
 
     driver = db.query(Conductores).filter(Conductores.CODIGO == vehicle.CONDUCTOR).first()
     if not driver:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
 
     owner = db.query(Propietarios).filter(Propietarios.CODIGO == vehicle.PROPI_IDEN, Propietarios.EMPRESA == data.company_code).first()
     if not owner:
-      return JSONResponse(content={"message": "Owner not found"}, status_code=404)
+      return JSONResponse(content={"message": "Propietario no encontrado"}, status_code=404)
     
     yard = db.query(Patios).filter(Patios.CODIGO == data.yard, Patios.EMPRESA == data.company_code).first()
     if not yard:
-      return JSONResponse(content={"message": "Yard not found"}, status_code=404)
+      return JSONResponse(content={"message": "Patio no encontrado"}, status_code=404)
     
     repair_type = db.query(TiposReparaciones).filter(TiposReparaciones.CODIGO == data.repair_type, TiposReparaciones.EMPRESA == data.company_code).first()
     if not repair_type:
-      return JSONResponse(content={"message": "Repair type not found"}, status_code=404)
+      return JSONResponse(content={"message": "Tipo de reparación no encontrado"}, status_code=404)
     
     user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user, PermisosUsuario.EMPRESA == data.company_code).first()
     
@@ -433,7 +433,7 @@ async def report_repairs(data: VehicleToRepairInfo, company_code: str):
     entries = db.query(VehiculosReparacion).filter(*filters).order_by(VehiculosReparacion.FECHA.desc(), VehiculosReparacion.HORA.desc()).all()
 
     if not entries:
-      return JSONResponse(content={"message": "No records found"}, status_code=404)
+      return JSONResponse(content={"message": "No se encontraron registros de reparaciones"}, status_code=404)
 
     await update_expired_entries(db, entries_list=entries)
 
@@ -589,10 +589,10 @@ async def get_pdf_url(entry_id: int):
   try:
     entry = db.query(VehiculosReparacion).filter(VehiculosReparacion.ID == entry_id).first()
     if not entry:
-      return JSONResponse(content={"message": "Record not found"}, status_code=404)
+      return JSONResponse(content={"message": "Registro no encontrado"}, status_code=404)
     
     if not entry.DOCQR:
-      return JSONResponse(content={"message": "Document not found"}, status_code=404)
+      return JSONResponse(content={"message": "Documento no encontrado"}, status_code=404)
     
     pdf_url = f"{route_api}uploads/vehiculos/{entry.DOCQR}"
     
@@ -609,7 +609,7 @@ async def repair_details(entry_id: int):
   try:
     entry = db.query(VehiculosReparacion).filter(VehiculosReparacion.ID == entry_id).first()
     if not entry:
-      return JSONResponse(content={"message": "Record not found"}, status_code=404)
+      return JSONResponse(content={"message": "Registro no encontrado"}, status_code=404)
 
     await update_expired_entries(db, entries_list=[entry])
 
@@ -692,7 +692,7 @@ async def vehicles_info(data: VehicleToRepairInfo, company_code: str):
     entries = db.query(VehiculosReparacion).filter(*filters).order_by(VehiculosReparacion.FECHA.desc(), VehiculosReparacion.HORA.desc()).all()
 
     if not entries:
-      return JSONResponse(content={"message": "No records found"}, status_code=404)
+      return JSONResponse(content={"message": "No se encontraron registros"}, status_code=404)
 
     await update_expired_entries(db, entries_list=entries)
 
@@ -758,10 +758,10 @@ async def finish_repair(data: FinishRepairRequest):
   try:
     entry = db.query(VehiculosReparacion).filter(VehiculosReparacion.ID == data.entry_id).first()
     if not entry:
-      return JSONResponse(content={"message": "Record not found"}, status_code=404)
+      return JSONResponse(content={"message": "Registro no encontrado"}, status_code=404)
 
     if entry.ESTADO != 'FIN':
-      return JSONResponse(content={"message": "The record must be in 'FIN' state to be finished"}, status_code=400)
+      return JSONResponse(content={"message": "El registro debe estar en estado 'FIN' para finalizar"}, status_code=400)
 
     entry.ESTADO = 'TER'
     entry.NOTAFIN = data.notes
@@ -769,7 +769,7 @@ async def finish_repair(data: FinishRepairRequest):
 
     db.commit()
 
-    return JSONResponse(content={"message": "Record finished successfully"}, status_code=200)
+    return JSONResponse(content={"message": "Registro finalizado con éxito"}, status_code=200)
   except Exception as e:
     db.rollback()
     return JSONResponse(content={"message": str(e)}, status_code=500)

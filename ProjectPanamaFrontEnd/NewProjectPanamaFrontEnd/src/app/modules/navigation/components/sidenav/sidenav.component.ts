@@ -7,7 +7,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { InfoCompanyComponent } from '../info-company/info-company.component';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { OptionsDocumentsDialogComponent } from 'src/app/modules/tasks/documents/options-documents-dialog/options-documents-dialog.component';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { TakeSignaturePhotoComponent } from 'src/app/modules/tasks/take-signature-photo/options-take-signature-photo-dialog/options-take-signature-photo-dialog.component';
 
 @Component({
@@ -33,7 +32,6 @@ export class SidenavComponent implements OnInit {
     private ownersGuard: OwnersGuard,
     private dialog: MatDialog,
     private breakpointObserver: BreakpointObserver,
-    private snackBar: MatSnackBar,
   ) {}
 
   ngOnInit() {
@@ -57,11 +55,7 @@ export class SidenavComponent implements OnInit {
         this.onItemClick();
         this.router.navigate(['/login']);
       },
-      (error) => {
-        this.openSnackbar(
-          'Hubo un error al cerrar sesión. Por favor, inténtalo de nuevo.',
-        );
-      },
+      (error) => {},
     );
   }
 
@@ -162,14 +156,6 @@ export class SidenavComponent implements OnInit {
 
     const dialogRef = this.dialog.open(TakeSignaturePhotoComponent, {
       width: dialogWidth,
-    });
-  }
-
-  openSnackbar(message: string) {
-    this.snackBar.open(message, 'Cerrar', {
-      duration: 3000,
-      horizontalPosition: 'center',
-      verticalPosition: 'top',
     });
   }
 

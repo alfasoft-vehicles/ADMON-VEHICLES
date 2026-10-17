@@ -83,7 +83,7 @@ export class TakeSignatureComponent implements OnInit {
     private apiService: ApiService,
     private jwtService: JwtService,
     private snackBar: MatSnackBar,
-    private dialogRef: MatDialogRef<TakeSignatureComponent>
+    private dialogRef: MatDialogRef<TakeSignatureComponent>,
   ) {}
 
   ngOnInit() {
@@ -102,17 +102,14 @@ export class TakeSignatureComponent implements OnInit {
         this.options = response;
         this.filteredOptions = this.vehicles.valueChanges.pipe(
           startWith(''),
-          map((value) => this._filter(value || ''))
+          map((value) => this._filter(value || '')),
         );
         this.isLoadingVehicles = false;
       },
       (error) => {
         console.error('Error fetching vehicles:', error);
-        this.openSnackbar(
-          'Error al obtener las unidades. Inténtalo de nuevo más tarde.'
-        );
         this.closeDialog();
-      }
+      },
     );
   }
 
@@ -158,7 +155,7 @@ export class TakeSignatureComponent implements OnInit {
     // Opcional: Forzar la actualización del filtro
     this.filteredOptions = this.vehicles.valueChanges.pipe(
       startWith(''),
-      map((value) => this._filter(value || ''))
+      map((value) => this._filter(value || '')),
     );
   }
 
@@ -186,13 +183,10 @@ export class TakeSignatureComponent implements OnInit {
           },
           (error) => {
             console.error('Error fetching contract info:', error);
-            this.openSnackbar(
-              'Error al obtener la información. Inténtalo de nuevo con otra unidad.'
-            );
             this.isLoadingvehicleSignatureInfo = false;
             this.resetInfo();
             this.resetVehicleAutocomplete();
-          }
+          },
         );
     }
   }
@@ -205,7 +199,7 @@ export class TakeSignatureComponent implements OnInit {
         option.placa.toLowerCase().includes(filterValue) ||
         option.unidad.toLowerCase().includes(filterValue) ||
         option.propietario.toLowerCase().includes(filterValue) ||
-        option.nro_cupo.toLowerCase().includes(filterValue)
+        option.nro_cupo.toLowerCase().includes(filterValue),
     );
   }
 
@@ -214,12 +208,12 @@ export class TakeSignatureComponent implements OnInit {
   }
 
   saveSignature(signatureBase64: string) {
-    if(this.selectedVehicle && signatureBase64) {
+    if (this.selectedVehicle && signatureBase64) {
       const data = {
         company_code: this.getCompany(),
         vehicle_number: this.vehicleSignatureInfo.vehicle_number,
         base64: signatureBase64,
-      }
+      };
 
       this.isLoadingVehicles = true;
 
@@ -230,9 +224,8 @@ export class TakeSignatureComponent implements OnInit {
         },
         (error) => {
           console.error('Error saving signature:', error);
-          this.openSnackbar('Error al guardar la firma. Inténtalo de nuevo.');
           this.closeDialog();
-        }
+        },
       );
     }
   }

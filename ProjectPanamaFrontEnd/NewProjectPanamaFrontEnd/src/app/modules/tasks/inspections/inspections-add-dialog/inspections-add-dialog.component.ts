@@ -205,7 +205,6 @@ export class InspectionsAddDialogComponent implements OnInit {
       },
       (error) => {
         console.error('Error al cargar datos de inspección:', error);
-        this.openSnackbar('Error al cargar los datos de la inspección.');
         this.isLoading = false;
         this.closeDialog();
       },
@@ -396,9 +395,8 @@ export class InspectionsAddDialogComponent implements OnInit {
 
   getDataVehicles() {
     const company = this.getCompany();
-    this.apiService
-      .getData('vehicles_data/' + company)
-      .subscribe((data: Vehicles[]) => {
+    this.apiService.getData('vehicles_data/' + company).subscribe({
+      next: (data: Vehicles[]) => {
         this.vehicles = [...data];
         this.optionsVehicles = this.inspectionInfoForm
           .get('vehiculo')!
@@ -419,7 +417,12 @@ export class InspectionsAddDialogComponent implements OnInit {
         }
 
         this.isLoading = false;
-      });
+      },
+      error: (error) => {
+        console.error('Error fetching vehicles:', error);
+        this.isLoading = false;
+      },
+    });
   }
 
   private _filterVehicles(value: string | Vehicles): Vehicles[] {
@@ -446,14 +449,14 @@ export class InspectionsAddDialogComponent implements OnInit {
     const company = this.getCompany();
     this.apiService
       .getData('inspections/inspection_types/' + company)
-      .subscribe(
-        (data: InspectionTypes[]) => {
+      .subscribe({
+        next: (data: InspectionTypes[]) => {
           this.inspectionTypes = [...data];
         },
-        (error) => {
+        error: (error) => {
           console.error('Error fetching inspection types:', error);
         },
-      );
+      });
   }
 
   openSnackbar(message: string) {
@@ -509,21 +512,18 @@ export class InspectionsAddDialogComponent implements OnInit {
 
     this.apiService
       .getData('inspections/new_inspection_data/' + company + '/' + vehicle)
-      .subscribe(
-        (data: InspectionsVehicleData) => {
+      .subscribe({
+        next: (data: InspectionsVehicleData) => {
           this.vehicleInfo = data;
           this.loadingVehicleInfo = false;
           this.selectedVehicle = true;
         },
-        (error) => {
+        error: (error) => {
           console.error('Error fetching vehicle info:', error);
-          this.openSnackbar(
-            'error al obtener la información del vehículo seleccionado. Vuelve a intentarlo más tarde.',
-          );
           this.loadingVehicleInfo = false;
           this.selectedVehicle = false;
         },
-      );
+      });
   }
 
   startInspection() {
@@ -680,10 +680,6 @@ export class InspectionsAddDialogComponent implements OnInit {
           },
           (error: any) => {
             console.error('Error al actualizar la inspección:', error);
-            this.openSnackbar(
-              error.error?.message ||
-                'Error al actualizar la inspección. Vuelve a intentarlo más tarde.',
-            );
             this.isLoading = false;
           },
         );
@@ -806,10 +802,7 @@ export class InspectionsAddDialogComponent implements OnInit {
           },
           (error) => {
             console.error('Error al crear la inspección:', error);
-            this.openSnackbar(
-              'Error al crear la inspección. Vuelve a intentarlo más tarde.',
-            );
-            this.closeDialog();
+            this.isLoading = false;
           },
         );
     }
@@ -867,9 +860,6 @@ export class InspectionsAddDialogComponent implements OnInit {
         error: (error) => {
           this.isLoading = false;
           console.error('Error al guardar la firma:', error);
-          this.openSnackbar(
-            'Error al guardar la firma. Vuelve a intentarlo más tarde.',
-          );
         },
       });
   }
