@@ -220,11 +220,122 @@
               <span class="bu-num-red">{{ row.comision }}</span>
             </td>
 
-            <!-- Rubros Adicionales -->
-            <td class="td-num td-muted">{{ row.inscripcion }}</td>
-            <td class="td-num td-muted">{{ row.multas }}</td>
-            <td class="td-num td-muted">{{ row.panapass }}</td>
-            <td class="td-num td-muted">{{ row.siniestros }}</td>
+            <!-- Rubros Adicionales (Editables con doble clic) -->
+            <!-- Inscripción -->
+            <td
+              class="td-num td-muted td-editable"
+              (dblclick)="startCellEdit(row, 'inscripcion', $event)"
+              [class.td-editing]="isEditing(row.id, 'inscripcion')"
+              matTooltip="Doble clic para editar"
+            >
+              <ng-container
+                *ngIf="!isEditing(row.id, 'inscripcion'); else editInscripTpl"
+              >
+                <span class="bu-cell-val">{{ row.inscripcion || "0.00" }}</span>
+              </ng-container>
+              <ng-template #editInscripTpl>
+                <input
+                  [id]="'edit-cell-' + row.id + '-inscripcion'"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="bu-cell-input"
+                  [(ngModel)]="editValue"
+                  (keydown.enter)="saveCellEdit(row, 'inscripcion')"
+                  (keydown.escape)="cancelCellEdit()"
+                  (blur)="saveCellEdit(row, 'inscripcion')"
+                  (click)="$event.stopPropagation()"
+                  (dblclick)="$event.stopPropagation()"
+                />
+              </ng-template>
+            </td>
+
+            <!-- Multas -->
+            <td
+              class="td-num td-muted td-editable"
+              (dblclick)="startCellEdit(row, 'multas', $event)"
+              [class.td-editing]="isEditing(row.id, 'multas')"
+              matTooltip="Doble clic para editar"
+            >
+              <ng-container
+                *ngIf="!isEditing(row.id, 'multas'); else editMultasTpl"
+              >
+                <span class="bu-cell-val">{{ row.multas || "0.00" }}</span>
+              </ng-container>
+              <ng-template #editMultasTpl>
+                <input
+                  [id]="'edit-cell-' + row.id + '-multas'"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="bu-cell-input"
+                  [(ngModel)]="editValue"
+                  (keydown.enter)="saveCellEdit(row, 'multas')"
+                  (keydown.escape)="cancelCellEdit()"
+                  (blur)="saveCellEdit(row, 'multas')"
+                  (click)="$event.stopPropagation()"
+                  (dblclick)="$event.stopPropagation()"
+                />
+              </ng-template>
+            </td>
+
+            <!-- Panapass -->
+            <td
+              class="td-num td-muted td-editable"
+              (dblclick)="startCellEdit(row, 'panapass', $event)"
+              [class.td-editing]="isEditing(row.id, 'panapass')"
+              matTooltip="Doble clic para editar"
+            >
+              <ng-container
+                *ngIf="!isEditing(row.id, 'panapass'); else editPanapassTpl"
+              >
+                <span class="bu-cell-val">{{ row.panapass || "0.00" }}</span>
+              </ng-container>
+              <ng-template #editPanapassTpl>
+                <input
+                  [id]="'edit-cell-' + row.id + '-panapass'"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="bu-cell-input"
+                  [(ngModel)]="editValue"
+                  (keydown.enter)="saveCellEdit(row, 'panapass')"
+                  (keydown.escape)="cancelCellEdit()"
+                  (blur)="saveCellEdit(row, 'panapass')"
+                  (click)="$event.stopPropagation()"
+                  (dblclick)="$event.stopPropagation()"
+                />
+              </ng-template>
+            </td>
+
+            <!-- Siniestros -->
+            <td
+              class="td-num td-muted td-editable"
+              (dblclick)="startCellEdit(row, 'siniestros', $event)"
+              [class.td-editing]="isEditing(row.id, 'siniestros')"
+              matTooltip="Doble clic para editar"
+            >
+              <ng-container
+                *ngIf="!isEditing(row.id, 'siniestros'); else editSiniestrosTpl"
+              >
+                <span class="bu-cell-val">{{ row.siniestros || "0.00" }}</span>
+              </ng-container>
+              <ng-template #editSiniestrosTpl>
+                <input
+                  [id]="'edit-cell-' + row.id + '-siniestros'"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="bu-cell-input"
+                  [(ngModel)]="editValue"
+                  (keydown.enter)="saveCellEdit(row, 'siniestros')"
+                  (keydown.escape)="cancelCellEdit()"
+                  (blur)="saveCellEdit(row, 'siniestros')"
+                  (click)="$event.stopPropagation()"
+                  (dblclick)="$event.stopPropagation()"
+                />
+              </ng-template>
+            </td>
 
             <!-- Cédula -->
             <td class="td-id">{{ row.cedula || "-" }}</td>

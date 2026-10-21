@@ -54,6 +54,13 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
   // Estado del buscador expandible
   isSearchExpanded: boolean = false;
 
+  // Edición inline de celdas (inscripcion, multas, panapass, siniestros)
+  editingCell: {
+    rowId: number;
+    field: 'inscripcion' | 'multas' | 'panapass' | 'siniestros';
+  } | null = null;
+  editValue: string = '';
+
   private routeSub!: Subscription;
 
   constructor(
@@ -358,5 +365,62 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
 
   recalculateMetrics(): void {
     this.metrics = this.bulkUploadService.getSummaryMetrics(this.records);
+  }
+
+  // ==========================================================================
+  // Métodos de edición inline para inscripcion, multas, panapass, siniestros
+  // ==========================================================================
+
+  isEditing(
+    rowId: number,
+    field: 'inscripcion' | 'multas' | 'panapass' | 'siniestros',
+  ): boolean {
+    return (
+      this.editingCell !== null &&
+      this.editingCell.rowId === rowId &&
+      this.editingCell.field === field
+    );
+  }
+
+  startCellEdit(
+    row: BulkUploadRecord,
+    field: 'inscripcion' | 'multas' | 'panapass' | 'siniestros',
+    event: MouseEvent,
+  ): void {
+    event.stopPropagation();
+    this.editingCell = { rowId: row.id, field };
+    this.editValue = row[field] ?? '0.00';
+    setTimeout(() => {
+      const input = document.getElementById(
+        `edit-cell-${row.id}-${field}`,
+      ) as HTMLInputElement;
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }, 50);
+  }
+
+  saveCellEdit(
+    row: BulkUploadRecord,
+    field: 'inscripcion' | 'multas' | 'panapass' | 'siniestros',
+  ): void {
+    if (
+      !this.editingCell ||
+      this.editingCell.rowId !== row.id ||
+      this.editingCell.field !== field
+    ) {
+      return;
+    }
+    const val = String(this.editValue).trim();
+    const num = parseFloat(val);
+    const formatted = isNaN(num) || num < 0 ? '0.00' : num.toFixed(2);
+    row[field] = formatted;
+    this.editingCell = null;
+    this.recalculateMetrics();
+  }
+
+  cancelCellEdit(): void {
+    this.editingCell = null;
   }
 }
