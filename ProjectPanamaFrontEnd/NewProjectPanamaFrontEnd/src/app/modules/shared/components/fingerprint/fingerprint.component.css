@@ -1,0 +1,98 @@
+.fingerprint-card {
+  max-width: 400px;
+  margin: 20px auto;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  background-color: #fafafa;
+  overflow: hidden;
+}
+
+.fingerprint-preview {
+  width: 100%;
+  height: 200px;
+  border-radius: 8px;
+  background-color: #eceff1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 16px 0;
+  border: 2px dashed #b0bec5;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.fingerprint-preview.capturing {
+  border-color: #2196f3;
+  background-color: #e3f2fd;
+  animation: pulse-border 1.5s infinite alternate;
+}
+
+.fingerprint-placeholder {
+  font-size: 80px;
+  width: 80px;
+  height: 80px;
+  color: #90a4ae;
+}
+
+.fingerprint-image {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.15));
+}
+
+.capture-progress {
+  margin: 8px 0;
+}
+
+.agent-warning {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 12px 0;
+  font-size: 14px;
+  border: 1px solid #ffcdd2;
+}
+
+.agent-warning mat-icon {
+  color: #e53935;
+}
+
+.warning-msg {
+  flex: 1;
+  font-weight: 500;
+}
+
+.btn-retry {
+  font-size: 12px;
+  line-height: 28px;
+  height: 28px;
+  padding: 0 8px;
+}
+
+.fingerprint-actions {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0 8px 0;
+}
+
+.error-text {
+  color: #e53935 !important;
+}
+
+@keyframes pulse-border {
+  from {
+    border-color: #2196f3;
+    box-shadow: 0 0 4px rgba(33, 150, 243, 0.2);
+  }
+  to {
+    border-color: #1565c0;
+    box-shadow: 0 0 12px rgba(21, 101, 192, 0.4);
+  }
+}

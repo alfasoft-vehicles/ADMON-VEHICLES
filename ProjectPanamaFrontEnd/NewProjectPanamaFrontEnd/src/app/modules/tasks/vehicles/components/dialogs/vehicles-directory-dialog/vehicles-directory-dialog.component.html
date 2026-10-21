@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>Directorio de Vehículos</h2>
+<div class="dialog-header">
+  <h3>Selecciona los estados</h3>
+</div>
+<mat-divider></mat-divider>
+<mat-dialog-content class="scrollable-content">
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate"></mat-progress-bar>
+  <mat-selection-list 
+    #selectionList
+    [@fadeInOut] 
+    [@listAnimation]="states.length"
+    *ngIf="!isLoading">
+    <mat-list-option 
+      *ngFor="let state of states" 
+      [value]="state"
+      [@fadeInOut]
+      checkboxPosition="before">
+      {{ state.name }} - {{ state.id }}
+    </mat-list-option>
+  </mat-selection-list>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancelar</button>
+  <button 
+    mat-button 
+    (click)="onConfirm()" 
+    cdkFocusInitial
+    [disabled]="isLoading">
+    Confirmar
+  </button>
+</mat-dialog-actions> 

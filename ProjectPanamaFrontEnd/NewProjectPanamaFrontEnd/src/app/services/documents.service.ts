@@ -86,8 +86,18 @@ export class DocumentsService {
         return '.doc';
       case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
         return '.docx';
+      case 'image/jpeg':
+        return '.jpg';
+      case 'image/png':
+        return '.png';
+      case 'image/gif':
+        return '.gif';
+      case 'image/webp':
+        return '.webp';
+      case 'image/bmp':
+        return '.bmp';
       default:
-        return '.bin'; // Default binary extension
+        return '.bin'; 
     }
   }
 }

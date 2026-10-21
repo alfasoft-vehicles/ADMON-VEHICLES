@@ -25,19 +25,21 @@ interface AppJwtPayload extends JwtPayload {
     opcion15: string;
     opcion16: string;
     opcion17: string;
+    opcion18: string;
     tarea01: string;
     tarea02: string;
     tarea03: string;
     tarea04: string;
     tarea05: string;
+    tarea09: string;
+    tarea10: string;
   };
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class JwtService {
-
   private readonly TOKEN_KEY = 'info_token';
   private decodedToken: AppJwtPayload | null = null;
 
@@ -68,7 +70,7 @@ export class JwtService {
     const userData = this.decodedToken!.user_data;
     const userPermissions = this.convertBooleanValues(userData);
 
-    return userPermissions.opcion16 === true || userData.nombre === 'Administrador';
+    return userPermissions.opcion16 === true;
   }
 
   isRegularUser(): boolean {
@@ -77,20 +79,22 @@ export class JwtService {
   }
 
   isAdmin(): boolean {
-    if (!this.isAuthenticated()) return false;
-    return this.decodedToken!.user_data.nombre === 'Administrador';
+    return false;
   }
 
   getUserData() {
-    return this.isAuthenticated() ? this.decodedToken!.user_data : null;
+    return this.isAuthenticated() ? { ...this.decodedToken!.user_data } : null;
+  }
+
+  getUserPermissions(): any {
+    if (!this.isAuthenticated()) return null;
+    return this.convertBooleanValues(this.decodedToken!.user_data);
   }
 
   getPermissionUser(permission: string): boolean {
     if (!this.isAuthenticated()) return false;
     const userData = this.decodedToken!.user_data;
     const userPermissions = this.convertBooleanValues(userData);
-
-    console.log('userPermissions:', userPermissions); 
 
     return userPermissions[permission] === true;
   }
@@ -115,12 +119,15 @@ export class JwtService {
       if (isExpired) {
         this.decodedToken = null;
         // Opcional: Proactivamente borramos el token expirado
-        // localStorage.removeItem(this.TOKEN_KEY); 
+        // localStorage.removeItem(this.TOKEN_KEY);
       } else {
         this.decodedToken = decoded;
       }
     } catch (error) {
-      console.error("Error al decodificar el token, es posible que esté malformado.", error);
+      console.error(
+        'Error al decodificar el token, es posible que esté malformado.',
+        error,
+      );
       this.decodedToken = null;
     }
   }

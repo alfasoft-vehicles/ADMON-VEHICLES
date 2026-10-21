@@ -1,0 +1,162 @@
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.info-table td {
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12); /* Divisor estándar de Material */
+}
+
+/* Elimina el borde de la última fila */
+.info-table tr:last-child td {
+  border-bottom: none;
+}
+
+.info-header {
+  font-weight: 500; /* Peso de fuente medio, común para etiquetas */
+  color: rgba(0, 0, 0); /* Color de texto secundario de Material */
+  padding-right: 32px; /* Espacio entre la etiqueta y el dato */
+  white-space: nowrap;
+}
+
+.info-data {
+  color: rgba(0, 0, 0, 0.87); /* Color de texto primario de Material */
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(0, 0, 0, 0.4);
+}
+
+.info-data:hover {
+  background-color: rgba(0, 0, 0, 0.04); /* Color de fondo al pasar el mouse */
+}
+
+/* Responsive styles for screens smaller than 600px */
+@media (max-width: 599px) {
+  /* Make table elements behave like blocks to stack them */
+  .info-table,
+  .info-table tbody,
+  .info-table tr,
+  .info-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .info-table tr {
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    margin-bottom: 16px;
+  }
+
+  .info-table tr:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  /* Remove padding and borders from individual cells */
+  .info-table td {
+    padding: 0;
+    border: none;
+  }
+
+  .info-header {
+    padding-bottom: 4px; /* Space between label and data */
+  }
+
+  .info-data {
+    padding-left: 2px; /* Slight indent for the data */
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+}
+
+/* Dialog Loader Styles */
+.dialog-loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px 24px 20px;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.spinner-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  width: 60px;
+  height: 60px;
+}
+
+.custom-spinner {
+  filter: drop-shadow(0 2px 8px rgba(2, 132, 199, 0.25));
+}
+
+.spinner-center-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0284c7;
+  animation: pulse-icon 1.8s ease-in-out infinite;
+}
+
+.spinner-center-icon mat-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+@keyframes pulse-icon {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+.loader-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.loader-title {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.loader-message {
+  margin: 0;
+  font-size: 0.86rem;
+  color: #64748b;
+  max-width: 300px;
+  line-height: 1.4;
+}
+
+.progress-bar-wrapper {
+  width: 100%;
+  max-width: 240px;
+  border-radius: 6px;
+  overflow: hidden;
+}

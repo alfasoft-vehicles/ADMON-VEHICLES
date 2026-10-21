@@ -1,5 +1,5 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
@@ -10,6 +10,12 @@ import { map, Observable, startWith } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { JwtService } from 'src/app/services/jwt.service';
 import { InspectionsAddDialogComponent } from '../inspections-add-dialog/inspections-add-dialog.component';
+import { InspectionFinishImagesDialogComponent } from '../inspection-finish-images-dialog/inspection-finish-images-dialog.component';
+import { InspectionInfoDialogComponent } from '../inspection-info-dialog/inspection-info-dialog.component';
+import { ActivatedRoute, Router } from '@angular/router';
+import { InspectionsGenerateQrDialogComponent } from '../inspections-generate-qr-dialog/inspections-generate-qr-dialog.component';
+import { InspectionsVehicleInfoComponent } from '../inspections-vehicle-info/inspections-vehicle-info.component';
+import { LoadingService } from 'src/app/services/loading.service';
 
 export interface owners {
   id: string;
@@ -38,31 +44,45 @@ export interface InspectionsInfoData {
   id: string;
   Fecha: string;
   Tipo: string;
+  Id_Tipo: string;
   Descripcion: string;
   Unidad: string;
   Placa: string;
+  Cupo: string;
   Usuario: string;
-  acciones: string;
+  Estado: string;
+  Propietario: string;
+  PuedeEditar: number;
+  Fotos: string[];
+  Firma: string[];
 }
 
 export interface apiResponse {
   id: string;
   fecha_hora: string;
   tipo_inspeccion: string;
+  id_tipo_inspeccion: string;
   descripcion: string;
   unidad: string;
   placa: string;
+  cupo: string;
   nombre_usuario: string;
-  acciones: string;
+  propietario: string;
+  estado_inspeccion: string;
+  puede_editar: number;
+  fotos: string[];
+  firma: string[];
 }
 
 @Component({
   selector: 'app-inspections',
   templateUrl: './inspections-table.component.html',
-  styleUrls: ['./inspections-table.component.css']
+  styleUrls: ['./inspections-table.component.css'],
 })
-export class InspectionsTableComponent implements OnInit {
+export class InspectionsTableComponent implements OnInit, AfterViewInit {
   inspectionForm!: FormGroup;
+  idVehicleNumber!: string;
+  fromSource!: string | null;
   owners: owners[] = [];
   drivers: drivers[] = [];
   vehicles: vehicles[] = [];
@@ -76,7 +96,6 @@ export class InspectionsTableComponent implements OnInit {
 
   maxDate: Date = new Date();
 
-  isLoading = true;
   isLoadingData = false;
 
   displayedColumns: string[] = [
@@ -85,7 +104,10 @@ export class InspectionsTableComponent implements OnInit {
     'Descripcion',
     'Unidad',
     'Placa',
+    'Cupo',
     'Usuario',
+    'Propietario',
+    'Estado',
     'Acciones',
   ];
   dataSource: MatTableDataSource<InspectionsInfoData>;
@@ -99,7 +121,10 @@ export class InspectionsTableComponent implements OnInit {
     private jwtService: JwtService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
-    private breakpointObserver: BreakpointObserver
+    private breakpointObserver: BreakpointObserver,
+    private route: ActivatedRoute,
+    private router: Router,
+    private loadingService: LoadingService,
   ) {
     this.dataSource = new MatTableDataSource<InspectionsInfoData>([]);
   }
@@ -113,18 +138,120 @@ export class InspectionsTableComponent implements OnInit {
       fechaFinal: ['', Validators.required],
     });
 
-    this.getDataAutoCompletes();
-    this.getMaxDate();
-    this.setupOwnerListener();
-    this.setupDriverListener();
+    this.route.queryParamMap.subscribe((params) => {
+      this.fromSource = params.get('from');
+    });
+
+    this.route.paramMap.subscribe((params) => {
+      const id = params.get('id');
+      this.isLoadingData = true;
+
+      if (id) {
+        this.idVehicleNumber = id;
+
+        // Eliminar validadores de fecha solo para este caso
+        this.inspectionForm.get('fechaInicial')?.clearValidators();
+        this.inspectionForm.get('fechaInicial')?.updateValueAndValidity();
+        this.inspectionForm.get('fechaFinal')?.clearValidators();
+        this.inspectionForm.get('fechaFinal')?.updateValueAndValidity();
+
+        this.loadingService.show({
+          title: 'Cargando Inspecciones',
+          message: `Obteniendo inspecciones del vehículo ${id}...`,
+          submessage: 'Por favor espere un momento',
+        });
+
+        this.getMaxDate();
+        this.setupOwnerListener();
+        this.setupDriverListener();
+      } else {
+        this.getTableInitialData();
+
+        this.getMaxDate();
+        this.setupOwnerListener();
+        this.setupDriverListener();
+      }
+
+      this.getDataAutoCompletes();
+    });
   }
 
   ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
+    if (this.paginator && this.sort) {
+      this.dataSource.paginator = this.paginator;
+      this.dataSource.sort = this.sort;
+
+      this.dataSource.sortingDataAccessor = (item, property) => {
+        if (property === 'Fecha') {
+          const [datePart, timePart] = item.Fecha.split(' ');
+          const [day, month, year] = datePart.split('-');
+          const dateTimeString = `${year}-${month}-${day}T${timePart}:00`;
+          return new Date(dateTimeString).getTime();
+        }
+        return (item as any)[property];
+      };
+
+      this.sort.active = 'Fecha';
+      this.sort.direction = 'desc';
+      this.dataSource.sort = this.sort;
+    }
   }
 
-  getDataAutoCompletes(){
+  getTableInitialData() {
+    this.isLoadingData = true;
+    this.loadingService.show({
+      title: 'Cargando Inspecciones',
+      message: 'Obteniendo inspecciones del sistema...',
+      submessage: 'Por favor espere un momento',
+    });
+
+    const company = this.getCompany();
+    const formattedValues = {
+      usuario: this.getUserId(),
+    };
+
+    this.apiService
+      .postData('inspections/inspections_info/all/' + company, formattedValues)
+      .subscribe({
+        next: (data: apiResponse[]) => {
+          this.dataSource.data = data.map((item) => ({
+            id: item.id,
+            Fecha: item.fecha_hora,
+            Tipo: item.tipo_inspeccion,
+            Id_Tipo: item.id_tipo_inspeccion,
+            Descripcion: item.descripcion,
+            Unidad: item.unidad,
+            Placa: item.placa,
+            Cupo: item.cupo,
+            Usuario: item.nombre_usuario,
+            Propietario: item.propietario,
+            Estado: item.estado_inspeccion,
+            PuedeEditar: item.puede_editar,
+            Fotos: item.fotos || [],
+            Firma: item.firma || [],
+          }));
+
+          // Reinicializar paginator y sort después de cargar los datos
+          this.initializePaginator();
+
+          if (data.length === 0) {
+            this.openSnackbar('No se encontraron inspecciones.');
+          } else {
+            this.openSnackbar('Inspecciones cargadas correctamente.');
+          }
+          this.isLoadingData = false;
+          this.loadingService.hide();
+        },
+        error: (error) => {
+          console.error('Error fetching inspections:', error);
+
+          this.isLoadingData = false;
+          this.loadingService.hide();
+        },
+      });
+  }
+
+  getDataAutoCompletes() {
     this.getDataOwners();
     this.getDataDrivers();
     this.getDataVehicles();
@@ -135,14 +262,14 @@ export class InspectionsTableComponent implements OnInit {
       (response: any) => {
         const dateParts = response.time.split('-');
         this.maxDate = new Date(
-          parseInt(dateParts[0]), 
-          parseInt(dateParts[1]) - 1, 
-          parseInt(dateParts[2])
+          parseInt(dateParts[0]),
+          parseInt(dateParts[1]) - 1,
+          parseInt(dateParts[2]),
         );
       },
       (error) => {
         this.maxDate = new Date();
-      }
+      },
     );
   }
 
@@ -151,163 +278,258 @@ export class InspectionsTableComponent implements OnInit {
     return userData ? userData.nombre : '';
   }
 
+  getUserId() {
+    const userData = this.jwtService.getUserData();
+    return userData ? userData.id : '';
+  }
+
   getCompany() {
     const userData = this.jwtService.getUserData();
     return userData ? userData.empresa : '';
   }
 
-  getDataOwners(){
+  getDataOwners() {
     const company = this.getCompany();
-    this.apiService.getData('owners/'+company).subscribe(
-      (data: owners[]) => {
+    this.apiService.getData('owners/' + company).subscribe({
+      next: (data: owners[]) => {
         // Filtrar elementos con id vacío antes de almacenarlos
-        this.owners = data.filter(owner => owner.id);
-        this.optionsOwners = this.inspectionForm.get('propietario')!.valueChanges.pipe(
-          startWith(''),
-          map(value => this._filterOwners(value || '')),
-        );
-        this.isLoading = false; 
-      }
-    );
+        this.owners = data.filter((owner) => owner.id);
+        this.optionsOwners = this.inspectionForm
+          .get('propietario')!
+          .valueChanges.pipe(
+            startWith(''),
+            map((value) => this._filterOwners(value || '')),
+          );
+      },
+      error: (error) => {
+        console.error('Error fetching owners:', error);
+      },
+    });
   }
 
   setupOwnerListener() {
-    this.inspectionForm.get('propietario')?.valueChanges.subscribe(selectedOwner => {
-      // Limpiar selecciones de conductor y vehículo cuando cambie el propietario
-      this.inspectionForm.patchValue({
-        conductor: '',
-        vehiculo: ''
-      });
+    this.inspectionForm
+      .get('propietario')
+      ?.valueChanges.subscribe((selectedOwner) => {
+        // Limpiar selecciones de conductor y vehículo cuando cambie el propietario
+        this.inspectionForm.patchValue({
+          conductor: '',
+          vehiculo: '',
+        });
 
-      if (selectedOwner && selectedOwner.id) {
-        // Filtrar conductores y vehículos por propietario seleccionado
-        this.filterDriversByOwner(selectedOwner.id);
-        this.filterVehiclesByOwner(selectedOwner.id);
-      } else {
-        // Si no hay propietario seleccionado, mostrar todos
-        this.resetFilters();
-      }
-    });
+        if (selectedOwner && selectedOwner.id) {
+          // Filtrar conductores y vehículos por propietario seleccionado
+          this.filterDriversByOwner(selectedOwner.id);
+          this.filterVehiclesByOwner(selectedOwner.id);
+        } else {
+          // Si no hay propietario seleccionado, mostrar todos
+          this.resetFilters();
+        }
+      });
   }
 
   setupDriverListener() {
-    this.inspectionForm.get('conductor')?.valueChanges.subscribe(selectedDriver => {
-      // Limpiar selección de vehículo cuando cambie el conductor
-      this.inspectionForm.patchValue({
-        vehiculo: ''
-      });
+    // Configurar listener para vehículo (ahora el vehículo filtra los conductores)
+    this.inspectionForm
+      .get('vehiculo')
+      ?.valueChanges.subscribe((selectedVehicle) => {
+        // Limpiar selección de conductor cuando cambie el vehículo
+        this.inspectionForm.patchValue({
+          conductor: '',
+        });
 
-      if (selectedDriver && selectedDriver.numero_unidad) {
-        // Filtrar vehículos por conductor seleccionado
-        this.filterVehiclesByDriver(selectedDriver.numero_unidad);
-      } else {
-        // Si no hay conductor seleccionado, filtrar por propietario (si hay uno seleccionado)
-        const selectedOwner = this.inspectionForm.get('propietario')?.value;
-        if (selectedOwner && selectedOwner.id) {
-          this.filterVehiclesByOwner(selectedOwner.id);
+        if (selectedVehicle && selectedVehicle.numero_unidad) {
+          // Filtrar conductores por vehículo seleccionado
+          this.filterDriversByVehicle(selectedVehicle.numero_unidad);
         } else {
-          this.resetVehicleFilter();
+          // Si no hay vehículo seleccionado, filtrar por propietario (si hay uno seleccionado)
+          const selectedOwner = this.inspectionForm.get('propietario')?.value;
+          if (selectedOwner && selectedOwner.id) {
+            this.filterDriversByOwner(selectedOwner.id);
+          } else {
+            this.resetDriverFilter();
+          }
         }
-      }
-    });
+      });
   }
 
   filterDriversByOwner(ownerId: string) {
-    this.drivers = this.allDrivers.filter(driver => driver.codigo_propietario === ownerId);
-    this.optionsDrivers = this.inspectionForm.get('conductor')!.valueChanges.pipe(
-      startWith(''),
-      map(value => this._filterDrivers(value || '')),
+    this.drivers = this.allDrivers.filter(
+      (driver) => driver.codigo_propietario === ownerId,
     );
+    this.optionsDrivers = this.inspectionForm
+      .get('conductor')!
+      .valueChanges.pipe(
+        startWith(''),
+        map((value) => this._filterDrivers(value || '')),
+      );
   }
 
   filterVehiclesByOwner(ownerId: string) {
-    this.vehicles = this.allVehicles.filter(vehicle => vehicle.codigo_propietario === ownerId);
-    this.optionsVehicles = this.inspectionForm.get('vehiculo')!.valueChanges.pipe(
-      startWith(''),
-      map(value => this._filterVehicles(value || '')),
+    this.vehicles = this.allVehicles.filter(
+      (vehicle) => vehicle.codigo_propietario === ownerId,
     );
+    this.optionsVehicles = this.inspectionForm
+      .get('vehiculo')!
+      .valueChanges.pipe(
+        startWith(''),
+        map((value) => this._filterVehicles(value || '')),
+      );
   }
 
-  filterVehiclesByDriver(numeroUnidad: string) {
-    this.vehicles = this.allVehicles.filter(vehicle => vehicle.numero_unidad === numeroUnidad);
-    this.optionsVehicles = this.inspectionForm.get('vehiculo')!.valueChanges.pipe(
-      startWith(''),
-      map(value => this._filterVehicles(value || '')),
+  filterDriversByVehicle(numeroUnidad: string) {
+    // Encontrar el vehículo seleccionado para obtener su código de conductor
+    const selectedVehicle = this.allVehicles.find(
+      (vehicle) => vehicle.numero_unidad === numeroUnidad,
     );
+    if (selectedVehicle) {
+      // Filtrar conductores que puedan manejar este vehículo (mismo numero_unidad)
+      this.drivers = this.allDrivers.filter(
+        (driver) => driver.numero_unidad === numeroUnidad,
+      );
+    } else {
+      this.drivers = [];
+    }
+    this.optionsDrivers = this.inspectionForm
+      .get('conductor')!
+      .valueChanges.pipe(
+        startWith(''),
+        map((value) => this._filterDrivers(value || '')),
+      );
+  }
+
+  resetDriverFilter() {
+    this.drivers = [...this.allDrivers];
+    this.optionsDrivers = this.inspectionForm
+      .get('conductor')!
+      .valueChanges.pipe(
+        startWith(''),
+        map((value) => this._filterDrivers(value || '')),
+      );
   }
 
   resetVehicleFilter() {
     this.vehicles = [...this.allVehicles];
-    this.optionsVehicles = this.inspectionForm.get('vehiculo')!.valueChanges.pipe(
-      startWith(''),
-      map(value => this._filterVehicles(value || '')),
-    );
+    this.optionsVehicles = this.inspectionForm
+      .get('vehiculo')!
+      .valueChanges.pipe(
+        startWith(''),
+        map((value) => this._filterVehicles(value || '')),
+      );
   }
 
   resetFilters() {
     this.drivers = [...this.allDrivers];
     this.vehicles = [...this.allVehicles];
-    
-    this.optionsDrivers = this.inspectionForm.get('conductor')!.valueChanges.pipe(
-      startWith(''),
-      map(value => this._filterDrivers(value || '')),
-    );
-    
-    this.optionsVehicles = this.inspectionForm.get('vehiculo')!.valueChanges.pipe(
-      startWith(''),
-      map(value => this._filterVehicles(value || '')),
-    );
+
+    this.optionsDrivers = this.inspectionForm
+      .get('conductor')!
+      .valueChanges.pipe(
+        startWith(''),
+        map((value) => this._filterDrivers(value || '')),
+      );
+
+    this.optionsVehicles = this.inspectionForm
+      .get('vehiculo')!
+      .valueChanges.pipe(
+        startWith(''),
+        map((value) => this._filterVehicles(value || '')),
+      );
   }
 
-  getDataDrivers(){
+  getDataDrivers() {
     const company = this.getCompany();
-    this.apiService.getData('inspections/drivers_data/'+company).subscribe(
-      (data: drivers[]) => {
+    this.apiService.getData('drivers_data/' + company).subscribe({
+      next: (data: drivers[]) => {
         this.allDrivers = data; // Guardar todos los conductores
         this.drivers = [...data]; // Inicializar con todos los datos
-        this.optionsDrivers = this.inspectionForm.get('conductor')!.valueChanges.pipe(
-          startWith(''),
-          map(value => this._filterDrivers(value || '')),
-        );
-      }
-    );
+        this.optionsDrivers = this.inspectionForm
+          .get('conductor')!
+          .valueChanges.pipe(
+            startWith(''),
+            map((value) => this._filterDrivers(value || '')),
+          );
+      },
+      error: (error) => {
+        console.error('Error fetching drivers:', error);
+      },
+    });
   }
 
-  getDataVehicles(){
+  getDataVehicles() {
     const company = this.getCompany();
-    this.apiService.getData('inspections/vehicles_data/'+company).subscribe(
-      (data: vehicles[]) => {
+    this.apiService.getData('vehicles_data/' + company).subscribe({
+      next: (data: vehicles[]) => {
         this.allVehicles = data; // Guardar todos los vehículos
         this.vehicles = [...data]; // Inicializar con todos los datos
-        this.optionsVehicles = this.inspectionForm.get('vehiculo')!.valueChanges.pipe(
-          startWith(''),
-          map(value => this._filterVehicles(value || '')),
-        );
-      }
-    );
+        this.optionsVehicles = this.inspectionForm
+          .get('vehiculo')!
+          .valueChanges.pipe(
+            startWith(''),
+            map((value) => this._filterVehicles(value || '')),
+          );
+
+        if (this.idVehicleNumber) {
+          const foundVehicle = this.allVehicles.find(
+            (v) => v.numero_unidad === this.idVehicleNumber,
+          );
+
+          if (foundVehicle) {
+            this.inspectionForm.patchValue({ vehiculo: foundVehicle });
+            this.getTableData();
+          } else {
+            this.loadingService.hide();
+            this.isLoadingData = false;
+            this.openSnackbar(
+              'El vehículo seleccionado no existe o no está asignado a su empresa.',
+            );
+            this.router.navigate(['/inspections']);
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Error fetching vehicles:', error);
+        if (this.idVehicleNumber) {
+          this.loadingService.hide();
+          this.isLoadingData = false;
+        }
+      },
+    });
   }
 
   private _filterOwners(value: string | owners): owners[] {
-    const filterValue = typeof value === 'string' ? value.toLowerCase() : value.name.toLowerCase();
-    return this.owners.filter(option => 
-      option.name.toLowerCase().includes(filterValue) ||
-      option.id.toLowerCase().includes(filterValue)
+    const filterValue =
+      typeof value === 'string'
+        ? value.toLowerCase()
+        : value.name.toLowerCase();
+    return this.owners.filter(
+      (option) =>
+        option.name.toLowerCase().includes(filterValue) ||
+        option.id.toLowerCase().includes(filterValue),
     );
   }
-  
+
   private _filterDrivers(value: string | drivers): drivers[] {
-    const filterValue = typeof value === 'string' ? value.toLowerCase() : value.nombre_conductor.toLowerCase();
-    return this.drivers.filter(option => 
-      option.nombre_conductor.toLowerCase().includes(filterValue) ||
-      option.cedula.toLowerCase().includes(filterValue)
+    const filterValue =
+      typeof value === 'string'
+        ? value.toLowerCase()
+        : value.nombre_conductor.toLowerCase();
+    return this.drivers.filter(
+      (option) =>
+        option.nombre_conductor.toLowerCase().includes(filterValue) ||
+        option.cedula.toLowerCase().includes(filterValue),
     );
   }
-  
+
   private _filterVehicles(value: string | vehicles): vehicles[] {
-    const filterValue = typeof value === 'string' ? value.toLowerCase() : value.placa_vehiculo.toLowerCase();
-    return this.vehicles.filter(option => 
-      option.placa_vehiculo.toLowerCase().includes(filterValue) || 
-      option.numero_unidad.toLowerCase().includes(filterValue)
+    const filterValue =
+      typeof value === 'string'
+        ? value.toLowerCase()
+        : value.placa_vehiculo.toLowerCase();
+    return this.vehicles.filter(
+      (option) =>
+        option.placa_vehiculo.toLowerCase().includes(filterValue) ||
+        option.numero_unidad.toLowerCase().includes(filterValue),
     );
   }
 
@@ -320,14 +542,25 @@ export class InspectionsTableComponent implements OnInit {
   }
 
   displayVehiclePlate(vehicle: vehicles): string {
-    return vehicle ? `${vehicle.numero_unidad} ${vehicle.placa_vehiculo} - ${vehicle.marca} ${vehicle.linea} ${vehicle.modelo}` : '';
+    return vehicle
+      ? `${vehicle.numero_unidad} ${vehicle.placa_vehiculo} - ${vehicle.marca} ${vehicle.linea} ${vehicle.modelo}`
+      : '';
+  }
+
+  private initializePaginator() {
+    setTimeout(() => {
+      if (this.paginator && this.sort) {
+        this.dataSource.paginator = this.paginator;
+        this.dataSource.sort = this.sort;
+      }
+    }, 0);
   }
 
   clearTableData() {
     if (this.dataSource.data.length > 0) {
       this.dataSource.data = [];
-      this.dataSource.paginator = this.paginator;
-      this.dataSource.sort = this.sort;
+      // Reinicializar el paginator y sort
+      this.initializePaginator();
     }
   }
 
@@ -340,81 +573,121 @@ export class InspectionsTableComponent implements OnInit {
     // Limpiar datos existentes de la tabla
     this.clearTableData();
 
-    this.isLoadingData = true; 
+    this.isLoadingData = true;
+    this.loadingService.show({
+      title: 'Buscando Inspecciones',
+      message: 'Consultando inspecciones con los criterios seleccionados...',
+      submessage: 'Por favor espere un momento',
+    });
 
     const formValues = this.inspectionForm.value;
-  
+    const user = this.getUserId();
+
     // Formatear las fechas para enviar solo YYYY-MM-DD
     const formattedValues = {
-      conductor: formValues.conductor && formValues.conductor.codigo_conductor ? formValues.conductor.codigo_conductor : '',
-      propietario: formValues.propietario && formValues.propietario.id ? formValues.propietario.id : '',
-      vehiculo: formValues.vehiculo && formValues.vehiculo.numero_unidad ? formValues.vehiculo.numero_unidad : '',
-      fechaInicial: formValues.fechaInicial ? new Date(formValues.fechaInicial).toISOString().split('T')[0] : '',
-      fechaFinal: formValues.fechaFinal ? new Date(formValues.fechaFinal).toISOString().split('T')[0] : ''
+      usuario: user,
+      conductor:
+        formValues.conductor && formValues.conductor.codigo_conductor
+          ? formValues.conductor.codigo_conductor
+          : '',
+      propietario:
+        formValues.propietario && formValues.propietario.id
+          ? formValues.propietario.id
+          : '',
+      vehiculo:
+        formValues.vehiculo && formValues.vehiculo.numero_unidad
+          ? formValues.vehiculo.numero_unidad
+          : '',
+      fechaInicial: formValues.fechaInicial
+        ? new Date(formValues.fechaInicial).toISOString().split('T')[0]
+        : '',
+      fechaFinal: formValues.fechaFinal
+        ? new Date(formValues.fechaFinal).toISOString().split('T')[0]
+        : '',
     };
 
     const company = this.getCompany();
-    
-    console.log('Form Values:', formattedValues);
 
-    this.apiService.postData('inspections/inspections_info/'+company, formattedValues).subscribe({
-      next: (data: apiResponse[]) => {
-        this.dataSource.data = data.map(item => ({
-          id: item.id,
-          Fecha: item.fecha_hora,
-          Tipo: item.tipo_inspeccion,
-          Descripcion: item.descripcion,
-          Unidad: item.unidad,
-          Placa: item.placa,
-          Usuario: item.nombre_usuario,
-          acciones: 'Edit',
-        }));
-        this.dataSource.paginator = this.paginator;
-        this.dataSource.sort = this.sort;
-        
-        if (data.length === 0) {
-          this.openSnackbar('No se encontraron inspecciones para los criterios seleccionados.');
-        } else {
-          this.openSnackbar('Inspecciones cargadas correctamente.');
-        }
+    this.apiService
+      .postData('inspections/inspections_info/' + company, formattedValues)
+      .subscribe({
+        next: (data: apiResponse[]) => {
+          this.dataSource.data = data.map((item) => ({
+            id: item.id,
+            Fecha: item.fecha_hora,
+            Tipo: item.tipo_inspeccion,
+            Id_Tipo: item.id_tipo_inspeccion,
+            Descripcion: item.descripcion,
+            Unidad: item.unidad,
+            Placa: item.placa,
+            Cupo: item.cupo,
+            Usuario: item.nombre_usuario,
+            Propietario: item.propietario,
+            Estado: item.estado_inspeccion,
+            PuedeEditar: item.puede_editar,
+            Fotos: item.fotos || [],
+            Firma: item.firma || [],
+          }));
 
-        this.isLoadingData = false;
-      },
-      error: (error) => {
-        console.error('Error fetching inspections:', error);
-        
-        if (error.status === 404) {
-          this.openSnackbar('No se encontraron inspecciones para los criterios seleccionados.');
-        } else {
-          this.openSnackbar('Error al cargar las inspecciones. Por favor, inténtelo de nuevo más tarde.');
-        }
-        this.isLoadingData = false;
-      }
-    });
+          // Reinicializar paginator y sort después de cargar los datos
+          this.initializePaginator();
+
+          if (data.length === 0) {
+            this.openSnackbar(
+              'No se encontraron inspecciones para los criterios seleccionados.',
+            );
+          } else {
+            this.openSnackbar('Inspecciones cargadas correctamente.');
+          }
+
+          this.isLoadingData = false;
+          this.loadingService.hide();
+        },
+        error: (error) => {
+          console.error('Error fetching inspections:', error);
+
+          this.isLoadingData = false;
+          this.loadingService.hide();
+        },
+      });
   }
 
-  getPdfData(){
-    if (this.inspectionForm.invalid) {
+  getPdfData() {
+    if (this.inspectionForm.invalid && !this.idVehicleNumber) {
+      this.openSnackbar('Por favor, complete las fechas requeridas.');
       this.inspectionForm.markAllAsTouched();
       return;
     }
 
     const formValues = this.inspectionForm.value;
-    const user = this.getUser();
-  
+    const user = this.getUserId();
+
     // Formatear las fechas para enviar solo YYYY-MM-DD
     const formattedValues = {
       usuario: user,
-      conductor: formValues.conductor && formValues.conductor.codigo_conductor ? formValues.conductor.codigo_conductor : '',
-      propietario: formValues.propietario && formValues.propietario.id ? formValues.propietario.id : '',
-      vehiculo: formValues.vehiculo && formValues.vehiculo.numero_unidad ? formValues.vehiculo.numero_unidad : '',
-      fechaInicial: formValues.fechaInicial ? new Date(formValues.fechaInicial).toISOString().split('T')[0] : '',
-      fechaFinal: formValues.fechaFinal ? new Date(formValues.fechaFinal).toISOString().split('T')[0] : ''
+      conductor:
+        formValues.conductor && formValues.conductor.codigo_conductor
+          ? formValues.conductor.codigo_conductor
+          : '',
+      propietario:
+        formValues.propietario && formValues.propietario.id
+          ? formValues.propietario.id
+          : '',
+      vehiculo:
+        formValues.vehiculo && formValues.vehiculo.numero_unidad
+          ? formValues.vehiculo.numero_unidad
+          : '',
+      fechaInicial: formValues.fechaInicial
+        ? new Date(formValues.fechaInicial).toISOString().split('T')[0]
+        : '',
+      fechaFinal: formValues.fechaFinal
+        ? new Date(formValues.fechaFinal).toISOString().split('T')[0]
+        : '',
     };
 
     const company = this.getCompany();
 
-    const endpoint = 'inspections/report_inspections/'+company;
+    const endpoint = 'inspections/report_inspections/' + company;
 
     if (endpoint) {
       localStorage.setItem('pdfEndpoint', endpoint);
@@ -427,11 +700,32 @@ export class InspectionsTableComponent implements OnInit {
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
     const dialogWidth = isSmallScreen ? '90vw' : '60%';
 
-    const dialogRef = this.dialog.open(InspectionsAddDialogComponent,
-      {
-        width: dialogWidth,
+    const dialogData = this.idVehicleNumber
+      ? { vehicleNumber: this.idVehicleNumber }
+      : undefined;
+
+    const dialogRef = this.dialog.open(InspectionsAddDialogComponent, {
+      width: dialogWidth,
+      disableClose: true,
+      data: dialogData,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result === 'refresh') {
+        const formValues = this.inspectionForm.value;
+        const hasFilter =
+          formValues.propietario ||
+          formValues.conductor ||
+          formValues.vehiculo ||
+          formValues.fechaInicial ||
+          formValues.fechaFinal;
+        if (hasFilter) {
+          this.getTableData();
+        } else {
+          this.getTableInitialData();
+        }
       }
-    );
+    });
   }
 
   openSnackbar(message: string) {
@@ -439,6 +733,154 @@ export class InspectionsTableComponent implements OnInit {
       duration: 3000,
       horizontalPosition: 'center',
       verticalPosition: 'top',
-    })
+    });
+  }
+
+  getEstadoText(estado: string): string {
+    switch (estado) {
+      case 'PEN':
+        return '<strong>PENDIENTE</strong>';
+      case 'SUS':
+        return '<strong>SUSPENDIDO</strong>';
+      case 'FIN':
+        return 'FINALIZADO';
+      default:
+        return 'DESCONOCIDO';
+    }
+  }
+
+  openImgDialog(inspection: InspectionsInfoData, action?: string) {
+    const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
+    const dialogWidth = isSmallScreen ? '90vw' : '60%';
+
+    const data = {
+      vehicleNumber: inspection.Unidad,
+      images: action === 'viewSignature' ? inspection.Firma : inspection.Fotos,
+      action: action || '',
+    };
+
+    const dialogRef = this.dialog.open(InspectionFinishImagesDialogComponent, {
+      width: dialogWidth,
+      data: data,
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result === 'viewPhotos' || result === 'viewSignature') {
+        this.openInspectionInfoDialog(inspection.id);
+      }
+    });
+  }
+
+  openUploadImagesDialog(inspection: InspectionsInfoData) {
+    if (inspection.PuedeEditar !== 1) {
+      this.openSnackbar(
+        'Solo puedes editar inspecciones PENDIENTES creadas por ti.',
+      );
+      return;
+    }
+
+    const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
+    const dialogWidth = isSmallScreen ? '90vw' : '60%';
+
+    const dialogRef = this.dialog.open(InspectionsAddDialogComponent, {
+      width: dialogWidth,
+      data: {
+        idInspection: inspection.id,
+        // No pasamos idTypeInspection para activar el modo edición
+      },
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result === 'refresh') {
+        const formValues = this.inspectionForm.value;
+        const hasFilter =
+          formValues.propietario ||
+          formValues.conductor ||
+          formValues.vehiculo ||
+          formValues.fechaInicial ||
+          formValues.fechaFinal;
+        if (hasFilter) {
+          this.getTableData();
+        } else {
+          this.getTableInitialData();
+        }
+      }
+    });
+  }
+
+  openInspectionInfoDialog(inspectionId: string) {
+    const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
+    const dialogWidth = isSmallScreen ? '90vw' : '60%';
+
+    const dialogRef = this.dialog.open(InspectionInfoDialogComponent, {
+      width: dialogWidth,
+      data: { inspectionId },
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result === 'viewPhotos' || result === 'viewSignature') {
+        this.openImgDialog(
+          this.dataSource.data.find((item) => item.id === inspectionId)!,
+          result,
+        );
+      }
+    });
+  }
+
+  openDocumentPDF(inspectionId: string) {
+    const user = this.getUserId();
+    const company = this.getCompany();
+
+    const data = {
+      user: user,
+      inspection_id: inspectionId,
+    };
+
+    const endpoint = 'inspections/generate_inspection_pdf/' + company;
+
+    localStorage.setItem('pdfEndpoint', endpoint);
+    localStorage.setItem('pdfData', JSON.stringify(data));
+    window.open(`/pdf`, '_blank');
+  }
+
+  openGenerateQRDialog() {
+    const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
+    const dialogWidth = isSmallScreen ? '90vw' : '60%';
+
+    const dialogRef = this.dialog.open(InspectionsGenerateQrDialogComponent, {
+      width: dialogWidth,
+      disableClose: false,
+    });
+  }
+
+  openInfoVehicle() {
+    if (!this.idVehicleNumber) {
+      this.openSnackbar('No hay vehículo seleccionado.');
+      return;
+    }
+
+    const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
+    const dialogWidth = isSmallScreen ? '90vw' : '40%';
+
+    const data = {
+      driverCode: '',
+      vehicleNumber: this.idVehicleNumber,
+    };
+
+    const dialogRef = this.dialog.open(InspectionsVehicleInfoComponent, {
+      width: dialogWidth,
+      data: data,
+    });
+  }
+
+  goBack() {
+    if (this.fromSource === 'vehicle-repair' && this.idVehicleNumber) {
+      this.router.navigate(['/vehicle-repair', this.idVehicleNumber]);
+    } else {
+      this.router.navigate(['/inspections']);
+    }
   }
 }

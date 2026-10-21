@@ -52,7 +52,7 @@ export class FeespaidComponent implements OnInit {
         this.owners.sort((a, b) => a.name.localeCompare(b.name));
       },
       (error) => {
-        console.log(error);
+        console.error(error);
       }
     );
   }
@@ -77,7 +77,7 @@ export class FeespaidComponent implements OnInit {
         });
       },
       (error) => {
-        console.log(error);
+        console.error(error);
       }
     );
   }
@@ -235,8 +235,10 @@ export class FeespaidComponent implements OnInit {
       estados: this.estadosSeleccionados
     };
 
+    const endpoint = 'informe-cuotas-pagas/'+this.getCompany();
+
     // Guardar endpoint y data en LocalStorage
-    localStorage.setItem('pdfEndpoint', 'informe-cuotas-pagas');
+    localStorage.setItem('pdfEndpoint', endpoint);
     localStorage.setItem('pdfData', JSON.stringify(info));
 
     // Navegar al componente PdfViewerComponent

@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from 'src/app/services/api.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { JwtService } from 'src/app/services/jwt.service';
 
 interface vehicleInfo {
   numero: string;
@@ -36,7 +37,7 @@ interface panamaTime {
 @Component({
   selector: 'app-operaciones-entrega-vehiculo-conductor',
   templateUrl: './operaciones-entrega-vehiculo-conductor.component.html',
-  styleUrls: ['./operaciones-entrega-vehiculo-conductor.component.css']
+  styleUrls: ['./operaciones-entrega-vehiculo-conductor.component.css'],
 })
 export class OperacionesEntregaVehiculoConductorComponent {
   @Output() close = new EventEmitter<void>();
@@ -60,8 +61,8 @@ export class OperacionesEntregaVehiculoConductorComponent {
     propietario: '',
     conductor: '',
     con_cupo: 0, //1 ES SÍ, 2 ES NO
-    fecha_estado: ''
-  }
+    fecha_estado: '',
+  };
 
   driverData: driverInfo = {
     codigo: '',
@@ -72,21 +73,22 @@ export class OperacionesEntregaVehiculoConductorComponent {
     licencia_numero: '',
     licencia_vencimiento: '',
     vehiculo: '',
-    estado: ''
-  }
+    estado: '',
+  };
 
   day: panamaTime = {
-    time: ''
-  }
+    time: '',
+  };
 
   dayBackup: panamaTime = {
-    time: ''
-  }
+    time: '',
+  };
 
   constructor(
     private apiService: ApiService,
-    private snackBar: MatSnackBar
-  ) { }
+    private snackBar: MatSnackBar,
+    private jwtService: JwtService,
+  ) {}
 
   ngOnInit(): void {
     this.getTodayDate();
@@ -99,16 +101,24 @@ export class OperacionesEntregaVehiculoConductorComponent {
         this.dayBackup = JSON.parse(JSON.stringify(data));
       },
       error: (error: HttpErrorResponse) => {
-        console.log('Error al obtener el día de Panamá');
-      }
+        console.error('Error al obtener el día de Panamá', error);
+      },
     });
   }
 
-  vehicleValidations(){
-    if (this.vehicleData.estado.substring(0, 2) !== '06'){
+  getCompany() {
+    const userData = this.jwtService.getUserData();
+    return userData ? userData.empresa : '';
+  }
+
+  vehicleValidations() {
+    if (this.vehicleData.estado.substring(0, 2) !== '06') {
       window.alert('Vehículo debe estar esperando operador.');
 
-      if (this.vehicleData.estado.substring(0, 2) === '01' && this.vehicleData.conductor !== ''){
+      if (
+        this.vehicleData.estado.substring(0, 2) === '01' &&
+        this.vehicleData.conductor !== ''
+      ) {
         this.driverInputValue = this.vehicleData.conductor;
         this.day.time = this.vehicleData.fecha_estado;
         this.driverSearch(this.vehicleData.conductor, false);
@@ -125,25 +135,27 @@ export class OperacionesEntregaVehiculoConductorComponent {
     this.driverInputDisabled = false;
   }
 
-  vehicleSearch(vehicleValue: string){
-    this.apiService.getData(`operations/deliveryvehicledriver/vehicle/${vehicleValue}`).subscribe({
-      next: (data: vehicleInfo) => {
-        this.vehicleData = data;
-        console.log(this.vehicleData);
-        this.vehicleValidations();
-      },
-      error: (error: HttpErrorResponse) => {
-        if (error.status === 404) {
-          window.alert('No se encontró el vehículo');
-        }
-        else {
-          window.alert('Error al buscar el vehículo. Vuelva a intentarlo.');
-        }
-      }
-    });
+  vehicleSearch(vehicleValue: string) {
+    this.apiService
+      .getData(
+        `operations/deliveryvehicledriver/vehicle/${this.getCompany()}/${vehicleValue}`,
+      )
+      .subscribe({
+        next: (data: vehicleInfo) => {
+          this.vehicleData = data;
+          this.vehicleValidations();
+        },
+        error: (error: HttpErrorResponse) => {
+          if (error.status === 404) {
+            window.alert('No se encontró el vehículo');
+          } else {
+            window.alert('Error al buscar el vehículo. Vuelva a intentarlo.');
+          }
+        },
+      });
   }
 
-  vehicleInput(event: any){
+  vehicleInput(event: any) {
     const vehicleInputValue = (event.target as HTMLInputElement).value;
     if (vehicleInputValue.length > 0) {
       this.deliveryVehicleDriverDisabled = true;
@@ -159,7 +171,7 @@ export class OperacionesEntregaVehiculoConductorComponent {
         licencia_numero: '',
         licencia_vencimiento: '',
         vehiculo: '',
-        estado: ''
+        estado: '',
       };
       this.vehicleSearch(vehicleInputValue);
     }
@@ -171,33 +183,39 @@ export class OperacionesEntregaVehiculoConductorComponent {
     }
 
     if (this.driverData.vehiculo !== '') {
-      window.alert('Conductor tiene el vehículo ' + this.driverData.vehiculo + ' asignado.');
+      window.alert(
+        'Conductor tiene el vehículo ' +
+          this.driverData.vehiculo +
+          ' asignado.',
+      );
     }
   }
 
-  driverSearch(driverValue: string, validations?: boolean){
+  driverSearch(driverValue: string, validations?: boolean) {
     this.deliveryVehicleDriverDisabled = true;
-    this.apiService.getData(`operations/deliveryvehicledriver/driver/${driverValue}`).subscribe({
-      next: (data: driverInfo) => {
-        this.driverData = data;
-        console.log(this.driverData);
-        if (validations !== false) {
-          this.driverValidations();
-          this.deliveryVehicleDriverValidations();
-        };
-      },
-      error: (error: HttpErrorResponse) => {
-        if (error.status === 404) {
-          window.alert('No se encontró el conductor');
-        }
-        else {
-          window.alert('Error al buscar el conducto. Vuelva a intentarlo.');
-        }
-      }
-    });
+    this.apiService
+      .getData(
+        `operations/deliveryvehicledriver/driver/${this.getCompany()}/${driverValue}`,
+      )
+      .subscribe({
+        next: (data: driverInfo) => {
+          this.driverData = data;
+          if (validations !== false) {
+            this.driverValidations();
+            this.deliveryVehicleDriverValidations();
+          }
+        },
+        error: (error: HttpErrorResponse) => {
+          if (error.status === 404) {
+            window.alert('No se encontró el conductor');
+          } else {
+            window.alert('Error al buscar el conducto. Vuelva a intentarlo.');
+          }
+        },
+      });
   }
 
-  driverInput(event: any){
+  driverInput(event: any) {
     const driverInputValue = (event.target as HTMLInputElement).value;
     if (driverInputValue.length > 0) {
       this.driverSearch(driverInputValue);
@@ -209,12 +227,12 @@ export class OperacionesEntregaVehiculoConductorComponent {
       this.openSnackbar('El conductor seleccionado no se encuentra activo.');
       return;
     }
-  
+
     if (this.driverData.vehiculo !== '') {
       this.openSnackbar('El conductor ya tiene un vehículo asignado.');
       return;
     }
-  
+
     if (this.vehicleData.estado.substring(0, 2) !== '06') {
       this.openSnackbar('El vehículo seleccionado no está esperando operador.');
       return;
@@ -224,16 +242,18 @@ export class OperacionesEntregaVehiculoConductorComponent {
       this.openSnackbar('El vehículo no tiene cupo disponible.');
       return;
     }
-    
+
     if (this.vehicleData.conductor !== '') {
-      this.openSnackbar('El vehículo ya se encuentra ocupado por otro conductor.');
+      this.openSnackbar(
+        'El vehículo ya se encuentra ocupado por otro conductor.',
+      );
       return;
     }
 
     this.deliveryVehicleDriverDisabled = false;
   }
 
-  confirmationChange(){
+  confirmationChange() {
     this.confirmation = !this.confirmation;
   }
 
@@ -241,26 +261,20 @@ export class OperacionesEntregaVehiculoConductorComponent {
     const data = {
       vehicle_number: this.vehicleData.numero,
       driver_number: this.driverData.codigo,
-      delivery_date: this.day.time
-    }
+      delivery_date: this.day.time,
+    };
 
-    this.apiService.postData('operations/deliveryvehicledriver', data).subscribe({
-      next: () => {
-        window.alert('Entrega de vehículo al conductor guardada exitosamente');
-        this.closeModal();
-      },
-      error: (error: HttpErrorResponse) => {
-        if (error.status === 400) {
-          window.alert('Error al guardar la entrega de vehículo al conductor. Vuelva a intentarlo.');
-        }
-        if (error.status === 404) {
-          window.alert('No se ha encontrado el conductor o el vehículo. Vuelva a intentarlo.');
-        }
-        else {
-          window.alert('Error al guardar la entrega de vehículo al conductor.');
-        }
-      }
-    });
+    this.apiService
+      .postData(`operations/deliveryvehicledriver/${this.getCompany()}`, data)
+      .subscribe({
+        next: () => {
+          this.openSnackbar(
+            'Entrega de vehículo al conductor guardada exitosamente.',
+          );
+          this.closeModal();
+        },
+        error: (error: HttpErrorResponse) => {},
+      });
   }
 
   openSnackbar(message: string) {
@@ -268,7 +282,7 @@ export class OperacionesEntregaVehiculoConductorComponent {
       duration: 3000,
       horizontalPosition: 'center',
       verticalPosition: 'top',
-    })
+    });
   }
 
   closeModal() {

@@ -12,6 +12,8 @@ import { JwtService } from 'src/app/services/jwt.service';
 interface vehicle {
   unidad: string;
   placa: string;
+  propietario: string;
+  nro_cupo: string;
 }
 
 interface vehicleInfo {
@@ -58,7 +60,9 @@ interface DateCurrently {
 export class OperacionesCrearCuentaDiarioConductorComponent implements OnInit {
   vehicles = new FormControl('');
   drivers = new FormControl({ value: '', disabled: true });
-  selectedDate = new FormControl<Date | null>(null, {validators: [Validators.required]});
+  selectedDate = new FormControl<Date | null>(null, {
+    validators: [Validators.required],
+  });
   description = new FormControl('', [Validators.maxLength(500)]);
   options: vehicle[] = [];
   filteredOptions!: Observable<vehicle[]>;
@@ -71,7 +75,7 @@ export class OperacionesCrearCuentaDiarioConductorComponent implements OnInit {
   reCheckedValidations: boolean = false;
   isLoadingCreate: boolean = false;
 
-  maxDate = new Date(); 
+  maxDate = new Date();
   date!: DateCurrently;
 
   vehicleData: vehicleInfo = {
@@ -112,7 +116,7 @@ export class OperacionesCrearCuentaDiarioConductorComponent implements OnInit {
     private snackBar: MatSnackBar,
     private dialogRef: MatDialogRef<OperacionesCrearCuentaDiarioConductorComponent>,
     private dialog: MatDialog,
-    private breakpointObserver: BreakpointObserver
+    private breakpointObserver: BreakpointObserver,
   ) {}
 
   ngOnInit() {
@@ -126,14 +130,14 @@ export class OperacionesCrearCuentaDiarioConductorComponent implements OnInit {
         this.date = response;
         const dateParts = response.time.split('-');
         this.maxDate = new Date(
-          parseInt(dateParts[0]), 
-          parseInt(dateParts[1]) - 1, 
-          parseInt(dateParts[2])
+          parseInt(dateParts[0]),
+          parseInt(dateParts[1]) - 1,
+          parseInt(dateParts[2]),
         );
       },
       (error) => {
         this.maxDate = new Date();
-      }
+      },
     );
   }
 
@@ -154,16 +158,13 @@ export class OperacionesCrearCuentaDiarioConductorComponent implements OnInit {
         this.options = response;
         this.filteredOptions = this.vehicles.valueChanges.pipe(
           startWith(''),
-          map((value) => this._filter(value || ''))
+          map((value) => this._filter(value || '')),
         );
         this.isLoadingVehicles = false;
       },
       (error) => {
-        this.openSnackbar(
-          'Error al obtener las unidades. Inténtalo de nuevo más tarde.'
-        );
         this.closeDialog();
-      }
+      },
     );
   }
 
@@ -173,7 +174,9 @@ export class OperacionesCrearCuentaDiarioConductorComponent implements OnInit {
     return this.options.filter(
       (option) =>
         option.placa.toLowerCase().includes(filterValue) ||
-        option.unidad.toLowerCase().includes(filterValue)
+        option.unidad.toLowerCase().includes(filterValue) ||
+        option.nro_cupo.toLowerCase().includes(filterValue) ||
+        option.propietario.toLowerCase().includes(filterValue),
     );
   }
 
@@ -183,7 +186,9 @@ export class OperacionesCrearCuentaDiarioConductorComponent implements OnInit {
     if (vehicleValue !== '') {
       this.isLoadingVehicleInfo = true;
       this.apiService
-        .getData(`operations/deliveryvehicledriver/vehicle/${vehicleValue}`)
+        .getData(
+          `operations/deliveryvehicledriver/vehicle/${this.getCompany()}/${vehicleValue}`,
+        )
         .subscribe({
           next: (data: vehicleInfo) => {
             this.vehicleData = data;
@@ -193,13 +198,6 @@ export class OperacionesCrearCuentaDiarioConductorComponent implements OnInit {
           error: (error: HttpErrorResponse) => {
             this.isLoadingVehicleInfo = false;
             this.selectedVehicle = false;
-            if (error.status === 404) {
-              this.openSnackbar('Vehículo no encontrado. Intenta con otro.');
-            } else {
-              this.openSnackbar(
-                'Error al obtener la información del vehículo. Inténtalo de nuevo más tarde.'
-              );
-            }
           },
         });
     }
@@ -208,7 +206,9 @@ export class OperacionesCrearCuentaDiarioConductorComponent implements OnInit {
   driverSearch(driverValue: string) {
     if (driverValue !== '') {
       this.apiService
-        .getData(`operations/deliveryvehicledriver/driver/${driverValue}`)
+        .getData(
+          `operations/deliveryvehicledriver/driver/${this.getCompany()}/${driverValue}`,
+        )
         .subscribe({
           next: (data: driverInfo) => {
             this.driverData = data;
@@ -217,13 +217,6 @@ export class OperacionesCrearCuentaDiarioConductorComponent implements OnInit {
           error: (error: HttpErrorResponse) => {
             if (error.status === 404) {
               this.getValidations(this.date);
-              this.openSnackbar(
-                'No se encontró el conductor para esta unidad.'
-              );
-            } else {
-              this.openSnackbar(
-                'Error al obtener la información del conductor. Inténtalo de nuevo más tarde.'
-              );
             }
           },
         });
@@ -239,30 +232,29 @@ export class OperacionesCrearCuentaDiarioConductorComponent implements OnInit {
       this.getValidations({
         time: selectedDate.toISOString().split('T')[0],
       });
-    } 
+    }
   }
 
   getValidations(date: DateCurrently) {
-    if(this.vehicleData.numero !== '') {
+    if (this.vehicleData.numero !== '') {
       const company = this.getCompany();
 
       const validationsData = {
         company_code: company,
         vehicle_number: this.vehicleData.numero,
         bill_date: date.time,
-      }
-      this.apiService.postData('operations/validation', validationsData).subscribe({
-        next: (response: Validations) => {
-          this.validations = response;
-          this.validateAuthorizedVehicle();
-        },
-        error: (error: HttpErrorResponse) => {
-          this.openSnackbar(
-            'Error al obtener las validaciones. Inténtalo de nuevo más tarde.'
-          );
-          this.isLoadingVehicleInfo = false;      
-        }
-      });
+      };
+      this.apiService
+        .postData('operations/validation', validationsData)
+        .subscribe({
+          next: (response: Validations) => {
+            this.validations = response;
+            this.validateAuthorizedVehicle();
+          },
+          error: (error: HttpErrorResponse) => {
+            this.isLoadingVehicleInfo = false;
+          },
+        });
     }
   }
 
@@ -271,13 +263,21 @@ export class OperacionesCrearCuentaDiarioConductorComponent implements OnInit {
     this.selectedVehicle = true;
     this.checkedValidations = true;
     this.reCheckedValidations = false;
-    if(this.validations.vehicle_bill || !this.validations.vehicle_driver || !this.validations.vehicle_state) {
-      this.openSnackbar('El vehículo no está autorizado para generar cuenta diaria.');
+    if (
+      this.validations.vehicle_bill ||
+      !this.validations.vehicle_driver ||
+      !this.validations.vehicle_state
+    ) {
+      this.openSnackbar(
+        'El vehículo no está autorizado para generar cuenta diaria.',
+      );
       this.authorizedVehicle = false;
       return;
     }
     this.authorizedVehicle = true;
-    this.openSnackbar('El vehículo está autorizado para generar cuenta diaria.');
+    this.openSnackbar(
+      'El vehículo está autorizado para generar cuenta diaria.',
+    );
   }
 
   resetInfo() {
@@ -314,8 +314,8 @@ export class OperacionesCrearCuentaDiarioConductorComponent implements OnInit {
     this.authorizedVehicle = false;
     this.checkedValidations = false;
     this.selectedDate.setValue(this.maxDate);
-    this.selectedDate.markAsUntouched(); 
-    this.selectedDate.markAsPristine(); 
+    this.selectedDate.markAsUntouched();
+    this.selectedDate.markAsPristine();
   }
 
   resetAutocomplete() {
@@ -332,18 +332,18 @@ export class OperacionesCrearCuentaDiarioConductorComponent implements OnInit {
 
   openConfirmationDialog() {
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.Small);
-    const isXsmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
+    const isXsmallScreen = this.breakpointObserver.isMatched(
+      Breakpoints.XSmall,
+    );
     const dialogWidth = isSmallScreen || isXsmallScreen ? '90vw' : '60%';
 
-    const dialogRef = this.dialog.open(ConfirmActionDialogComponent,
-      {
-        data: {
-          documentName: 'Crear Cuenta de Diario al Conductor',
-          message: `¿Estás seguro de que deseas crear la cuenta diaria para el conductor ${this.driverData.nombre} con el vehículo ${this.vehicleData.numero} - ${this.vehicleData.placa}?`,
-        },
-        width: dialogWidth,
-      }
-    );
+    const dialogRef = this.dialog.open(ConfirmActionDialogComponent, {
+      data: {
+        documentName: 'Crear Cuenta de Diario al Conductor',
+        message: `¿Estás seguro de que deseas crear la cuenta diaria para el conductor ${this.driverData.nombre} con el vehículo ${this.vehicleData.numero} - ${this.vehicleData.placa}?`,
+      },
+      width: dialogWidth,
+    });
 
     dialogRef.afterClosed().subscribe((confirmation: boolean) => {
       if (confirmation) {
@@ -365,7 +365,7 @@ export class OperacionesCrearCuentaDiarioConductorComponent implements OnInit {
       driver_number: this.driverData.codigo,
       bill_date: this.selectedDate.value?.toISOString().split('T')[0],
       description: this.description.value || '',
-      user: user
+      user: user,
     };
 
     this.apiService.postData('operations/new-bill', accountData).subscribe({
@@ -374,9 +374,8 @@ export class OperacionesCrearCuentaDiarioConductorComponent implements OnInit {
         this.closeDialog();
       },
       error: (error: HttpErrorResponse) => {
-        this.openSnackbar('Error al crear la cuenta diaria. Inténtalo de nuevo más tarde.');
         this.isLoadingCreate = false;
-      }
+      },
     });
   }
 

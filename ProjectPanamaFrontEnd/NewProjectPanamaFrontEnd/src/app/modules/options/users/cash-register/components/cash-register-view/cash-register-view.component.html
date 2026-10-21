@@ -1,0 +1,630 @@
+<div class="cr-main-container">
+  <div class="cr-title-container">
+    <h1 class="cr-title">Caja</h1>
+  </div>
+
+  <div class="cr-search-section-wrapper" [formGroup]="searchForm">
+    <div
+      *ngIf="!isLoadingAutocompletes"
+      class="cr-search-controls"
+      [class.cr-search-controls-full]="!hasData"
+    >
+      <mat-form-field
+        class="cr-field-input cr-search-field-custom"
+        [class.cr-search-full-width]="!hasData"
+      >
+        <mat-label>Cédula / Código</mat-label>
+        <mat-icon matPrefix>badge</mat-icon>
+        <input
+          type="text"
+          matInput
+          formControlName="driver"
+          [matAutocomplete]="autoDriver"
+          #triggerDriver="matAutocompleteTrigger"
+          placeholder="Ej. 3720237"
+          (click)="hasData ? clearForm(triggerDriver) : null"
+        />
+        <button
+          *ngIf="searchForm.get('driver')?.value && !hasData"
+          matSuffix
+          mat-icon-button
+          aria-label="Clear"
+          (click)="searchForm.get('driver')?.setValue('')"
+        >
+          <mat-icon>clear</mat-icon>
+        </button>
+        <mat-autocomplete
+          #autoDriver="matAutocomplete"
+          [displayWith]="displayDriver"
+        >
+          <mat-option
+            *ngFor="let option of optionsDrivers | async"
+            [value]="option"
+          >
+            {{ option.cedula }} - {{ option.nombre_conductor }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-form-field
+        class="cr-field-input cr-search-field-custom"
+        [class.cr-search-full-width]="!hasData"
+      >
+        <mat-label>Unidad</mat-label>
+        <mat-icon matPrefix>directions_car</mat-icon>
+        <input
+          type="text"
+          matInput
+          formControlName="vehicle"
+          [matAutocomplete]="autoVehicle"
+          #triggerVehicle="matAutocompleteTrigger"
+          placeholder="Ej. 0363"
+          (click)="hasData ? clearForm(triggerVehicle) : null"
+        />
+        <button
+          *ngIf="searchForm.get('vehicle')?.value && !hasData"
+          matSuffix
+          mat-icon-button
+          aria-label="Clear"
+          (click)="searchForm.get('vehicle')?.setValue('')"
+        >
+          <mat-icon>clear</mat-icon>
+        </button>
+        <mat-autocomplete
+          #autoVehicle="matAutocomplete"
+          [displayWith]="displayVehicle"
+        >
+          <mat-option
+            *ngFor="let option of optionsVehicles | async"
+            [value]="option"
+          >
+            {{ option.unidad }} - {{ option.placa }} - {{ option.nro_cupo }} -
+            {{ option.propietario }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <div class="cr-button-group">
+        <button
+          *ngIf="hasData"
+          mat-flat-button
+          class="cr-button cr-btn-pastel-red"
+          (click)="clearForm()"
+        >
+          <mat-icon>clear</mat-icon> Limpiar
+        </button>
+      </div>
+    </div>
+
+    <button
+      *ngIf="!hasData && !isLoadingAutocompletes"
+      class="cr-bulk-upload-btn"
+      matRipple
+      (click)="openBulkUploadDialog()"
+      [disabled]="isCheckingRecords"
+    >
+      <div class="cr-consult-icon-box cr-bg-orange-soft">
+        <mat-icon *ngIf="!isCheckingRecords" class="cr-text-orange-600"
+          >cloud_upload</mat-icon
+        >
+        <mat-icon *ngIf="isCheckingRecords" class="cr-text-orange-600 spin-icon"
+          >sync</mat-icon
+        >
+      </div>
+      <span class="cr-consult-btn-label">{{
+        isCheckingRecords ? "Verificando..." : "Carga Masiva"
+      }}</span>
+    </button>
+
+    <div
+      *ngIf="hasData && notificationMessage"
+      class="cr-alert-warning mat-elevation-z2"
+    >
+      <mat-icon class="cr-icon-warning">warning</mat-icon>
+      <div class="cr-alert-content">
+        <p class="cr-alert-title">{{ notificationMessage }}</p>
+      </div>
+    </div>
+
+    <div *ngIf="hasData && detailInfo" class="cr-receipt-info mat-elevation-z2">
+      <div class="cr-receipt-col">
+        <p class="cr-receipt-label">Nº Recibo</p>
+        <p class="cr-receipt-value-lg">94827</p>
+      </div>
+      <mat-divider vertical class="cr-receipt-divider"></mat-divider>
+      <div class="cr-receipt-col">
+        <p class="cr-receipt-label">Fecha / Hora</p>
+        <p class="cr-receipt-value-md">{{ closingDateInfo?.date }}</p>
+        <p class="cr-receipt-value-sm">{{ closingDateInfo?.time }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div
+    *ngIf="!hasData && !isLoading && !isLoadingAutocompletes"
+    class="cr-empty-state mat-elevation-z1"
+  >
+    <mat-icon class="cr-empty-icon">manage_search</mat-icon>
+    <h2 class="cr-empty-title">No hay unidad seleccionada</h2>
+    <p class="cr-empty-subtitle">
+      Seleccione un código o número de unidad para cargar los datos del recaudo.
+    </p>
+  </div>
+
+  <div *ngIf="hasData && !isLoading" class="cr-main-grid">
+    <div class="cr-col-left">
+      <div class="mat-elevation-z8 cr-card-container cr-p-4">
+        <table class="cr-info-table">
+          <tbody *ngIf="walletInfo">
+            <tr>
+              <th
+                colspan="2"
+                class="cr-section-header cr-text-green cr-first-header"
+              >
+                FONDOS
+              </th>
+            </tr>
+            <tr>
+              <td class="cr-info-header">Inscripción</td>
+              <td class="cr-info-data cr-text-bold cr-text-green-600">
+                $ {{ walletInfo.funds.registration | number: "1.2-2" }}
+              </td>
+            </tr>
+            <tr>
+              <td class="cr-info-header">Ahorros</td>
+              <td class="cr-info-data cr-text-bold cr-text-green-600">
+                $ {{ walletInfo.funds.savings | number: "1.2-2" }}
+              </td>
+            </tr>
+            <tr class="cr-spacer-row">
+              <td colspan="2"></td>
+            </tr>
+            <tr>
+              <th colspan="2" class="cr-section-header cr-text-red">DEUDAS</th>
+            </tr>
+            <tr>
+              <td class="cr-info-header">Renta Diaria</td>
+              <td class="cr-info-data cr-text-bold cr-text-red-600">
+                $ {{ walletInfo.debts.daily_rent | number: "1.2-2" }}
+              </td>
+            </tr>
+            <tr>
+              <td class="cr-info-header">Siniestros</td>
+              <td class="cr-info-data cr-text-bold cr-text-red-600">
+                $ {{ walletInfo.debts.accidents | number: "1.2-2" }}
+              </td>
+            </tr>
+            <tr>
+              <td class="cr-info-header">Recargos/Vtas</td>
+              <td class="cr-info-data cr-text-bold cr-text-red-600">
+                $ {{ walletInfo.debts.other_debts | number: "1.2-2" }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div
+        class="mat-elevation-z8 cr-card-container cr-no-padding cr-detail-debts-card cr-flex-grow"
+      >
+        <div class="cr-card-header">
+          <span class="cr-card-title">DETALLE DE DEUDAS</span>
+        </div>
+        <div class="cr-table-scroll-container">
+          <table class="cr-details-table">
+            <thead>
+              <tr>
+                <th>FECHA</th>
+                <th>TIPO</th>
+                <th>FACTURA</th>
+                <th class="cr-text-right">SALDO</th>
+              </tr>
+            </thead>
+            <tbody *ngIf="receiptsInfo">
+              <tr *ngFor="let receipt of receiptsInfo.receipts">
+                <td>{{ receipt.date }}</td>
+                <td>{{ receipt.type }}</td>
+                <td>{{ receipt.invoice }}</td>
+                <td class="cr-text-right cr-text-bold">
+                  {{ receipt.amount | number: "1.2-2" }}
+                </td>
+              </tr>
+              <tr *ngIf="receiptsInfo.receipts.length === 0">
+                <td colspan="4" class="cr-text-center cr-p-5 cr-italic">
+                  No hay deudas pendientes
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="cr-detail-footer">
+          <button
+            mat-stroked-button
+            color="primary"
+            class="cr-full-width cr-btn-small"
+          >
+            VER CUOTAS PAGAS ADELANTADAS
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cr-col-center">
+      <div
+        class="mat-elevation-z8 cr-card-container cr-p-5 cr-info-card-wrapper"
+        *ngIf="detailInfo"
+      >
+        <div class="cr-info-accent-line"></div>
+        <div class="cr-info-card-header">
+          <div>
+            <h3 class="cr-operator-name">{{ detailInfo.driver_name }}</h3>
+            <p class="cr-operator-code">
+              Operador: <span>{{ detailInfo.driver_code }}</span>
+            </p>
+          </div>
+          <div class="cr-text-right">
+            <p class="cr-info-label-sm">Fecha Inicio</p>
+            <p class="cr-info-value-md">{{ detailInfo.start_date }}</p>
+          </div>
+        </div>
+
+        <table class="cr-info-table cr-compact-table">
+          <tbody>
+            <tr>
+              <td class="cr-info-header cr-w-25">Tel / Cel:</td>
+              <td class="cr-info-data-left">{{ detailInfo.driver_phone }}</td>
+              <td class="cr-info-header cr-w-25">Central:</td>
+              <td class="cr-info-data-left">{{ detailInfo.central }}</td>
+            </tr>
+            <tr>
+              <td class="cr-info-header">Dirección:</td>
+              <td class="cr-info-data-left" colspan="3">
+                {{ detailInfo.driver_address }}
+              </td>
+            </tr>
+            <tr>
+              <td class="cr-info-header">Propietario:</td>
+              <td class="cr-info-data-left">{{ detailInfo.owner }}</td>
+              <td class="cr-info-header">Fecha Pago:</td>
+              <td class="cr-info-data-left cr-text-bold cr-text-blue-600">
+                {{ detailInfo.payment_form }}
+              </td>
+            </tr>
+            <tr>
+              <td class="cr-info-header">Vehículo:</td>
+              <td class="cr-info-data-left cr-text-bold">
+                {{ detailInfo.vehicle }}
+              </td>
+              <td class="cr-info-header">Placa:</td>
+              <td class="cr-info-data-left">
+                {{ detailInfo.license_plate }}
+                <span class="cr-badge-active">{{
+                  detailInfo.vehicle_state
+                }}</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="cr-info-header">Saldo Panapass:</td>
+              <td class="cr-info-data-left">
+                {{ detailInfo.panapass_balance || "-" }}
+              </td>
+              <td class="cr-info-header">Kilometraje:</td>
+              <td class="cr-info-data-left">
+                {{ detailInfo.mileage | number: "1.2-2" }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="cr-stats-bar">
+          <div class="cr-stat-item">
+            <span class="cr-stat-label">Cuentas:</span>
+            <span class="cr-stat-value">{{
+              detailInfo.accounts.total_accounts
+            }}</span>
+          </div>
+          <div class="cr-stat-item">
+            <span class="cr-stat-label">Pagas:</span>
+            <span class="cr-stat-value cr-text-green-600">{{
+              detailInfo.accounts.delivered_accounts
+            }}</span>
+          </div>
+          <div class="cr-stat-item">
+            <span class="cr-stat-label">Faltan:</span>
+            <span class="cr-stat-value cr-text-red-500">{{
+              detailInfo.accounts.pending_accounts
+            }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="mat-elevation-z8 cr-card-container cr-no-padding cr-payment-form-card cr-flex-grow"
+      >
+        <div class="cr-card-header">
+          <span class="cr-card-title cr-flex-grow">CARGA DE RECAUDO</span>
+          <div class="cr-header-actions">
+            <button
+              mat-icon-button
+              class="cr-btn-header-small"
+              color="primary"
+              matTooltip="Pagos"
+            >
+              <mat-icon>payments</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              class="cr-btn-header-small"
+              color="primary"
+              matTooltip="Siniestros"
+            >
+              <mat-icon>car_crash</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              class="cr-btn-header-small"
+              color="primary"
+              matTooltip="Facturas"
+            >
+              <mat-icon>receipt</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="cr-p-5 cr-flex-grow cr-flex-column">
+          <div class="cr-payment-methods-row">
+            <div class="cr-payment-method-container">
+              <span class="cr-payment-method-label">Forma de Pago</span>
+              <mat-radio-group
+                color="primary"
+                class="cr-radio-group"
+                [(ngModel)]="paymentMethod"
+                (ngModelChange)="onPaymentMethodChange()"
+              >
+                <mat-radio-button value="efectivo">Efectivo</mat-radio-button>
+                <mat-radio-button value="ach">ACH (Trans)</mat-radio-button>
+                <mat-radio-button value="arp">ARP</mat-radio-button>
+                <mat-radio-button value="nequi">Nequi</mat-radio-button>
+                <mat-radio-button value="yappy">Yappy</mat-radio-button>
+              </mat-radio-group>
+            </div>
+            <mat-form-field class="cr-field-input cr-input-km-custom">
+              <mat-label>Km Actual</mat-label>
+              <input
+                matInput
+                type="number"
+                name="currentKm"
+                [(ngModel)]="currentKm"
+                (ngModelChange)="onKmChange($event)"
+                [min]="baseMileage"
+                #kmModel="ngModel"
+              />
+            </mat-form-field>
+          </div>
+
+          <div class="cr-payment-inputs-grid">
+            <mat-form-field class="cr-field-input cr-payment-input">
+              <mat-label>Renta</mat-label>
+              <span matPrefix class="cr-currency-prefix">$</span>
+              <input
+                matInput
+                type="number"
+                [(ngModel)]="rentPayment"
+                (ngModelChange)="calculateTotal()"
+              />
+            </mat-form-field>
+            <mat-form-field class="cr-field-input cr-payment-input">
+              <mat-label>Siniestros</mat-label>
+              <span matPrefix class="cr-currency-prefix">$</span>
+              <input
+                matInput
+                type="number"
+                [(ngModel)]="accidentsPayment"
+                (ngModelChange)="calculateTotal()"
+              />
+            </mat-form-field>
+            <mat-form-field
+              class="cr-field-input cr-payment-input cr-surcharges-field"
+            >
+              <mat-label>Recargos</mat-label>
+              <span matPrefix class="cr-currency-prefix">$</span>
+              <input
+                matInput
+                type="number"
+                [(ngModel)]="surchargesPayment"
+                readonly
+                class="cr-cursor-pointer"
+                (click)="openPaySurchargesDialog()"
+                matTooltip="Pagar recargos"
+              />
+              <button
+                type="button"
+                matSuffix
+                mat-icon-button
+                color="primary"
+                class="cr-btn-add-surcharge"
+                matTooltip="Añadir recargo"
+                (click)="$event.stopPropagation(); openAddSurchargesDialog()"
+              >
+                <mat-icon>add</mat-icon>
+              </button>
+            </mat-form-field>
+            <mat-form-field class="cr-field-input cr-payment-input">
+              <mat-label>Inscripción</mat-label>
+              <span matPrefix class="cr-currency-prefix">$</span>
+              <input
+                matInput
+                type="number"
+                [(ngModel)]="registrationPayment"
+                (ngModelChange)="calculateTotal()"
+              />
+            </mat-form-field>
+            <mat-form-field class="cr-field-input cr-payment-input">
+              <mat-label>Ahorros</mat-label>
+              <span matPrefix class="cr-currency-prefix">$</span>
+              <input
+                matInput
+                type="number"
+                [(ngModel)]="savingsPayment"
+                (ngModelChange)="calculateTotal()"
+              />
+            </mat-form-field>
+          </div>
+
+          <mat-form-field class="cr-full-width cr-field-input cr-textarea-note">
+            <mat-label>Nota de Recaudo</mat-label>
+            <textarea
+              matInput
+              rows="1"
+              placeholder="Observaciones opcionales..."
+            ></textarea>
+          </mat-form-field>
+
+          <div class="cr-form-footer">
+            <div class="cr-total-box">
+              <span class="cr-total-label">Valor Recibido</span>
+              <span class="cr-total-value"
+                >$ {{ totalReceived | number: "1.2-2" }}</span
+              >
+            </div>
+            <div class="cr-action-buttons-inline">
+              <!-- Botón Verificar (Visible cuando NO está verificado) -->
+              <button
+                *ngIf="!isVerified"
+                mat-flat-button
+                class="cr-button cr-btn-pastel-blue"
+                [disabled]="isFormDisabled"
+                [matTooltip]="disabledTooltip"
+                (click)="onAccept()"
+              >
+                <mat-icon *ngIf="!isVerifying">fact_check</mat-icon>
+                <mat-icon class="cr-spin" *ngIf="isVerifying">sync</mat-icon>
+                <span>{{ isVerifying ? "Verificando..." : "Verificar" }}</span>
+              </button>
+
+              <!-- Botón Recaudar (Visible únicamente tras verificar con éxito) -->
+              <button
+                *ngIf="isVerified"
+                mat-flat-button
+                class="cr-button cr-btn-pastel-green"
+                [disabled]="isFormDisabled"
+                [matTooltip]="disabledTooltip"
+                (click)="onCollect()"
+              >
+                <mat-icon *ngIf="!isCollecting">payments</mat-icon>
+                <mat-icon class="cr-spin" *ngIf="isCollecting">sync</mat-icon>
+                <span>{{ isCollecting ? "Recaudando..." : "Recaudar" }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cr-col-right">
+      <div
+        class="mat-elevation-z8 cr-card-container cr-no-padding cr-driver-photo-card"
+      >
+        <div class="cr-card-header">
+          <span class="cr-card-title">FOTO DEL CONDUCTOR</span>
+        </div>
+        <div class="cr-driver-photo-container">
+          <img
+            *ngIf="detailInfo?.driver_photo"
+            [src]="detailInfo?.driver_photo"
+            (load)="isImageLoaded = true"
+            (error)="isImageLoaded = false"
+            [style.display]="isImageLoaded ? 'block' : 'none'"
+            alt="Foto del conductor"
+            class="cr-driver-img"
+          />
+          <mat-icon
+            *ngIf="!detailInfo?.driver_photo || !isImageLoaded"
+            class="cr-default-avatar"
+            >person</mat-icon
+          >
+        </div>
+      </div>
+
+      <div
+        class="mat-elevation-z8 cr-card-container cr-no-padding cr-messages-card"
+      >
+        <div class="cr-card-header">
+          <span class="cr-card-title">MENSAJES</span>
+        </div>
+        <div class="cr-messages-list cr-p-4">
+          <div
+            *ngIf="messages && messages.length === 0"
+            class="cr-message-item cr-text-center cr-italic cr-text-gray-500"
+            style="
+              color: #6b7280;
+              text-align: center;
+              font-style: italic;
+              border-left: none;
+            "
+          >
+            No hay mensajes para mostrar en este momento.
+          </div>
+          <div *ngFor="let msg of messages" class="cr-message-item">
+            {{ msg }}
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="mat-elevation-z8 cr-card-container cr-no-padding cr-consult-card"
+      >
+        <div class="cr-card-header">
+          <span class="cr-card-title">CONSULTAS</span>
+        </div>
+        <div class="cr-p-4">
+          <div class="cr-consult-grid-main">
+            <button
+              class="cr-consult-btn-main"
+              matRipple
+              (click)="openBulkUploadDialog()"
+              [disabled]="isCheckingRecords"
+            >
+              <div class="cr-consult-icon-box cr-bg-orange-soft">
+                <mat-icon *ngIf="!isCheckingRecords" class="cr-text-orange-600"
+                  >cloud_upload</mat-icon
+                >
+                <mat-icon
+                  *ngIf="isCheckingRecords"
+                  class="cr-text-orange-600 spin-icon"
+                  >sync</mat-icon
+                >
+              </div>
+              <span class="cr-consult-btn-label">{{
+                isCheckingRecords ? "Verificando..." : "Carga Masiva"
+              }}</span>
+            </button>
+            <button class="cr-consult-btn-main" matRipple>
+              <div class="cr-consult-icon-box cr-bg-green-soft">
+                <mat-icon class="cr-text-green-600">account_balance</mat-icon>
+              </div>
+              <span class="cr-consult-btn-label">Cuadre Caja</span>
+            </button>
+            <button class="cr-consult-btn-main" matRipple>
+              <div class="cr-consult-icon-box cr-bg-red-soft">
+                <mat-icon class="cr-text-red-600"
+                  >assignment_turned_in</mat-icon
+                >
+              </div>
+              <span class="cr-consult-btn-label">Cierre Caja</span>
+            </button>
+            <button
+              class="cr-consult-btn-main"
+              matRipple
+              (click)="openQueriesDialog()"
+            >
+              <div class="cr-consult-icon-box cr-bg-indigo-soft">
+                <mat-icon class="cr-text-indigo-600">apps</mat-icon>
+              </div>
+              <span class="cr-consult-btn-label">Ver más</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

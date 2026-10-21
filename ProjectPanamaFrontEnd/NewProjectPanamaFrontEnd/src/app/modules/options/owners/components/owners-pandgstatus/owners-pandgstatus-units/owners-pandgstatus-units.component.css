@@ -1,0 +1,285 @@
+.modal {
+  overflow: auto;
+  display: block;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 10% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 60%;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.close {
+  margin-bottom: 0;
+  color: #aaa;
+  /* float: right; */
+  display: flex;
+  font-size: 28px;
+  font-weight: bold;
+  justify-content: flex-end;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.title-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 0;
+  font-size: 25px;
+  margin-bottom: 10px;
+}
+
+.loading-container {
+  width: 100%;
+}
+
+form {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; 
+  align-items: center;
+}
+
+.subtitle-container {
+  font-weight: normal;
+  font-size: 18px;
+  margin: 0;
+}
+
+.select-vehicle {
+  margin: 10px;
+  box-sizing: border-box;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex-direction: column;
+  width: 80%;
+}
+
+.group-container {
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: row;
+  flex-shrink: 0;
+  margin-bottom: 10px;
+}
+
+.last-form-group {
+  margin-bottom: 0;
+}
+
+.form-group label {
+  padding-right: 10px;
+  display: flex;
+  align-items: center;
+  font-size: 14px
+}
+
+.form-group input {
+  padding: 8px;
+  background: #f9f9f9;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  color: rgb(75, 75, 75);
+  font-size: 13px;
+}
+
+.form-group input:enabled {
+  background: #ffffff;
+  color: black;
+}
+
+.options-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.option {
+  width: 40vh;
+  height: 7vh;
+  margin: 10px;
+  box-sizing: border-box;
+  background: #ffffff;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-decoration: none;
+  color: black;
+  font-size: 16px;
+  position: relative;  /* Permite posicionamiento absoluto de elementos hijos */
+}
+
+.option span.material-symbols-outlined {
+  margin-right: auto;  /* Empuja el icono a la izquierda */
+  font-size: 3.5vh;
+}
+
+.option-text {
+  flex-grow: 1;
+  text-align: center;  /* Asegura que el texto esté centrado */
+}
+
+.option:hover {
+  background: #bcd1ec;
+}
+
+.option:disabled {
+  background: #e0e0e0;
+  color: #888;
+  cursor: not-allowed;
+  border-color: #aaa;
+}
+
+.back {
+  background: #ffe9e9;
+}
+
+.back:hover {
+  background: #ffcdcd; 
+}
+
+.selects-container {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.cuadro-seleccion {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+  min-height: 20vh;
+  max-height: 25vh;
+  width: 90%;
+  border-radius: 10px;
+  overflow-y: scroll;
+  height: auto;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.cuadro-seleccion .checkbox-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: flex-start; /* Alinea el contenido al inicio (izquierda) */
+  padding: 5px 0; /* Añadir algo de espaciado vertical */
+}
+
+.cuadro-seleccion .checkbox-container:hover {
+  background: #bcd1ec;
+}
+
+.cuadro-seleccion label {
+  padding-left: 5px;
+}
+
+@media (max-width: 1024px) {
+  .modal-content {
+    width: 70%;
+  }
+
+  .title-container {
+    font-size: 25px;
+  }
+
+  .subtitle-container {
+    font-size: 20px;
+  }
+
+  .option {
+    height: 5vh;
+  }
+
+}
+
+@media (max-width: 768px) {
+  .modal-content {
+    width: 80%;
+  }
+
+  .title-container {
+    font-size: 25px;
+    margin-bottom: 8px;
+  }
+
+  .select-vehicle {
+    width: 100%;
+  }
+
+  .group-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .form-group input {
+    width: 100%;
+  }
+
+  .option {
+    height: 7vh;
+  }
+
+}
+
+@media (max-width: 480px) {
+  .title-container {
+    font-size: 20px;
+  }
+
+  .subtitle-container {
+    font-size: 16px;
+  }
+
+  .select-vehicle {
+    font-size: 14px;
+  }
+
+  .option {
+    width: 45vh;
+  }
+
+  .option-text {
+    font-size: 14px;
+  }
+}

@@ -1,0 +1,19 @@
+<h2 mat-dialog-title>Añadir Nota de Retiro</h2>
+
+<mat-dialog-content>
+  <p>Por favor, ingrese una nota sobre el retiro del vehículo.</p>
+  <form [formGroup]="noteForm">
+    <mat-form-field appearance="fill" class="full-width">
+      <mat-label>Nota de retiro</mat-label>
+      <textarea matInput formControlName="note" rows="4" placeholder="Escriba aquí los detalles..."></textarea>
+      <mat-error *ngIf="noteForm.get('note')?.hasError('required')">
+        La nota es requerida.
+      </mat-error>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancelar</button>
+  <button mat-button color="primary" [disabled]="noteForm.invalid" (click)="onConfirm()">Aceptar</button>
+</mat-dialog-actions>

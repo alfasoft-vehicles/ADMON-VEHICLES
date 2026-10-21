@@ -4,14 +4,14 @@
   <div class="container">
     <div class="carousel-container">
       <div class="carousel">
-        <div class="left-container"  *ngIf="!ownersFeespaidVisible && !ownersStatusfleetdetailVisible && !ownersPurchasevalueandpiqueraVisible && !ownersRelationshiprevenuesVisible && !ownersRelationshiprevenuesGeneralVisible && !ownersPartsrelationshipVisible && !ownersPandgstatusVisible  && !ownersStatusfleetsummaryVisible && !infoCompanyVisible">
+        <div class="left-container"  *ngIf="!ownersFeespaidVisible && !ownersStatusfleetdetailVisible && !ownersPurchasevalueandpiqueraVisible && !ownersRelationshiprevenuesVisible && !ownersRelationshiprevenuesGeneralVisible && !ownersPartsrelationshipVisible && !ownersPandgstatusVisible && !ownersPandgstatusGeneralVisible && !ownersStatusfleetsummaryVisible && !infoCompanyVisible">
           <a class="alternate-media" (click)="toggleMediaType()">
             <img [src]="this.rightIcon" class="media-icon">
           </a>
         </div>
         <img class="media-container" *ngIf="showImages" [src]="images[currentImageIndex]" [style.opacity]="showImage ? '1' : '0'">
         <video #videoPlayer *ngIf="!showImages" [src]="currentVideo" (ended)="onVideoEnded()" autoplay></video>
-        <div class="right-container"  *ngIf="!ownersFeespaidVisible && !ownersStatusfleetdetailVisible && !ownersPurchasevalueandpiqueraVisible && !ownersRelationshiprevenuesVisible && !ownersRelationshiprevenuesGeneralVisible && !ownersPartsrelationshipVisible && !ownersPandgstatusVisible && !ownersStatusfleetsummaryVisible && !infoCompanyVisible">
+        <div class="right-container"  *ngIf="!ownersFeespaidVisible && !ownersStatusfleetdetailVisible && !ownersPurchasevalueandpiqueraVisible && !ownersRelationshiprevenuesVisible && !ownersRelationshiprevenuesGeneralVisible && !ownersPartsrelationshipVisible && !ownersPandgstatusVisible && !ownersPandgstatusGeneralVisible && !ownersStatusfleetsummaryVisible && !infoCompanyVisible">
           <a class="alternate-media" (click)="toggleMediaType()">
             <img [src]="this.rightIcon" class="media-icon">
           </a>
@@ -25,12 +25,6 @@
           <p class="option-text">{{ option.name }}</p>
         </button>
       </ng-container>
-      <button class="option" type="button" [routerLink]="['/home/users']" *ngIf="this.isAdmin">
-        <span class="material-symbols-outlined" translate="no">
-          home
-        </span>
-        <p class="option-text">Inicio</p>
-      </button>
     </div>
     <!-- <div class="options-container">
       <ul>
@@ -76,11 +70,15 @@
   (close)="hideModal()"
 ></app-owners-partsrelationship>
 
-<app-owners-pandgstatus
+<app-owners-pandgstatus-units
   *ngIf="ownersPandgstatusVisible"
   (close)="hideModal()"
-></app-owners-pandgstatus>
+></app-owners-pandgstatus-units>
 
+<app-owners-pandgstatus-general
+  *ngIf="ownersPandgstatusGeneralVisible"
+  (close)="hideModal()"
+></app-owners-pandgstatus-general>
 
 <app-owners-feespaid
   *ngIf="ownersFeespaidVisible" 

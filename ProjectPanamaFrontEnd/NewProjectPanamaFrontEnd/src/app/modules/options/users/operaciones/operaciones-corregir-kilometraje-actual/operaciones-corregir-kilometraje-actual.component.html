@@ -1,9 +1,7 @@
 <h2 mat-dialog-title>Corregir Kilometraje Actual al Vehículo</h2>
 <mat-divider></mat-divider>
 <mat-dialog-content *ngIf="isLoadingVehicles || isLoadingChange">
-  <mat-progress-bar
-    mode="indeterminate"
-  ></mat-progress-bar>
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
 </mat-dialog-content>
 <mat-dialog-content
   class="scrollable-content"
@@ -28,7 +26,8 @@
           *ngFor="let option of filteredOptions | async"
           [value]="option.unidad"
         >
-          {{ option.unidad }} - {{ option.placa }}
+          {{ option.unidad }} - {{ option.placa }} - {{ option.nro_cupo }} -
+          {{ option.propietario }}
         </mat-option>
       </mat-autocomplete>
     </mat-form-field>
@@ -130,14 +129,18 @@
       </mat-form-field>
 
       <mat-error
-        *ngIf="infoChangeMileage.get('newMileage')?.hasError('required') && infoChangeMileage.get('newMileage')?.touched"
+        *ngIf="
+          infoChangeMileage.get('newMileage')?.hasError('required') &&
+          infoChangeMileage.get('newMileage')?.touched
+        "
       >
         El kilometraje actual es obligatorio.
       </mat-error>
       <mat-error
         *ngIf="
           infoChangeMileage.hasError('sameAsOld') &&
-          !infoChangeMileage.get('newMileage')?.hasError('required') && infoChangeMileage.get('newMileage')?.touched
+          !infoChangeMileage.get('newMileage')?.hasError('required') &&
+          infoChangeMileage.get('newMileage')?.touched
         "
       >
         El nuevo kilometraje no puede ser igual al actual.
@@ -160,7 +163,12 @@
   <button
     mat-button
     cdkFocusInitial
-    [disabled]="!selectedVehicle || isLoadingVehicleInfo || isLoadingChange || infoChangeMileage.invalid"
+    [disabled]="
+      !selectedVehicle ||
+      isLoadingVehicleInfo ||
+      isLoadingChange ||
+      infoChangeMileage.invalid
+    "
     (click)="openConfirmationDialog()"
   >
     Confirmar

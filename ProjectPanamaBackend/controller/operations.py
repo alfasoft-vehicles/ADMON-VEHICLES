@@ -9,18 +9,26 @@ from models.centrales import Centrales
 from models.estadocivil import EstadoCivil
 from models.cartera import Cartera
 from models.patios import Patios
+from models.itemscxp import ItemsCXP
+from models.permisosusuario import PermisosUsuario
+from models.cajarecaudos import CajaRecaudos
 from schemas.operations import *
 from fastapi.encoders import jsonable_encoder
 from utils.reports import *
 from utils.docx import *
 from utils.pdf import *
-from fastapi import BackgroundTasks
+from utils.images import *
+from utils.files import *
+from fastapi import BackgroundTasks, UploadFile, File
 import tempfile
 import os
-from docxtpl import DocxTemplate
+from docxtpl import DocxTemplate, InlineImage
+from docx.shared import Inches
 import pytz
 from num2words import num2words
 import locale
+import platform
+from decimal import Decimal
 
 #! Verificar si las importaciones son necesarias
 from sqlalchemy.orm import aliased
@@ -30,9 +38,22 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import FileResponse
 import jinja2
 from utils.pdf import html2pdf
+from utils.text import clean_text
+from utils.panapass import get_txt_file, search_value_in_txt
 from sqlalchemy import func
+from dotenv import load_dotenv
+import shutil
+import base64
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
-async def get_vehicle_operation(vehicle_number: str):
+load_dotenv()
+
+docs_path = os.getenv('DOCS_PATH')
+images_path = os.getenv('DIRECTORY_IMG')
+PDF_THREAD_POOL = ThreadPoolExecutor(max_workers=2)
+
+async def get_vehicle_operation(company_code: str, vehicle_number: str):
   db = session()
   try:
     vehicle_operations = db.query(
@@ -48,11 +69,12 @@ async def get_vehicle_operation(vehicle_number: str):
     ).join(
       Propietarios, Vehiculos.PROPI_IDEN == Propietarios.CODIGO
     ).filter(
+      Vehiculos.EMPRESA == company_code,
       Vehiculos.NUMERO == vehicle_number
     ).first()
 
     if not vehicle_operations:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
 
     outstanding_balance = db.query(
       func.sum(Cartera.SALDO).label('outstanding balance')
@@ -88,7 +110,7 @@ async def get_vehicle_operation(vehicle_number: str):
 
 #-----------------------------------------------------------------------------------------------
 
-async def get_driver_operation(driver_number: str):
+async def get_driver_operation(company_code: str, driver_number: str):
   db = session()
   try:
     driver_operations = db.query(
@@ -96,11 +118,12 @@ async def get_driver_operation(driver_number: str):
       Conductores.CELULAR, Conductores.DIRECCION, Conductores.LICEN_NRO, 
       Conductores.LICEN_VCE, Conductores.UND_NRO, Conductores.UND_PRE, Conductores.ESTADO
     ).filter(
+      Conductores.EMPRESA == company_code,
       Conductores.CODIGO == driver_number
     ).first()
 
     if not driver_operations:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
     
     driver = {
       'codigo': driver_number,
@@ -125,23 +148,23 @@ async def get_driver_operation(driver_number: str):
 
 #-----------------------------------------------------------------------------------------------
 
-async def delivery_vehicle_driver(data: DeliveryVehicleDriver):
+async def delivery_vehicle_driver(company_code: str, data: DeliveryVehicleDriver):
   db = session()
   try:
-    vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == data.vehicle_number).first()
+    vehicle = db.query(Vehiculos).filter(Vehiculos.EMPRESA == company_code, Vehiculos.NUMERO == data.vehicle_number).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
-    driver = db.query(Conductores).filter(Conductores.CODIGO == data.driver_number).first()
+    driver = db.query(Conductores).filter(Conductores.EMPRESA == company_code, Conductores.CODIGO == data.driver_number).first()
     if not driver:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
     
     if(driver.ESTADO != '1' and 
        driver.UND_NRO != '' and 
        vehicle.ESTADO != '06' and 
        vehicle.CON_CUPO != 1 and
        vehicle.CONDUCTOR != ''):
-      return JSONResponse(content={"message": "Driver already has a vehicle assigned"}, status_code=400)
+      return JSONResponse(content={"message": "El conductor ya tiene un vehículo asignado"}, status_code=400)
     
     vehicle.CONDUCTOR = driver.CODIGO
     vehicle.ESTADO = '01'
@@ -151,7 +174,7 @@ async def delivery_vehicle_driver(data: DeliveryVehicleDriver):
 
     db.commit()
 
-    return JSONResponse(content={"message": "Vehicle delivered successfully"}, status_code=200)
+    return JSONResponse(content={"message": "Vehículo entregado con éxito"}, status_code=200)
   
   except Exception as e:
     db.rollback()
@@ -167,25 +190,50 @@ async def vehicle_delivery_info(vehicle_number: str):
   try:
     vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == vehicle_number).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     driver = db.query(Conductores).filter(Conductores.CODIGO == vehicle.CONDUCTOR).first()
     if not driver:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
     
     owner = db.query(Propietarios).filter(Propietarios.CODIGO == vehicle.PROPI_IDEN).first()
     if not owner:
-      return JSONResponse(content={"message": "Owner not found"}, status_code=404)
+      return JSONResponse(content={"message": "Propietario no encontrado"}, status_code=404)
     
     central = db.query(Centrales).filter(Centrales.CODIGO == vehicle.CENTRAL, Centrales.EMPRESA == vehicle.EMPRESA).first()
     if not central:
-      return JSONResponse(content={"message": "Central not found"}, status_code=404)
+      return JSONResponse(content={"message": "Central no encontrada"}, status_code=404)
     
     state = db.query(Estados).filter(Estados.CODIGO == vehicle.ESTADO, Estados.EMPRESA == vehicle.EMPRESA).first()
+
+    pdf_path = os.path.join(docs_path, 'conductores', vehicle.EMPRESA, driver.CODIGO, "docu07.pdf")
+
+    base_images_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO)
+    photo_path = os.path.join(base_images_path, f"{driver.CODIGO}_foto.png")
+    fingerprint_path = os.path.join(base_images_path, f"{driver.CODIGO}_huella.png")
+    signature_path = os.path.join(base_images_path, f"{driver.CODIGO}_firma.png")
+
+    photo_exists = 1
+    signature_exists = 1
+    adverte = []
+    # Verificar existencia de la foto del conductor
+    if not os.path.exists(photo_path):
+      photo_exists = 0
+      adverte.append('No se ha encontrado la foto del conductor')
+    # Verificar existencia de la huella del conductor
+    if not os.path.exists(fingerprint_path):
+      adverte.append('No se ha encontrado la huella del conductor')
+    if not os.path.exists(signature_path):
+      signature_exists = 0
+      adverte.append('No se ha encontrado la firma del conductor')
     
     wReg = 0
+    #Verificar existencia del contrato
+    if os.path.exists(pdf_path):
+      wReg = 1
+      message = 'Ya se ha generado anteriormente un contrato'
     # Verificar datos del vehiculo
-    if vehicle.FEC_CONTRA is None or vehicle.FEC_CONTRA == '' or vehicle.FEC_CONTRA == '0000-00-00':
+    elif vehicle.FEC_CONTRA is None or vehicle.FEC_CONTRA == '' or vehicle.FEC_CONTRA == '0000-00-00':
       wReg = 1
       message = 'VEHICULO no Tiene Fecha de Contrato'
     elif float(vehicle.NROENTREGA) == 0:
@@ -316,7 +364,10 @@ async def vehicle_delivery_info(vehicle_number: str):
       'conductor_direccion': driver.DIRECCION,
       'fecha_contrato': vehicle.FEC_CONTRA.strftime('%d/%m/%Y') if vehicle.FEC_CONTRA and hasattr(vehicle.FEC_CONTRA, 'strftime') else None,
       'permitido': wReg,
+      'foto_conductor': photo_exists,
+      'firma_conductor': signature_exists,
       'mensaje': message if wReg == 1 else '',
+      'advertencia': adverte
     }
 
     return JSONResponse(content=jsonable_encoder(delivery_info), status_code=200)
@@ -329,37 +380,47 @@ async def vehicle_delivery_info(vehicle_number: str):
 
 #-----------------------------------------------------------------------------------------------
 
-base_dir = os.path.dirname(os.path.dirname(__file__))
-docx_template_path = os.path.join(base_dir, 'documents', 'ContratoOriginal.docx')
+docx_template_path_con_cupo = os.path.join(docs_path, 'contratos', 'ContratoOriginal_ConCupo_0010.docx')
+docx_template_path_sin_cupo = os.path.join(docs_path, 'contratos', 'ContratoOriginal_SinCupo_0010.docx')
 
-locale.setlocale(locale.LC_TIME, "es_ES.utf8")
+if platform.system() == "Darwin":
+  locale.setlocale(locale.LC_TIME, "es_ES.UTF-8")
+else:
+  locale.setlocale(locale.LC_TIME, "es_ES.utf8")
 
-async def generate_contract(vehicle_number: str):
+async def generate_contract(vehicle_number: str, data: GenerateContractData):
   db = session()
   try:
-    vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == vehicle_number).first()
+    vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == vehicle_number, Vehiculos.EMPRESA == data.company_code).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     driver = db.query(Conductores).filter(Conductores.CODIGO == vehicle.CONDUCTOR).first()
     if not driver:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
     
     owner = db.query(Propietarios).filter(Propietarios.CODIGO == vehicle.PROPI_IDEN).first()
     if not owner:
-      return JSONResponse(content={"message": "Owner not found"}, status_code=404)
+      return JSONResponse(content={"message": "Propietario no encontrado"}, status_code=404)
     
     central = db.query(Centrales).filter(Centrales.CODIGO == vehicle.CENTRAL, Centrales.EMPRESA == Vehiculos.EMPRESA).first()
     if not central:
-      return JSONResponse(content={"message": "Central not found"}, status_code=404)
+      return JSONResponse(content={"message": "Central no encontrada"}, status_code=404)
     
     civil_status = db.query(EstadoCivil).filter(EstadoCivil.CODIGO == driver.ESTA_CIVIL).first()
     if not civil_status:
-      return JSONResponse(content={"message": "Civil status not found"}, status_code=404)
+      return JSONResponse(content={"message": "Estado civil no encontrado"}, status_code=404)
+    
+    base_path = os.path.join(docs_path, 'conductores', vehicle.EMPRESA, driver.CODIGO)
+    contract_path = os.path.join(base_path, "docu07.pdf")
     
     wReg = 0
+    #Verificar existencia del contrato
+    if os.path.exists(contract_path):
+      wReg = 1
+      message = 'Ya se ha generado anteriormente un contrato'
     # Verificar datos del vehiculo
-    if float(vehicle.NROENTREGA) == 0:
+    elif float(vehicle.NROENTREGA) == 0:
       wReg = 1
       message = 'VEHICULO no Tiene Nº de Cuotas'
     elif Vehiculos.VLR_DEPOSI == 0:
@@ -398,9 +459,6 @@ async def generate_contract(vehicle_number: str):
     elif not vehicle.PLACA:
       wReg = 1
       message = 'VEHICULO no Tiene Nº de Placa'
-    elif vehicle.CON_CUPO == '0':
-      wReg = 1
-      message = 'VEHICULO no Tiene marca Con Cupo o Sin Cupo'
     # Verificar datos del propietario
     elif not owner.REPRESENTA:
       wReg = 1
@@ -471,34 +529,19 @@ async def generate_contract(vehicle_number: str):
     if wReg == 1:
       return JSONResponse(content={"message": message}, status_code=400)
     
+    if vehicle.CON_CUPO == '1':
+      docx_template_path = docx_template_path_con_cupo
+    else:
+      docx_template_path = docx_template_path_sin_cupo
+    
     zMsg = num2words(float(vehicle.NROENTREGA), lang='es')
 
     xMsg = "{:,.2f}".format(vehicle.CTA_RENTA + vehicle.CTA_SINIES)
-    xMsg1 = "{:,.2f}".format(vehicle.CTA_RENTA)
-    xMsg2 = "{:,.2f}".format(vehicle.CTA_SINIES)
 
     wMsg = num2words(float(vehicle.CTA_RENTA + vehicle.CTA_SINIES), lang='es')
-    wMsg1 = num2words(float(vehicle.CTA_RENTA), lang='es')
-    wMsg2 = num2words(float(vehicle.CTA_SINIES), lang='es')
 
     vDepGar = vehicle.VLR_DEPOSI
     wDepGar = num2words(int(vDepGar), lang='es')
-    
-    if vehicle.NUEVOUSADO == '1':
-      wTipAut = 'Nuevo'
-    elif vehicle.NUEVOUSADO == '2':
-      wTipAut = 'Usado'
-    else:
-      wTipAut = '**********'
-
-    if vehicle.CON_CUPO == '1':
-      Mensaje1 = 'El plan de financiamiento implícito en este contrato otorga el beneficio al ARRENDATARIO que en su favor se haga la '
-      Mensaje2 = 'transferencia del Certificado de operación, siempre y cuando éste cumpla con todos los presupuestos para el ' 
-      Mensaje3 = 'traspaso por  tanto,  no debe entender el ARRENDATARIO que con el pago de cuotas de financiamientos o repuestos se '
-      Mensaje4 = 'computan abonos al valor que representa el certificado de operación, dado a que,  este beneficio es otorgado por la '
-      Mensaje5 = 'naturaleza del contrato solo en casos de cumplimiento total y efectivo del mismo.'
-    else:
-      Mensaje1, Mensaje2, Mensaje3, Mensaje4, Mensaje5 = '', '', '', '', ''
 
     panama_timezone = pytz.timezone('America/Panama')
     now_in_panama = datetime.now(panama_timezone)
@@ -508,74 +551,73 @@ async def generate_contract(vehicle_number: str):
     n_year = num2words(int(year), lang='es')
     n_month = now_in_panama.strftime("%B")
     n_day = num2words(int(day), lang='es')
+
+    os.makedirs(base_path, exist_ok=True)
+
+    signature_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_firma.png")
+    photo_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_foto.png")
+
+    if data.signature_base64:
+      signature_image_data = decode_image(data.signature_base64)
+      with open(signature_path, "wb") as f:
+        f.write(signature_image_data)
+
+    if data.photo_base64:
+      photo_image_data = decode_image(data.photo_base64)
+      with open(photo_path, "wb") as f:
+        f.write(photo_image_data)
+
+    representative_signature_path = os.path.join(images_path, "empresas", vehicle.EMPRESA, f"Firma_{owner.REP_NUMERO}.png")
+
+    fingerprint_path = os.path.join(images_path, "conductores", vehicle.EMPRESA, driver.CODIGO, f"{driver.CODIGO}_huella.png")
+
+    current_docx_path = docx_template_path
+    temp_docx_fd, temp_docx_path = tempfile.mkstemp(suffix=".docx")
+    os.close(temp_docx_fd)
+    
+    doc = DocxTemplate(current_docx_path)
     
     data = {
       'Representa': owner.REPRESENTA,
-      'Rep_sexo': owner.REP_SEXO,
-      'Rep_estado': owner.REP_ESTADO,
-      'Rep_tipdoc': owner.REP_TIPDOC,
       'Rep_numero': owner.REP_NUMERO,
       'Empresa': owner.RAZONSOCIA,
-      'Ficha': owner.FICHA,
-      'Documento': owner.DOCUMENTO,
-      'Rep_admon': owner.REP_ADMON,
+      'Diremp': owner.DIRECCION,
       'LimNorte': central.LIMI_NORTE,
       'LimSur': central.LIMI_SUR,
       'LimEste': central.LIMI_ESTE,
       'LimOeste': central.LIMI_OESTE,
-      'Operador': driver.CODIGO,
+      'xOpe': driver.CODIGO,
       'Con_sexo': 'varón' if driver.SEXO == '1' else 'mujer',
-      'Con_estado': civil_status.NOMBRE.lower(),
       'Nombre': driver.NOMBRE,
       'Cedula': str(driver.NIT),
-      'Codigo': driver.CODIGO,
       'Direccion': driver.DIRECCION,
       'Telefono': driver.TELEFONO + ' ' + driver.CELULAR,
-      'NomRecomen': driver.RECOME_NOM,
-      'CedRecom': driver.RECOME_CED,
       'laCuota': zMsg,
       'Cuotas': str(vehicle.NROENTREGA),
-      'Puertas': vehicle.PUERTAS,
-      'Capacidad': vehicle.CAPACIDAD,
       'Marca': vehicle.NOMMARCA,
       'Linea': vehicle.LINEA,
       'Ano': vehicle.MODELO,
       'Chasis': vehicle.CHASISNRO,
       'Motor': vehicle.MOTORNRO,
-      'PanaPass': vehicle.PANAPASSNU,
+      'NroPana': vehicle.PANAPASSNU,
       'laSuma': wMsg,
-      'laSuma1': wMsg1,
-      'laSuma2': wMsg2,
       'elValor': xMsg,
-      'elValor1': xMsg1,
-      'elValor2': xMsg2,
       'Unidad': vehicle.NUMERO,
       'Placa': vehicle.PLACA,
-      'NroCupo': vehicle.NRO_CUPO,
-      'ConCupo': 'Con Cupo' if vehicle.CON_CUPO == '1' else 'Sin certificado de operación',
       'wDepGar': wDepGar,
       'vDepGar': vDepGar,
-      'wTipAut': wTipAut,
-      'Mensaje1': Mensaje1,
-      'Mensaje2': Mensaje2,
-      'Mensaje3': Mensaje3,
-      'Mensaje4': Mensaje4,
-      'Mensaje5': Mensaje5,
       'fAno': year,
       'fMes': month,
       'fDia': day,
       'nAno': n_year,
       'nMes': n_month,
       'nDia': n_day,
+      'Firma': InlineImage(doc, signature_path, width=Inches(2)) if os.path.exists(signature_path) else '',
+      'FirmaRepresenta': InlineImage(doc, representative_signature_path, width=Inches(2)) if os.path.exists(representative_signature_path) else '',
+      'Foto': InlineImage(doc, photo_path, width=Inches(3)) if os.path.exists(photo_path) else '',
+      'Huella': InlineImage(doc, fingerprint_path, width=Inches(1)) if os.path.exists(fingerprint_path) else '',
     }
     
-    current_docx_path = docx_template_path
-
-    temp_docx_fd, temp_docx_path = tempfile.mkstemp(suffix=".docx")
-    os.close(temp_docx_fd)
-
-    #doc = Document(current_docx_path)
-    doc = DocxTemplate(current_docx_path)
     doc.render(data)
 
     #replace_text_in_docx_robust(doc, data) ##
@@ -587,6 +629,10 @@ async def generate_contract(vehicle_number: str):
     temp_pdf_path = temp_docx_path.replace('.docx', '.pdf')
     if not os.path.exists(temp_pdf_path):
       raise FileNotFoundError(f"El archivo PDF no se generó correctamente: {temp_pdf_path}")
+
+    final_pdf_path = os.path.join(base_path, "docu07.pdf")
+    final_pdf_path = final_pdf_path.replace('\\', '/')
+    shutil.copy(temp_pdf_path, final_pdf_path)
 
     os.remove(temp_docx_path)
 
@@ -736,6 +782,7 @@ async def new_bill(bill_data: BillInfo):
 
     db.add(new_bill)
     db.commit()
+
     return JSONResponse(content={"message": "Cuenta creada con éxito"}, status_code=201)
   except Exception as e:
     db.rollback()
@@ -750,11 +797,11 @@ async def change_yard(data: ChangeYard):
   try:
     vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == data.vehicle_number, Vehiculos.EMPRESA == data.company_code).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     yard = db.query(Patios).filter(Patios.CODIGO == data.yard_code, Patios.EMPRESA == data.company_code).first()
     if not yard:
-      return JSONResponse(content={"message": "Yard not found"}, status_code=404)
+      return JSONResponse(content={"message": "Patio no encontrado"}, status_code=404)
 
     vehicle.PATIO = data.yard_code
     vehicle.NOMPATIO = yard.NOMBRE
@@ -776,15 +823,15 @@ async def change_vehicle_state(data: ChangeVehicleState):
   try:
     vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == data.vehicle_number, Vehiculos.EMPRESA == data.company_code).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     state = db.query(Estados).filter(Estados.CODIGO == data.state_code, Estados.EMPRESA == data.company_code).first()
     if not state:
-      return JSONResponse(content={"message": "State not found"}, status_code=404)
+      return JSONResponse(content={"message": "Estado no encontrado"}, status_code=404)
     
     yard = db.query(Patios).filter(Patios.CODIGO == data.yard_code, Patios.EMPRESA == data.company_code).first()
     if not yard:
-      return JSONResponse(content={"message": "Yard not found"}, status_code=404)
+      return JSONResponse(content={"message": "Patio no encontrado"}, status_code=404)
 
     vehicle.ESTADO = data.state_code
     vehicle.ABREVIADO = state.ABREVIADO
@@ -809,7 +856,7 @@ async def vehicle_mileage(company_code: str, vehicle_number: str):
   try:
     vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == vehicle_number, Vehiculos.EMPRESA == company_code).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     mileage = {
       'mileage': vehicle.KILOMETRAJ
@@ -829,7 +876,7 @@ async def update_mileage(data: VehicleMileage):
   try:
     vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == data.vehicle_number, Vehiculos.EMPRESA == data.company_code).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     vehicle.KILO_ANTES = vehicle.KILOMETRAJ
     vehicle.KILOMETRAJ = data.mileage
@@ -852,6 +899,8 @@ async def loan_validation(company_code: str, vehicle_number: str):
     if not vehicle:
       return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
+    vehicle_driver = db.query(Conductores).filter(Conductores.CODIGO == vehicle.CONDUCTOR, Conductores.EMPRESA == company_code).first()
+    
     state = 0
 
     if vehicle.ESTADO == '01' or vehicle.ESTADO == '11' or vehicle.ESTADO == '12':
@@ -862,9 +911,14 @@ async def loan_validation(company_code: str, vehicle_number: str):
     if vehicle.CONDUCTOR and vehicle.CONDUCTOR != '':
       driver = 1
 
+    loaned = 0
+    if vehicle_driver.UND_PRE and vehicle_driver.UND_PRE != '':
+      loaned = 1
+
     response = {
       "state": state,
       "driver": driver,
+      "loaned_unit": loaned
     }
 
     return JSONResponse(content=response, status_code=200)
@@ -912,6 +966,9 @@ async def loan_vehicle(data: LoanVehicle):
     driver = db.query(Conductores).filter(Conductores.CODIGO == original_vehicle.CONDUCTOR, Conductores.EMPRESA == data.company_code).first()
     if not driver:
       return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
+    
+    if driver.UND_PRE and driver.UND_PRE != '':
+      return JSONResponse(content={"message": "Conductor ya tiene un vehículo prestado"}, status_code=400)
 
     panama_timezone = pytz.timezone('America/Panama')
     now_in_panama = datetime.now(panama_timezone)
@@ -1017,6 +1074,518 @@ async def return_vehicle(data: ReturnVehicle):
     db.commit()
 
     return JSONResponse(content={"message": "Devolución de vehículo realizada con éxito"}, status_code=200)
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
+async def remove_driver(company_code: str, vehicle_number: str, driver_number: str):
+  db = session()
+  try:
+    debts = (db.query(Cartera.TIPO, func.sum(Cartera.SALDO).label('total_saldo')).filter(
+                Cartera.EMPRESA == company_code,
+                Cartera.UNIDAD == vehicle_number,
+                Cartera.CLIENTE == driver_number,
+                Cartera.TIPO.in_(['01', '10', '11', '12'])
+              ).group_by(Cartera.TIPO).all())
+    
+    debt_map = {debt.TIPO: debt.total_saldo for debt in debts}
+
+    registration = debt_map.get('01', 0)
+    daily_rent = debt_map.get('10', 0)
+    accidents = debt_map.get('11', 0)
+    other_debts = debt_map.get('12', 0)
+
+    txt_file_path = get_txt_file(company_code)
+    if txt_file_path:
+      panapass_value = Decimal(search_value_in_txt('Unidad', vehicle_number, 'Saldo Cuenta PanaPass', txt_file_path))
+    else:
+      panapass_value = 0
+
+    panapass_debt = abs(panapass_value) if panapass_value < 0 else 0
+    
+    total_debt = daily_rent + accidents + other_debts + panapass_debt
+
+    balance = registration - total_debt
+
+    owed_to_driver = 0
+    owed_by_driver = 0
+
+    if balance > 0:
+      owed_to_driver = balance
+    else:
+      owed_by_driver = abs(balance)
+
+    response = {
+      "registration": registration,
+      "daily_rent": daily_rent,
+      "accidents": accidents,
+      "other_debts": other_debts,
+      "panapass": panapass_debt,
+      "total_debt": total_debt,
+      "owed_to_driver": owed_to_driver,
+      "owed_by_driver": owed_by_driver
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
+async def items_cxp(company_code: str):
+  db = session()
+  try:
+    items = db.query(
+                ItemsCXP.CODIGO,
+                ItemsCXP.NOMBRE
+            ).filter(
+                ItemsCXP.EMPRESA == company_code,
+                ItemsCXP.CODIGO is not None,
+                ItemsCXP.NOMBRE is not None,
+                ItemsCXP.CODIGO != '',
+                ItemsCXP.NOMBRE != ''
+            ).order_by(
+                ItemsCXP.CODIGO
+            ).all()
+    
+    response = [{"code": item.CODIGO, "name": item.NOMBRE} for item in items]
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
+async def driver_settlement(data: DriverSettlement):
+  db = session()
+  try:
+
+    driver = db.query(Conductores).filter(Conductores.EMPRESA == data.company_code, Conductores.CODIGO == data.driver_number).first()
+    if not driver:
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
+
+    user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
+    user = user.NOMBRE if user else ""
+
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    date = now_in_panama.strftime("%d/%m/%Y")
+    current_time = now_in_panama.strftime("%I:%M:%S %p")
+
+    title = 'Liquidación de Cuenta'
+
+    return_by_registration = data.registration - data.total_debt
+    
+    data_view = {
+      'fecha': date,
+      'hora': current_time,
+      'company_code': data.company_code,
+      'vehicle_number': data.vehicle_number,
+      'usuario': user,
+      'registration': f"{data.registration:.2f}",
+      'daily_rent': f"{data.daily_rent:.2f}",
+      'accidents': f"{data.accidents:.2f}",
+      'other_debts': f"{data.other_debts:.2f}",
+      'panapass': f"{data.panapass:.2f}",
+      'total_debt': f"{data.total_debt:.2f}",
+      'return_by_registration': f"{return_by_registration:.2f}",
+      'other_expenses': f"{data.other_expenses:.2f}",
+      'owed_to_driver': f"{data.owed_to_driver:.2f}",
+      'owed_by_driver': f"{data.owed_by_driver:.2f}",
+      'details': data.details if data.details else '',
+      'driver': {
+        'code': driver.CODIGO,
+        'name': driver.NOMBRE,
+        'cc': driver.CEDULA,
+        'cellphone': driver.CELULAR,
+        'address': driver.DIRECCION
+      } if driver else {},
+      'title': title
+    }
+
+    headers = {
+      "Content-Disposition": f"attachment; filename=BajarConductor_{data.driver_number}.pdf"
+    }
+
+    template_loader = jinja2.FileSystemLoader(searchpath="./templates")
+    template_env = jinja2.Environment(loader=template_loader)
+    template = template_env.get_template("LiquidacionConductor.html")
+    header = template_env.get_template("header.html")
+    footer = template_env.get_template("footer.html")
+    output_text = template.render(data_view=data_view)
+    output_header = header.render(data_view=data_view)
+    output_footer = footer.render(data_view=data_view)
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w') as html_file:
+      html_path = html_file.name
+      html_file.write(output_text)
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w') as header_file:
+      header_path = header_file.name
+      header_file.write(output_header)
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w') as footer_file:
+      footer_path = footer_file.name
+      footer_file.write(output_footer)
+    pdf_path = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf').name
+
+    # Ejecutar la conversión PDF en un thread separado para no bloquear el event loop
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(
+      PDF_THREAD_POOL,
+      html2pdf,
+      title,
+      html_path,
+      pdf_path,
+      header_path,
+      footer_path
+    )
+
+    background_tasks = BackgroundTasks()
+    background_tasks.add_task(os.remove, html_path)
+    background_tasks.add_task(os.remove, header_path)
+    background_tasks.add_task(os.remove, footer_path)
+    background_tasks.add_task(os.remove, pdf_path)
+
+    response = FileResponse(
+      pdf_path, 
+      media_type='application/pdf', 
+      filename=f'BajarConductor_{data.driver_number}.pdf', 
+      headers=headers,
+      background=background_tasks
+    )
+
+    return response
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
+async def save_remove_driver(data: RemoveDriver):
+  db = session()
+  try:
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    date = now_in_panama.strftime("%Y-%m-%d")
+    current_time = now_in_panama.strftime("%H:%M:%S")
+    complete_date = now_in_panama.strftime("%Y-%m-%d %H:%M:%S")
+    text_date = now_in_panama.strftime("%Y%m%d")
+
+    vehicle = db.query(Vehiculos).filter(Vehiculos.EMPRESA == data.company_code, Vehiculos.NUMERO == data.vehicle_number).first()
+    if not vehicle:
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
+    
+    driver = db.query(Conductores).filter(Conductores.EMPRESA == data.company_code, Conductores.CODIGO == data.driver_number).first()
+    if not driver:
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
+    
+    user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
+    user = user.CODIGO if user else ""
+    
+    wallet_records = db.query(Cartera).filter(
+                        Cartera.EMPRESA == data.company_code,
+                        Cartera.UNIDAD == data.vehicle_number,
+                        Cartera.CLIENTE == data.driver_number,
+                        Cartera.TIPO.in_(['01', '10', '11', '12'])
+                      ).all()
+    
+    vehicle.ESTADO = '06'
+    vehicle.CONDUCTOR = ''
+    driver.ESTADO = '3'
+    driver.UND_NRO = ''
+    driver.FEC_RETIRO = date
+    driver.FEC_ESTADO = date
+
+    last_record = db.query(CajaRecaudos).filter(CajaRecaudos.EMPRESA == data.company_code).order_by(CajaRecaudos.RECIBO.desc()).first()
+    new_record = str(int(last_record.RECIBO) + 1 if last_record else 1).zfill(8)
+    
+    for record in wallet_records:
+      record.N_CRE = record.N_CRE + record.SALDO
+      record.CAN_NCRE = record.CAN_NCRE + 1
+      record.FEC_NCRE = date
+
+      new_saldo = record.VALOR - record.ABONOS + record.N_DEB - record.N_CRE
+
+      new_caja_record = CajaRecaudos(
+        EMPRESA=data.company_code,
+        RECIBO=new_record,
+        FEC_RECIBO=date,
+        HOR_RECIBO=current_time,
+        NUMERO=data.vehicle_number,
+        CONDUCTOR=driver.CODIGO,
+        NIT=driver.NIT,
+        PROPI_IDEN=vehicle.PROPI_IDEN,
+        FORMAPAGO='8',
+        TOTAL=record.SALDO,
+        VLR_RC=record.SALDO,
+        SDO_RC=record.SALDO,
+        TIPO=record.TIPO,
+        FACTURA=record.FACTURA,
+        DETALLE=f"Cancelación de Saldos por Baja de Unidad: {data.vehicle_number} / {data.details}",
+        FEC_IMPRES=date,
+        TRASLADA='B',
+        FEC_TRASLA=complete_date,
+        USUARIO=user,
+        FEC_DOCUM=text_date,
+        FEC_CREADO=complete_date
+      )
+      db.add(new_caja_record)
+
+      if new_saldo == 0:
+        record.SALDO = 0
+      else:
+        return JSONResponse(content={"message": "Hay un descuadre en la cartera"}, status_code=400)
+      
+    if data.owed_by_driver > 0:
+      new_wallet_record = Cartera(
+        EMPRESA=data.company_code,
+        FACTURA=new_record,
+        TIPO='11',
+        # NOMTIPO='',
+        CLIENTE=driver.CODIGO,
+        CEDULA=driver.CEDULA,
+        PLACA=vehicle.PLACA,
+        UNIDAD=vehicle.NUMERO,
+        PROPI_IDEN=vehicle.PROPI_IDEN,
+        FEC_ENTREG=date,
+        VALOR=data.owed_by_driver,
+        FECHA=date,
+        FEC_FACTU=date,
+        DOC_FACTU=new_record,
+        DETALLE=f"Creación de Siniestros por Baja de Unidad: {data.vehicle_number} / {data.details}",
+        SALDO=data.owed_by_driver,
+        FEC_DOCUM=text_date,
+        FEC_CREADO=date,
+        USU_CREADO=user
+      )
+      db.add(new_wallet_record)
+    
+    db.commit()
+
+    return JSONResponse(content={"message": "Conductor removido correctamente"}, status_code=200)
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
+async def info_account_opening(company_code: str, vehicle_number: str, driver_number: str):
+  db = session()
+  try:
+    debts = (db.query(Cartera.TIPO, func.sum(Cartera.SALDO).label('total_saldo')).filter(
+                Cartera.EMPRESA == company_code,
+                Cartera.UNIDAD == vehicle_number,
+                Cartera.CLIENTE == driver_number,
+                Cartera.TIPO.in_(['01', '02', '10', '11', '12'])
+              ).group_by(Cartera.TIPO).all())
+    
+    debt_map = {debt.TIPO: debt.total_saldo for debt in debts}
+
+    registration = debt_map.get('01', 0)
+    savings = debt_map.get('02', 0)
+
+    daily_rent = debt_map.get('10', 0)
+    accidents = debt_map.get('11', 0)
+    other_debts = debt_map.get('12', 0)
+
+    total_funds = registration + savings
+    
+    total_debt = daily_rent + accidents  + other_debts
+
+    response = {
+      "registration": registration,
+      "savings": savings,
+      "total_funds": total_funds,
+      "daily_rent": daily_rent,
+      "accidents": accidents,
+      "other_debts": other_debts,
+      "total_debt": total_debt
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
+async def account_opening(data: AccountOpening):
+  db = session()
+  try:
+    panama_timezone = pytz.timezone('America/Panama')
+    now_in_panama = datetime.now(panama_timezone)
+    date = now_in_panama.strftime("%Y-%m-%d")
+    current_time = now_in_panama.strftime("%H:%M:%S")
+    complete_date = now_in_panama.strftime("%Y-%m-%d %H:%M:%S")
+    text_date = now_in_panama.strftime("%Y%m%d")
+    date_pdf = now_in_panama.strftime("%d/%m/%Y")
+    time_pdf = now_in_panama.strftime("%I:%M:%S %p")
+    timestamp = now_in_panama.strftime("%Y%m%d%H%M%S")
+
+    vehicle = db.query(Vehiculos).filter(Vehiculos.EMPRESA == data.company_code, Vehiculos.NUMERO == data.vehicle_number).first()
+    if not vehicle:
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
+    
+    driver = db.query(Conductores).filter(Conductores.EMPRESA == data.company_code, Conductores.CODIGO == data.driver_number).first()
+    if not driver:
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
+    
+    user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
+    user = user.CODIGO if user else ""
+
+    last_record = db.query(CajaRecaudos).filter(CajaRecaudos.EMPRESA == data.company_code).order_by(CajaRecaudos.RECIBO.desc()).first()
+    new_record = str(int(last_record.RECIBO) + 1 if last_record else 1).zfill(8)
+
+    new_caja_record = CajaRecaudos(
+      EMPRESA=data.company_code,
+      RECIBO=new_record,
+      FEC_RECIBO=date,
+      HOR_RECIBO=current_time,
+      PLACA=vehicle.PLACA,
+      NUMERO=data.vehicle_number,
+      CONDUCTOR=driver.CODIGO,
+      CEDULA=driver.CEDULA,
+      NIT=driver.NIT,
+      PROPI_IDEN=vehicle.PROPI_IDEN,
+      ZONA=vehicle.PROPI_IDEN,
+      FORMAPAGO='6',
+      TOTAL=data.total_opening,
+      VLR_ND=data.total_opening,
+      TIPO='11',
+      FACTURA=new_record,
+      DETALLE=f"Apertura de Cuenta por Cobrar Conductor: {driver.CODIGO}   Unidad: {vehicle.NUMERO} / {data.details}",
+      FEC_IMPRES=date,
+      TRASLADA='I',
+      FEC_TRASLA=complete_date,
+      USUARIO=user,
+      FEC_DOCUM=text_date,
+      FEC_CREADO=complete_date
+    )
+    db.add(new_caja_record)
+    
+    new_wallet_record = Cartera(
+      EMPRESA=data.company_code,
+      FACTURA=new_record,
+      TIPO='11',
+      CLIENTE=driver.CODIGO,
+      CEDULA=driver.CEDULA,
+      ZONA=vehicle.PROPI_IDEN,
+      PLACA=vehicle.PLACA,
+      UNIDAD=vehicle.NUMERO,
+      PROPI_IDEN=vehicle.PROPI_IDEN,
+      FEC_ENTREG=date,
+      VALOR=data.total_opening,
+      FECHA=date,
+      FEC_FACTU=date,
+      DOC_FACTU=new_record,
+      CAN_FACTU=1,
+      DETALLE=f"Apertura de Cuenta por Cobrar Conductor: {driver.CODIGO}   Unidad: {vehicle.NUMERO} / {data.details}",
+      SALDO=data.total_opening,
+      FEC_CUADRE=date,
+      FEC_DOC=text_date,
+      FEC_DOCUM=text_date,
+      FEC_CREADO=date,
+      USU_CREADO=user
+    )
+    db.add(new_wallet_record)
+    
+    db.commit()
+
+    title = 'Apertura de Cuenta por Cobrar'
+    
+    data_view = {
+      'fecha': date_pdf,
+      'hora': time_pdf,
+      'company_code': data.company_code,
+      'vehicle_number': data.vehicle_number,
+      'consecutive': new_record,
+      'usuario': user,
+      'registration': f"{data.registration:.2f}",
+      'savings': f"{data.savings:.2f}",
+      'total_funds': f"{data.total_funds:.2f}",
+      'daily_rent': f"{data.daily_rent:.2f}",
+      'accidents': f"{data.accidents:.2f}",
+      'other_debts': f"{data.other_debts:.2f}",
+      'total_debt': f"{data.total_debt:.2f}",
+      'total_opening': f"{data.total_opening:.2f}",
+      'details': data.details if data.details else '',
+      'driver': {
+        'code': driver.CODIGO,
+        'name': driver.NOMBRE,
+        'cc': driver.CEDULA,
+        'cellphone': driver.CELULAR,
+        'address': driver.DIRECCION
+      } if driver else {},
+      'title': title
+    }
+
+    headers = {
+      "Content-Disposition": f"attachment; filename=AperturaCuenta_{data.vehicle_number}.pdf"
+    }
+
+    template_loader = jinja2.FileSystemLoader(searchpath="./templates")
+    template_env = jinja2.Environment(loader=template_loader)
+    template = template_env.get_template("AperturaCuentaConductor.html")
+    header = template_env.get_template("header.html")
+    footer = template_env.get_template("footer.html")
+    output_text = template.render(data_view=data_view)
+    output_header = header.render(data_view=data_view)
+    output_footer = footer.render(data_view=data_view)
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w') as html_file:
+      html_path = html_file.name
+      html_file.write(output_text)
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w') as header_file:
+      header_path = header_file.name
+      header_file.write(output_header)
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.html', mode='w') as footer_file:
+      footer_path = footer_file.name
+      footer_file.write(output_footer)
+    pdf_path = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf').name
+
+    # Ejecutar la conversión PDF en un thread separado para no bloquear el event loop
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(
+      PDF_THREAD_POOL,
+      html2pdf,
+      title,
+      html_path,
+      pdf_path,
+      header_path,
+      footer_path
+    )
+
+    background_tasks = BackgroundTasks()
+    background_tasks.add_task(os.remove, html_path)
+    background_tasks.add_task(os.remove, header_path)
+    background_tasks.add_task(os.remove, footer_path)
+    background_tasks.add_task(os.remove, pdf_path)
+
+    response = FileResponse(
+      pdf_path, 
+      media_type='application/pdf', 
+      filename=f'AperturaCuenta_{data.vehicle_number}.pdf', 
+      headers=headers,
+      background=background_tasks
+    )
+
+    return response
   except Exception as e:
     db.rollback()
     return JSONResponse(content={"message": str(e)}, status_code=500)

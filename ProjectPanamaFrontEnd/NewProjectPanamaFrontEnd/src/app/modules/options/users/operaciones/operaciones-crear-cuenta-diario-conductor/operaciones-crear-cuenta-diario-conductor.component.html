@@ -1,11 +1,12 @@
 <h2 mat-dialog-title>Crear Cuenta de Diario al Conductor</h2>
 <mat-divider></mat-divider>
 <mat-dialog-content *ngIf="isLoadingVehicles || isLoadingCreate">
-  <mat-progress-bar
-    mode="indeterminate"
-  ></mat-progress-bar>
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
 </mat-dialog-content>
-<mat-dialog-content class="scrollable-content" *ngIf="!isLoadingVehicles && !isLoadingCreate">
+<mat-dialog-content
+  class="scrollable-content"
+  *ngIf="!isLoadingVehicles && !isLoadingCreate"
+>
   <div class="vehicle-info">
     <mat-form-field class="form-field">
       <mat-label>Vehículo</mat-label>
@@ -25,12 +26,17 @@
           *ngFor="let option of filteredOptions | async"
           [value]="option.unidad"
         >
-          {{ option.unidad }} - {{ option.placa }}
+          {{ option.unidad }} - {{ option.placa }} - {{ option.nro_cupo }} -
+          {{ option.propietario }}
         </mat-option>
       </mat-autocomplete>
     </mat-form-field>
 
-    <mat-progress-bar class="loading-bar" mode="indeterminate" *ngIf="isLoadingVehicleInfo"></mat-progress-bar>
+    <mat-progress-bar
+      class="loading-bar"
+      mode="indeterminate"
+      *ngIf="isLoadingVehicleInfo"
+    ></mat-progress-bar>
 
     <table class="info-table" *ngIf="!isLoadingVehicleInfo && selectedVehicle">
       <tbody>
@@ -48,7 +54,9 @@
         </tr>
         <tr>
           <td class="info-header">Cupo N°</td>
-          <td class="info-data">{{ vehicleData.cupo }} {{ vehicleData.con_cupo }}</td>
+          <td class="info-data">
+            {{ vehicleData.cupo }} {{ vehicleData.con_cupo }}
+          </td>
         </tr>
         <tr>
           <td class="info-header">N° de Cuotas</td>
@@ -56,7 +64,7 @@
         </tr>
         <tr>
           <td class="info-header">Valor Cuota</td>
-          <td class="info-data">{{ vehicleData.cuota_diaria}}</td>
+          <td class="info-data">{{ vehicleData.cuota_diaria }}</td>
         </tr>
         <tr>
           <td class="info-header">Estado</td>
@@ -64,7 +72,7 @@
         </tr>
         <tr>
           <td class="info-header">Propietario</td>
-          <td class="info-data"> {{ vehicleData.propietario }}</td>
+          <td class="info-data">{{ vehicleData.propietario }}</td>
         </tr>
       </tbody>
     </table>
@@ -75,10 +83,7 @@
   <div class="driver-info" *ngIf="!isLoadingVehicleInfo && selectedVehicle">
     <mat-form-field class="form-field">
       <mat-label>Conductor</mat-label>
-      <input type="text"
-             matInput
-             [formControl]="drivers"
-             >
+      <input type="text" matInput [formControl]="drivers" />
     </mat-form-field>
 
     <table class="info-table">
@@ -113,10 +118,26 @@
     <mat-divider></mat-divider>
 
     <div class="loading-validations" *ngIf="reCheckedValidations">
-      <mat-progress-bar class="loading-bar" mode="indeterminate" *ngIf="reCheckedValidations"></mat-progress-bar>
+      <mat-progress-bar
+        class="loading-bar"
+        mode="indeterminate"
+        *ngIf="reCheckedValidations"
+      ></mat-progress-bar>
     </div>
-    <div class="date-message" *ngIf="checkedValidations && !reCheckedValidations">
-      <mat-form-field class="form-field date-form" (click)="datepicker.open()" *ngIf="authorizedVehicle || (validations.vehicle_bill && validations.vehicle_driver && validations.vehicle_state)">
+    <div
+      class="date-message"
+      *ngIf="checkedValidations && !reCheckedValidations"
+    >
+      <mat-form-field
+        class="form-field date-form"
+        (click)="datepicker.open()"
+        *ngIf="
+          authorizedVehicle ||
+          (validations.vehicle_bill &&
+            validations.vehicle_driver &&
+            validations.vehicle_state)
+        "
+      >
         <input
           matInput
           placeholder="Selecciona una fecha inicial"
@@ -154,11 +175,17 @@
         El vehículo ya tiene una cuenta de cobro para la fecha ingresada.
       </p>
 
-      <p class="message" *ngIf="!validations.vehicle_driver && !authorizedVehicle">
+      <p
+        class="message"
+        *ngIf="!validations.vehicle_driver && !authorizedVehicle"
+      >
         El vehículo no tiene un conductor asignado.
       </p>
 
-      <p class="message" *ngIf="!validations.vehicle_state && !authorizedVehicle">
+      <p
+        class="message"
+        *ngIf="!validations.vehicle_state && !authorizedVehicle"
+      >
         El vehículo no está activo.
       </p>
     </div>
@@ -166,5 +193,20 @@
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button mat-dialog-close>Cancelar</button>
-  <button mat-button cdkFocusInitial [disabled]="!selectedVehicle || isLoadingVehicleInfo || !checkedValidations || !authorizedVehicle || selectedDate.invalid || reCheckedValidations || isLoadingCreate" (click)="openConfirmationDialog()">Confirmar</button>
+  <button
+    mat-button
+    cdkFocusInitial
+    [disabled]="
+      !selectedVehicle ||
+      isLoadingVehicleInfo ||
+      !checkedValidations ||
+      !authorizedVehicle ||
+      selectedDate.invalid ||
+      reCheckedValidations ||
+      isLoadingCreate
+    "
+    (click)="openConfirmationDialog()"
+  >
+    Confirmar
+  </button>
 </mat-dialog-actions>

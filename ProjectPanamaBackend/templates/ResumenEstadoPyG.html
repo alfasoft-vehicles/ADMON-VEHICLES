@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Estado de Pérdidas y Ganancias</title>
+  <style type="text/css">
+    #logo {
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      font-family: sans-serif;
+      border: 1px solid black;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: center;
+      border: 1px solid black;
+    }
+
+    /* Columna del nombre de la empresa más ancha*/
+    table thead tr:first-child th:first-child,
+    table tbody tr td:first-child {
+      width: 40%;
+      min-width: 300px;
+      
+      padding-left: 15px;
+    }
+
+    /* Bordes más definidos para los encabezados */
+    th {
+      background-color: #ddd;
+    }
+
+    td.group {
+      border-right: none;
+      border-left: none;
+    }
+
+    td.right {
+      border-right: none;
+    }
+
+    /* Estilo para la fila de encabezados */
+    thead {
+      background-color: #f2f2f2;
+    }
+
+    /* Estilo para la celda de la empresa */
+    .empresa-cell {
+      border: 1px solid #000;
+      border-radius: 10px;
+      padding: 10px;
+      text-align: left;
+    }
+
+    /* Estilo para la celda de Total Empresa */
+    .empresa-total {
+      border: 1px solid #000;
+      padding: 10px;
+      font-weight: bold;
+      text-align: right;
+      background-color: #f0f0f0;
+    }
+
+    /* Estilo para el total control como en RelacionIngresos */
+    .box-propietario {
+      text-align: left;
+      font-size: 17px;
+      margin-top: 10px;
+      padding: 5px;
+    }
+
+  </style>
+</head>
+<body>
+  <div style="font-weight: bold; display: flex; justify-content: space-between;">
+    <div>Desde: {{ data['fechas']['primeraFecha'] }} Hasta: {{ data['fechas']['ultimaFecha'] }}</div>
+  </div>
+
+  <table>
+    <thead>
+      <!-- Fila superior de encabezados -->
+      <tr>
+        <th rowspan="2">Código - Nombre de la empresa</th>
+        
+        <th colspan="2">INGRESOS (+)</th>
+        <th colspan="3">GASTOS (-)</th>
+        <th colspan="2">PIEZAS / M.OBRA (-)</th>
+        <th colspan="2">ESTADO DE PyG ($)</th>
+      </tr>
+      <tr>
+        <th>Ingresos</th>
+        <th>Seguros</th>
+        <th>Gasto Caja</th>
+        <th>Generales</th>
+        <th>Otro Gasto</th>
+        <th>Chapistería</th>
+        <th>Almacén</th>
+        <th>Utilidad</th>
+        <th>Pérdida</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- INICIO SECCIÓN ITERATIVA POR EMPRESA -->
+      {% for propietario in data.propietarios %}
+      <!-- Fila con el total de la empresa -->
+      <tr>
+        <td class="empresa-cell">{{ propietario.propietario }} &nbsp; - &nbsp; {{ propietario.propietario_nombre }}</td>
+        <td>{{ propietario.totales.incomes }}</td>
+        <td>{{ propietario.totales.insurances }}</td>
+        <td>{{ propietario.totales.gasto_caja }}</td>
+        <td>{{ propietario.totales.generales }}</td>
+        <td>{{ propietario.totales.otro_gasto }}</td>
+        <td>{{ propietario.totales.chapisteria }}</td>
+        <td>{{ propietario.totales.almacen }}</td>
+        <td>{{ "" if propietario.totales.estado_pyg <= 0 else propietario.totales.estado_pyg }}</td>
+        <td>{{ "" if propietario.totales.estado_pyg >= 0 else -propietario.totales.estado_pyg }}</td>
+      </tr>
+      {% endfor %}
+      <!-- FIN DE SECCIÓN ITERATIVA POR EMPRESA -->
+
+      <!-- Total -->
+      <tr>
+        <td class="empresa-total">Total General: {{ data.totales_generales.cantidad_propietarios }}</td>
+        <td>{{ data.totales_generales.incomes }}</td>
+        <td>{{ data.totales_generales.insurances }}</td>
+        <td>{{ data.totales_generales.gasto_caja }}</td>
+        <td>{{ data.totales_generales.generales }}</td>
+        <td>{{ data.totales_generales.otro_gasto }}</td>
+        <td>{{ data.totales_generales.chapisteria }}</td>
+        <td>{{ data.totales_generales.almacen }}</td>
+        <td>{{ "" if data.totales_generales.estado_pyg <= 0 else data.totales_generales.estado_pyg }}</td>
+        <td>{{ "" if data.totales_generales.estado_pyg >= 0 else -data.totales_generales.estado_pyg }}</td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>

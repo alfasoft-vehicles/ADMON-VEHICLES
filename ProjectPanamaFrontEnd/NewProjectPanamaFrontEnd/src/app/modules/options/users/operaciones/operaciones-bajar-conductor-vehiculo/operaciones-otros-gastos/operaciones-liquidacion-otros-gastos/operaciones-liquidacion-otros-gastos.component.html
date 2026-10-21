@@ -1,0 +1,57 @@
+<h2 mat-dialog-title>Otros Gastos Por Pagar</h2>
+<mat-divider></mat-divider>
+
+<mat-dialog-content class="scrollable-content">
+  <div class="table-container">
+    <table mat-table [dataSource]="data.otherExpensesItems" class="gastos-table">
+      <!-- Código Column -->
+      <ng-container matColumnDef="code">
+        <th mat-header-cell *matHeaderCellDef>CÓDIGO</th>
+        <td mat-cell *matCellDef="let item">{{ item.code }}</td>
+      </ng-container>
+
+      <!-- Nombre Column -->
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>NOMBRE</th>
+        <td mat-cell *matCellDef="let item">{{ item.name }}</td>
+      </ng-container>
+
+      <!-- Explicación Column -->
+      <ng-container matColumnDef="explanation">
+        <th mat-header-cell *matHeaderCellDef>EXPLICACIÓN</th>
+        <td mat-cell *matCellDef="let item" class="explicacion-cell">
+          <span class="explicacion-text">{{ item.explanation || "" }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Valor Column -->
+      <ng-container matColumnDef="value">
+        <th mat-header-cell *matHeaderCellDef>VALOR</th>
+        <td mat-cell *matCellDef="let item" class="valor-cell">
+          $ {{ item.value | number : "1.2-2" }}
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        [class.has-value]="row.value > 0"
+        (click)="openExplanation(row)"
+        matTooltip="Click para añadir explicación y valor"
+      ></tr>
+    </table>
+  </div>
+
+  <div class="total-section" *ngIf="totalOtherExpenses > 0">
+    <span class="total-label">Total Otros Gastos:</span>
+    <span class="total-value">$ {{ totalOtherExpenses | number : "1.2-2" }}</span>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="close()"><mat-icon>close</mat-icon> Salir</button>
+  <button mat-button (click)="save()">
+    <mat-icon>check</mat-icon> Aceptar
+  </button>
+</mat-dialog-actions>

@@ -1,0 +1,16 @@
+<h2 mat-dialog-title>Consulta de Saldo de PanaPass</h2>
+<mat-dialog-content>
+  <div class="buttons-container">
+    <button mat-raised-button class="button" (click)="openExternalLink('placa')">
+      <mat-icon>garage</mat-icon>
+      Número de Placa
+    </button>
+    <button mat-raised-button class="button" (click)="openExternalLink('usuario')">
+      <mat-icon>assignment_ind</mat-icon>
+      Usuario y Contraseña
+    </button>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close cdkFocusInitial>Cerrar</button>
+</mat-dialog-actions>

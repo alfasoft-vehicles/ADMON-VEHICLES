@@ -1,0 +1,24 @@
+.buttons-container {
+  display: flex;
+  justify-content: space-evenly;
+  gap: 10px;
+}
+
+.buttons-container button {
+  /* background-color: #e7eeff; */
+  height: 46px;
+  width: 100%;
+}
+
+@media (max-width: 675px) {
+  .buttons-container {
+    flex-direction: column;
+  }
+
+  .buttons-container button span.button-text {
+    margin-left: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

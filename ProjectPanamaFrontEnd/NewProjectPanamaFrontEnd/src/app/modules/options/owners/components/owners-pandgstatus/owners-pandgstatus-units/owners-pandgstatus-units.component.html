@@ -1,0 +1,59 @@
+<div class="modal">
+  <div class="modal-content">
+    <span class="close" (click)="closeModal()">&times;</span>
+
+    <h2 class="title-container">Informe Estado de P y G - Unidades.</h2>
+
+    <div class="loading-container" *ngIf="!isLoadingValues">
+      <form [formGroup]="infoForm" (ngSubmit)="onSubmit()">
+        <div class="select-vehicle">
+          <div class="selects-container full-width">
+            <h2 class="subtitle-container">Selecciona las Empresas.</h2>
+  
+            <div class="cuadro-seleccion">
+              <div *ngFor="let opcion of owners" class="checkbox-container" (click)="onCheckboxEmpresaContainerClick(opcion.id, $event)">
+                <input type="checkbox" [id]="opcion.id" [value]="opcion.id" 
+                        [checked]="isEmpresaSeleccionada(opcion.id)" 
+                        (change)="onCheckboxEmpresaChange(opcion.id, $event)">
+                <label [for]="opcion.id">{{ opcion.name }} - {{ opcion.id }}</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="group-container">
+            <div class="form-group last-form-group">
+              <label for="firstDate">Desde:</label><br>
+              <input type="date" id="firstDate" name="firstDate" formControlName="firstDate" [max]="date.time"><br>
+            </div>
+    
+            <div class="form-group last-form-group">
+              <label for="lastDate">Hasta:</label><br>
+              <input type="date" id="lastDate" name="lastDate" formControlName="lastDate" [max]="date.time"><br>
+            </div>
+          </div>
+        </div>
+
+        <div class="options-container">
+          <button class="option" type="button" type="submit" [disabled]="!infoForm.valid">
+            <span class="material-symbols-outlined" translate="no">
+              check
+            </span>
+            <p class="option-text">Generar Informe</p>
+          </button>
+
+          <button class="option back" type="button" (click)="closeModal()">
+            <span class="material-symbols-outlined" translate="no">
+              close
+            </span>
+            <p class="option-text">Cancelar</p>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="loading-container" *ngIf="isLoadingValues">
+      <h2 class="subtitle-container">Cargando valores, por favor espere...</h2>
+    </div>
+    
+  </div>
+</div>

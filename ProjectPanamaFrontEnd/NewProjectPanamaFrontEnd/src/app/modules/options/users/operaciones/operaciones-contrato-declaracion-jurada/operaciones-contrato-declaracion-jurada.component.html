@@ -1,29 +1,50 @@
 <h2 mat-dialog-title>Contrato y Declaración Jurada</h2>
 <mat-divider></mat-divider>
 <mat-dialog-content *ngIf="isLoadingVehicles">
-  <mat-progress-bar mode="indeterminate" *ngIf="isLoadingVehicles"></mat-progress-bar>
+  <mat-progress-bar
+    mode="indeterminate"
+    *ngIf="isLoadingVehicles"
+  ></mat-progress-bar>
 </mat-dialog-content>
-<mat-dialog-content class="scrollable-content" *ngIf="!isLoadingVehicles">
+<mat-dialog-content
+  class="scrollable-content"
+  *ngIf="!isLoadingVehicles && !signatureDriver && !photoDriver"
+>
   <div class="vehicle-info">
     <mat-form-field class="form-field">
       <mat-label>Vehículo</mat-label>
-      <input type="text"
-             placeholder="Selecciona uno"
-             matInput
-             [formControl]="vehicles"
-             [matAutocomplete]="auto"
-             >
-      <mat-autocomplete #auto="matAutocomplete" (optionSelected)="getContractInfo($event)">
+      <input
+        type="text"
+        placeholder="Selecciona uno"
+        matInput
+        [formControl]="vehicles"
+        [matAutocomplete]="auto"
+      />
+      <mat-autocomplete
+        #auto="matAutocomplete"
+        (optionSelected)="getContractInfo($event)"
+      >
         <mat-option [value]="">-</mat-option>
-        <mat-option *ngFor="let option of filteredOptions | async" [value]="option.unidad">
-          {{option.unidad}} - {{option.placa}}
+        <mat-option
+          *ngFor="let option of filteredOptions | async"
+          [value]="option.unidad"
+        >
+          {{ option.unidad }} - {{ option.placa }} - {{ option.nro_cupo }} -
+          {{ option.propietario }}
         </mat-option>
       </mat-autocomplete>
     </mat-form-field>
 
-    <mat-progress-bar class="loading-bar" mode="indeterminate" *ngIf="isLoadingContractInfo"></mat-progress-bar>
+    <mat-progress-bar
+      class="loading-bar"
+      mode="indeterminate"
+      *ngIf="isLoadingContractInfo"
+    ></mat-progress-bar>
 
-    <table class="info-table" *ngIf="!isLoadingContractInfo && contractInfo.permitido !== null">
+    <table
+      class="info-table"
+      *ngIf="!isLoadingContractInfo && contractInfo.permitido !== null"
+    >
       <tbody>
         <tr>
           <td class="info-header">Marca</td>
@@ -35,15 +56,17 @@
         </tr>
         <tr>
           <td class="info-header">Cupo N°</td>
-          <td class="info-data">{{ contractInfo.cupo }} {{ contractInfo.con_cupo }}</td>
+          <td class="info-data">
+            {{ contractInfo.cupo }} {{ contractInfo.con_cupo }}
+          </td>
         </tr>
         <tr>
           <td class="info-header">Central</td>
-          <td class="info-data"> {{ contractInfo.central }}</td>
+          <td class="info-data">{{ contractInfo.central }}</td>
         </tr>
         <tr>
           <td class="info-header">Propietario</td>
-          <td class="info-data"> {{ contractInfo.propietario_nombre }}</td>
+          <td class="info-data">{{ contractInfo.propietario_nombre }}</td>
         </tr>
         <tr>
           <td class="info-header">N° de Cuotas</td>
@@ -51,7 +74,7 @@
         </tr>
         <tr>
           <td class="info-header">Valor Cuota</td>
-          <td class="info-data">{{ contractInfo.cuota_diaria}}</td>
+          <td class="info-data">{{ contractInfo.cuota_diaria }}</td>
         </tr>
         <tr>
           <td class="info-header">Valor Depositado</td>
@@ -67,13 +90,13 @@
 
   <mat-divider class="mobile"></mat-divider>
 
-  <div class="driver-info" *ngIf="!isLoadingContractInfo && contractInfo.permitido !== null">
+  <div
+    class="driver-info"
+    *ngIf="!isLoadingContractInfo && contractInfo.permitido !== null"
+  >
     <mat-form-field class="form-field">
       <mat-label>Conductor</mat-label>
-      <input type="text"
-             matInput
-             [formControl]="drivers"
-             >
+      <input type="text" matInput [formControl]="drivers" />
     </mat-form-field>
 
     <table class="info-table">
@@ -99,12 +122,22 @@
 
     <mat-divider></mat-divider>
 
-    <div class="date-message" *ngIf="contractInfo.permitido !== null && contractInfo.permitido !== undefined">
+    <div
+      class="date-message"
+      *ngIf="
+        contractInfo.permitido !== null && contractInfo.permitido !== undefined
+      "
+    >
       <p class="message" *ngIf="contractInfo.permitido === 1">
-        <strong class="message-strong">NO PERMITIDO:</strong> {{ contractInfo.mensaje }}.
+        <strong class="message-strong">NO PERMITIDO:</strong>
+        {{ contractInfo.mensaje }}.
       </p>
 
-      <mat-form-field class="form-field date-form" (click)="datepicker.open()" *ngIf="contractInfo.permitido === 0">
+      <mat-form-field
+        class="form-field date-form"
+        (click)="datepicker.open()"
+        *ngIf="contractInfo.permitido === 0"
+      >
         <input
           matInput
           placeholder="Selecciona una fecha inicial"
@@ -124,17 +157,61 @@
       <mat-error *ngIf="selectedDate.invalid && selectedDate.touched">
         Debes seleccionar una fecha.
       </mat-error>
+
+      <p
+        class="adverte"
+        *ngIf="
+          contractInfo.permitido === 0 &&
+          contractInfo.advertencia &&
+          contractInfo.advertencia.length > 0
+        "
+      >
+        <strong class="adverte-strong">ADVERTENCIA:</strong>
+        <mat-list>
+          <mat-list-item *ngFor="let warning of contractInfo.advertencia">
+            {{ warning }}
+          </mat-list-item>
+        </mat-list>
+      </p>
     </div>
   </div>
-
+</mat-dialog-content>
+<mat-dialog-content *ngIf="photoDriver">
+  <app-camera
+    [maxPhotos]="1"
+    (photosChange)="onPhotosChange($event)"
+  ></app-camera>
+</mat-dialog-content>
+<mat-dialog-content *ngIf="signatureDriver">
+  <app-signature-pad
+    (signatureSubmit)="handleSignatureSubmit($event)"
+  ></app-signature-pad>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button mat-dialog-close>Cancelar</button>
-  <button 
-    mat-button 
+  <button
+    mat-button
     cdkFocusInitial
-    [disabled]="contractInfo.permitido === 1 || contractInfo.permitido === null || contractInfo.permitido === undefined || selectedDate.invalid"
-    (click)="generateContract()">
+    [disabled]="
+      contractInfo.permitido === 1 ||
+      contractInfo.permitido === null ||
+      contractInfo.permitido === undefined ||
+      selectedDate.invalid
+    "
+    *ngIf="!signatureDriver && !photoDriver"
+    (click)="generateContract()"
+  >
     Confirmar
   </button>
-</mat-dialog-actions> 
+  <button mat-button cdkFocusInitial *ngIf="photoDriver" (click)="savePhoto()">
+    Siguiente
+  </button>
+  <button
+    mat-button
+    cdkFocusInitial
+    *ngIf="signatureDriver"
+    (click)="saveSignature()"
+  >
+    Guardar Firma
+  </button>
+</mat-dialog-actions>

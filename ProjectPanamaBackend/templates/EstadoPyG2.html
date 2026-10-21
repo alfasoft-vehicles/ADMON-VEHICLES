@@ -167,7 +167,15 @@
         <td>{{ unidad['NOMESTADO'] }}</td>
         
         <td>{{ "" if unidad['INGRESOS']['INGRESOS'] == 0.00 else unidad['INGRESOS']['INGRESOS'] }}</td>
-        <td>{{ "" if unidad['INGRESOS']['SEGUROS'] == 0.00 else unidad['INGRESOS']['SEGUROS'] }}</td>
+        <!-- <td>{{ "" if unidad['INGRESOS']['SEGUROS'] == 0.00 else unidad['INGRESOS']['SEGUROS'] }}</td> -->
+        <td>
+          <span style="display:inline-block; width:48%; text-align:center; font-weight:bold;">
+            {{ "" if unidad['INGRESOS']['CERRADO'] == 0.00 else unidad['INGRESOS']['CERRADO'] }}
+          </span>
+          <span style="display:inline-block; width:48%; text-align:center;">
+            {{ "" if unidad['INGRESOS']['SEGUROS'] == 0.00 else unidad['INGRESOS']['SEGUROS'] }}
+          </span>
+        </td>
         <td>{{ "" if unidad['GASTOS']['GASTO_CAJA'] == 0.00 else unidad['GASTOS']['GASTO_CAJA'] }}</td>
         <td>{{ "" if unidad['GASTOS']['GENERALES'] == 0.00 else unidad['GASTOS']['GENERALES'] }}</td>
         <td>{{ "" if unidad['GASTOS']['OTRO_GASTO'] == 0.00 else unidad['GASTOS']['OTRO_GASTO'] }}</td>

@@ -1,0 +1,177 @@
+<h2 mat-dialog-title>Generar QR de Inspecciones</h2>
+<mat-dialog-content>
+  <div class="dialog-loader-container" *ngIf="isLoadingVehicles">
+    <div class="spinner-wrapper">
+      <mat-progress-spinner
+        mode="indeterminate"
+        [diameter]="52"
+        [strokeWidth]="4"
+        color="primary"
+        class="custom-spinner"
+      ></mat-progress-spinner>
+      <div class="spinner-center-icon">
+        <mat-icon>hourglass_top</mat-icon>
+      </div>
+    </div>
+    <div class="loader-text">
+      <h3 class="loader-title">Cargando vehículos</h3>
+      <p class="loader-message">Obteniendo lista de vehículos disponibles...</p>
+    </div>
+    <div class="progress-bar-wrapper">
+      <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+    </div>
+  </div>
+  <div class="scrollable-content" *ngIf="!isLoadingVehicles">
+    <div class="vehicle-info">
+      <mat-form-field class="form-field">
+        <mat-label>Vehículo</mat-label>
+        <input
+          type="text"
+          placeholder="Selecciona uno"
+          matInput
+          [formControl]="vehicles"
+          [matAutocomplete]="auto"
+        />
+        <mat-autocomplete
+          #auto="matAutocomplete"
+          (optionSelected)="getVehicleQRInfo($event)"
+        >
+          <mat-option [value]="">-</mat-option>
+          <mat-option
+            *ngFor="let option of filteredOptions | async"
+            [value]="option.unidad"
+          >
+            {{ option.unidad }} - {{ option.placa }} - {{ option.nro_cupo }} -
+            {{ option.propietario }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <div class="dialog-inline-loader" *ngIf="isLoadingvehicleQRInfo">
+        <div class="spinner-wrapper-small">
+          <mat-progress-spinner
+            mode="indeterminate"
+            [diameter]="28"
+            [strokeWidth]="3"
+            color="primary"
+          ></mat-progress-spinner>
+          <div class="spinner-center-icon-small">
+            <mat-icon>sync</mat-icon>
+          </div>
+        </div>
+        <div class="inline-loader-text">
+          <span class="inline-loader-title"
+            >Cargando información del vehículo...</span
+          >
+          <span class="inline-loader-subtitle"
+            >Obteniendo datos para el código QR</span
+          >
+        </div>
+      </div>
+
+      <table
+        class="info-table"
+        *ngIf="!isLoadingvehicleQRInfo && selectedVehicle"
+      >
+        <tbody>
+          <tr>
+            <td class="info-header">Marca</td>
+            <td class="info-data">{{ vehicleQRInfo.model }}</td>
+          </tr>
+          <tr>
+            <td class="info-header">Placa</td>
+            <td class="info-data">{{ vehicleQRInfo.plate }}</td>
+          </tr>
+          <tr>
+            <td class="info-header">Cupo N°</td>
+            <td class="info-data">
+              {{ vehicleQRInfo.quota }}
+              {{ vehicleQRInfo.has_quota }}
+            </td>
+          </tr>
+          <tr>
+            <td class="info-header">Central</td>
+            <td class="info-data">{{ vehicleQRInfo.central }}</td>
+          </tr>
+          <tr>
+            <td class="info-header">Propietario</td>
+            <td class="info-data">{{ vehicleQRInfo.owner_name }}</td>
+          </tr>
+          <tr>
+            <td class="info-header">N° de Cuotas</td>
+            <td class="info-data">{{ vehicleQRInfo.nro_delivery }}</td>
+          </tr>
+          <tr>
+            <td class="info-header">Valor Cuota</td>
+            <td class="info-data">{{ vehicleQRInfo.daily_quota }}</td>
+          </tr>
+          <tr>
+            <td class="info-header">Valor Depositado</td>
+            <td class="info-data">{{ vehicleQRInfo.deposit_value }}</td>
+          </tr>
+          <tr>
+            <td class="info-header">Estado</td>
+            <td class="info-data">{{ vehicleQRInfo.state_name }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <mat-divider class="mobile"></mat-divider>
+
+    <div class="driver-info" *ngIf="!isLoadingvehicleQRInfo && selectedVehicle">
+      <mat-form-field class="form-field">
+        <mat-label>Conductor</mat-label>
+        <input type="text" matInput [formControl]="drivers" />
+      </mat-form-field>
+
+      <table class="info-table">
+        <tbody>
+          <tr>
+            <td class="info-header">Nombre</td>
+            <td class="info-data">{{ vehicleQRInfo.driver_name }}</td>
+          </tr>
+          <tr>
+            <td class="info-header">N° CC</td>
+            <td class="info-data">{{ vehicleQRInfo.driver_id }}</td>
+          </tr>
+          <tr>
+            <td class="info-header">Celular</td>
+            <td class="info-data">{{ vehicleQRInfo.driver_phone }}</td>
+          </tr>
+          <tr>
+            <td class="info-header">Dirección</td>
+            <td class="info-data">{{ vehicleQRInfo.driver_address }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <mat-divider></mat-divider>
+
+      <div class="date-message">
+        <p class="message" *ngIf="vehicleQRInfo.driver_code === ''">
+          <strong class="message-strong-alert">ALERTA:</strong>
+          El vehículo no tiene un conductor asignado.
+        </p>
+        <p class="message" *ngIf="vehicleQRInfo.inspections === 0">
+          <strong class="message-strong">ALERTA: </strong>
+          El vehículo no tiene inspecciones.
+        </p>
+        <p class="message" *ngIf="vehicleQRInfo.inspections > 0">
+          <strong class="message-strong-green">ALERTA: </strong>
+          El vehículo tiene {{ vehicleQRInfo.inspections }} inspecciones.
+        </p>
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button
+    mat-button
+    [disabled]="vehicleQRInfo.vehicle_number === ''"
+    (click)="generateQR()"
+  >
+    Generar QR
+  </button>
+  <button mat-button mat-dialog-close cdkFocusInitial>Cerrar</button>
+</mat-dialog-actions>

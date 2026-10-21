@@ -60,9 +60,9 @@ async def get_all_owners(company_code: str):
       Centrales, Propietarios.CENTRAL == Centrales.CODIGO
     ).filter(
       Centrales.EMPRESA == company_code,
-      Propietarios.EMPRESA == company_code
-    )\
-    .all()
+      Propietarios.EMPRESA == company_code,
+      Propietarios.CODIGO != '',
+    ).distinct().all()
 
     owners_list = []
     for owner in owners:
@@ -77,13 +77,13 @@ async def get_all_owners(company_code: str):
 
       owner_list = {
         'codigo': owner.codigo,
-        'nombre_propietario': owner.nombre_propietario,
+        'nombre_propietario': (owner.nombre_propietario or '').title(),
         'ruc': owner.ruc,
         'telefono': owner.telefono,
         'celular': owner.celular,
-        'representante': owner.representante,
-        'central': owner.central,
-        'auditor': owner.auditor,
+        'representante': (owner.representante or '').title(),
+        'central': (owner.central or '').title(),
+        'auditor': (owner.auditor or '').title(),
         'cnt': owner.cnt,
         'dcto': owner.dcto,
         'estado': estado
@@ -299,6 +299,59 @@ def create_propietario(propietario: PropietarioCreate):
   except Exception as e:
     db.rollback()
     return JSONResponse(content={"error": str(e)})
+  finally:
+    db.close()
+
+#----------------------------------------------------------------------------------------------------------------
+
+@owners_router.get("/owners_data/{company_code}/", tags=["Owners"])
+async def owners_data(company_code: str):
+  db = session()
+  try:
+    owners = db.query(Propietarios).filter(Propietarios.EMPRESA == company_code, Propietarios.CODIGO != "").all()
+    if not owners:
+      return JSONResponse(content={"message": "Owner not found"}, status_code=404)
+
+    result = []
+
+    for owner in owners:
+      owner_data = {
+        "codigo_propietario": owner.CODIGO,
+        "nombre_propietario": owner.NOMBRE,
+        "conductores": [],
+        "vehiculos": []
+      }
+
+      # Obtener vehículos de ese propietario
+      vehicles = db.query(Vehiculos).filter(Vehiculos.PROPI_IDEN == owner.CODIGO, Vehiculos.PLACA != "", Vehiculos.NUMERO != "").all()
+
+      for vehicle in vehicles:
+        owner_data["vehiculos"].append({
+          "placa_vehiculo": vehicle.PLACA,
+          "numero_unidad": vehicle.NUMERO,
+          "codigo_conductor": vehicle.CONDUCTOR,
+          "marca": vehicle.NOMMARCA,
+          "linea": vehicle.LINEA
+        })
+
+        # Obtener conductor relacionado al vehículo
+        drivers = db.query(Conductores).filter(Conductores.CODIGO == vehicle.CONDUCTOR, Conductores.CODIGO != "").all()
+
+        for driver in drivers:
+          if driver and driver.CODIGO not in owner_data["conductores"]:
+            owner_data["conductores"].append({
+              "codigo_conductor": driver.CODIGO,
+              "numero_unidad": driver.UND_NRO,
+              "nombre_conductor": driver.NOMBRE,
+              "cedula": driver.CEDULA
+            })
+
+      result.append(owner_data)
+
+    return JSONResponse(content=jsonable_encoder(result), status_code=200)
+
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()
 
@@ -522,25 +575,18 @@ async def verify_owner_delete(owner_id: int):
   finally:
     db.close()
 
-#----------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------
 
 @owners_router.post("/companies_owners/", tags=["Owners"])
 async def get_companies_owners(owner: Owner):
   db = session()
   try:
-    user_admin = os.getenv('USER_ADMIN')
     if owner.propietario:
-      
-      if owner.propietario == user_admin:
-        owners = db.query(Propietarios.CODIGO, Propietarios.NOMBRE).all()
-        owners_list = [{'id': owner.CODIGO, 'name': owner.NOMBRE} for owner in owners]
-
-      else:
-        company_code = db.query(PermisosUsuario.EMPRESA).filter(PermisosUsuario.CODIGO == owner.propietario).first()
-        companies = db.query(PermisosUsuario.EMPRESAS).filter(PermisosUsuario.CODIGO == owner.propietario).first()
-        companies_list = companies.EMPRESAS.strip('[]').split()
-        owners = db.query(Propietarios.CODIGO, Propietarios.NOMBRE).filter(Propietarios.CODIGO.in_(companies_list)).filter(Propietarios.EMPRESA == company_code[0]).all()
-        owners_list = [{'id': owner.CODIGO, 'name': owner.NOMBRE} for owner in owners]
+      company_code = db.query(PermisosUsuario.EMPRESA).filter(PermisosUsuario.CODIGO == owner.propietario).first()
+      companies = db.query(PermisosUsuario.EMPRESAS).filter(PermisosUsuario.CODIGO == owner.propietario).first()
+      companies_list = companies.EMPRESAS.strip('[]').split() if companies and companies.EMPRESAS else []
+      owners = db.query(Propietarios.CODIGO, Propietarios.NOMBRE).filter(Propietarios.CODIGO.in_(companies_list)).filter(Propietarios.EMPRESA == company_code[0]).all() if company_code else []
+      owners_list = [{'id': owner.CODIGO, 'name': owner.NOMBRE} for owner in owners]
 
       return JSONResponse(content=jsonable_encoder(owners_list), status_code=200)
 
@@ -556,19 +602,12 @@ async def get_companies_owners(owner: Owner):
 async def get_companies_per_owners(owner: Owner):
   db = session()
   try:
-    user_admin = os.getenv('USER_ADMIN')
     if owner.propietario:
-      
-      if owner.propietario == user_admin:
-        owners = db.query(Propietarios.CODIGO, Propietarios.NOMBRE).all()
-        owners_list = [{'id': owner.CODIGO, 'name': owner.NOMBRE} for owner in owners]
+      company_code = db.query(PermisosUsuario.EMPRESA).filter(PermisosUsuario.CODIGO == owner.propietario).first()
+      companies = db.query(PermisosUsuario.EMPRESA).filter(PermisosUsuario.CODIGO == owner.propietario).first()
+      owners = db.query(Propietarios.CODIGO, Propietarios.NOMBRE).filter(Propietarios.EMPRESA == companies[0]).filter(Propietarios.EMPRESA == company_code[0]).all() if company_code and companies else []
+      owners_list = [{'id': owner.CODIGO, 'name': owner.NOMBRE} for owner in owners]
 
-      else:
-        company_code = db.query(PermisosUsuario.EMPRESA).filter(PermisosUsuario.CODIGO == owner.propietario).first()
-        companies = db.query(PermisosUsuario.EMPRESA).filter(PermisosUsuario.CODIGO == owner.propietario).first()
-        owners = db.query(Propietarios.CODIGO, Propietarios.NOMBRE).filter(Propietarios.EMPRESA == companies[0]).filter(Propietarios.EMPRESA == company_code[0]).all()
-        owners_list = [{'id': owner.CODIGO, 'name': owner.NOMBRE} for owner in owners]
-  
       return JSONResponse(content=jsonable_encoder(owners_list), status_code=200)
 
     return JSONResponse(content={"error": "Propietario no encontrado"}, status_code=404)
@@ -583,24 +622,17 @@ async def get_companies_per_owners(owner: Owner):
 async def get_vehicles_owners(owner: Owner):
   db = session()
   try:
-    user_admin = os.getenv('USER_ADMIN')
     if owner.propietario:
+      companies = db.query(PermisosUsuario.EMPRESAS).filter(PermisosUsuario.CODIGO == owner.propietario).first()
+      companies_list = companies.EMPRESAS.strip('[]').split() if companies and companies.EMPRESAS else []
+      vehicles = db.query(Vehiculos.PLACA, Vehiculos.NUMERO, Vehiculos.NOMMARCA, Vehiculos.CONSECUTIV).filter(Vehiculos.PROPI_IDEN.in_(companies_list)).all()
 
-      if owner.propietario == user_admin:
-        vehicles = db.query(Vehiculos.PLACA, Vehiculos.NUMERO, Vehiculos.NOMMARCA, Vehiculos.CONSECUTIV).all()
-        vehicles_list = [{'placa': vehicle.PLACA, 'numero': vehicle.NUMERO, 'marca': vehicle.NOMMARCA, 'consecutivo': vehicle.CONSECUTIV} for vehicle in vehicles]
-      
-      else:
-        companies = db.query(PermisosUsuario.EMPRESAS).filter(PermisosUsuario.CODIGO == owner.propietario).first()
-        companies_list = companies.EMPRESAS.strip('[]').split()
-        vehicles = db.query(Vehiculos.PLACA, Vehiculos.NUMERO, Vehiculos.NOMMARCA, Vehiculos.CONSECUTIV).filter(Vehiculos.PROPI_IDEN.in_(companies_list)).all()
+      vehicles_list = [{'placa': vehicle.PLACA, 'numero': vehicle.NUMERO, 'marca': vehicle.NOMMARCA, 'consecutivo': vehicle.CONSECUTIV} for vehicle in vehicles]
 
-        vehicles_list = [{'placa': vehicle.PLACA, 'numero': vehicle.NUMERO, 'marca': vehicle.NOMMARCA, 'consecutivo': vehicle.CONSECUTIV} for vehicle in vehicles]
-      
       return JSONResponse(content=jsonable_encoder(vehicles_list), status_code=200)
-    
+
     return JSONResponse(content={"error": "Propietario no encontrado"}, status_code=404)
-  
+
   except Exception as e:
     return JSONResponse(content={"error": str(e)}, status_code=500)
   finally:
@@ -609,41 +641,26 @@ async def get_vehicles_owners(owner: Owner):
 # ---------------------------------------------------------------------------------------------------------------
 
 @owners_router.post("/vehicles_per_owners/", tags=["Owners"])
-async def get_vehicles_owners(owner: Owner):
+async def get_vehicles_per_owners(owner: Owner):
   db = session()
   try:
-    user_admin = os.getenv('USER_ADMIN')
     vehicles_by_company = {}
     if owner.propietario:
-      if owner.propietario == user_admin:
-        # Para el usuario admin, se obtienen todos los vehículos
-        # Se realiza join con Propietarios para obtener el nombre de la empresa
-        vehicles = db.query(
-          Vehiculos.PLACA,
-          Vehiculos.NUMERO,
-          Vehiculos.NOMMARCA,
-          Vehiculos.CONSECUTIV,
-          Vehiculos.PROPI_IDEN,
-          Propietarios.NOMBRE.label('empresa')
-        ).join(Propietarios, Propietarios.CODIGO == Vehiculos.PROPI_IDEN).all()
-      else:
-        company_code = db.query(PermisosUsuario.EMPRESA).filter(PermisosUsuario.CODIGO == owner.propietario).first()
-        # Para un usuario no admin, se filtran las empresas asignadas
-        companies = db.query(PermisosUsuario.EMPRESAS)\
-                      .filter(PermisosUsuario.CODIGO == owner.propietario)\
-                      .first()
-        # Se asume que companies.EMPRESAS es un string tipo "[50 51 57 60 63]"
-        companies_list = companies.EMPRESAS.strip('[]').split()
-        vehicles = db.query(
-          Vehiculos.PLACA,
-          Vehiculos.NUMERO,
-          Vehiculos.NOMMARCA,
-          Vehiculos.CONSECUTIV,
-          Vehiculos.PROPI_IDEN,
-          Propietarios.NOMBRE.label('empresa')
-        ).join(Propietarios, Propietarios.CODIGO == Vehiculos.PROPI_IDEN)\
-         .filter(Vehiculos.PROPI_IDEN.in_(companies_list), Vehiculos.EMPRESA == company_code[0], Propietarios.EMPRESA == company_code[0]).all()
-      
+      company_code = db.query(PermisosUsuario.EMPRESA).filter(PermisosUsuario.CODIGO == owner.propietario).first()
+      companies = db.query(PermisosUsuario.EMPRESAS)\
+                    .filter(PermisosUsuario.CODIGO == owner.propietario)\
+                    .first()
+      companies_list = companies.EMPRESAS.strip('[]').split() if companies and companies.EMPRESAS else []
+      vehicles = db.query(
+        Vehiculos.PLACA,
+        Vehiculos.NUMERO,
+        Vehiculos.NOMMARCA,
+        Vehiculos.CONSECUTIV,
+        Vehiculos.PROPI_IDEN,
+        Propietarios.NOMBRE.label('empresa')
+      ).join(Propietarios, Propietarios.CODIGO == Vehiculos.PROPI_IDEN)\
+       .filter(Vehiculos.PROPI_IDEN.in_(companies_list), Vehiculos.EMPRESA == company_code[0], Propietarios.EMPRESA == company_code[0]).all() if company_code else []
+
       # Agrupar vehículos por el nombre (empresa)
       for vehicle in vehicles:
         company_key = f"{vehicle.empresa} - {vehicle.PROPI_IDEN}"
@@ -656,13 +673,31 @@ async def get_vehicles_owners(owner: Owner):
           'consecutivo': vehicle.CONSECUTIV
         })
 
-        sorted_vehicles_by_company = dict(sorted(vehicles_by_company.items()))
-      
+      sorted_vehicles_by_company = dict(sorted(vehicles_by_company.items()))
+
       return JSONResponse(content=jsonable_encoder(sorted_vehicles_by_company), status_code=200)
-    
+
     return JSONResponse(content={"error": "Propietario no encontrado"}, status_code=404)
-  
+
   except Exception as e:
     return JSONResponse(content={"error": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# ---------------------------------------------------------------------------------------------------------------
+
+@owners_router.get("/owners-count/{company_code}/", tags=["Owners"])
+async def get_owners_count(company_code: str):
+  db = session()
+  try:
+    count = db.query(Propietarios).filter(
+      Propietarios.EMPRESA == company_code,
+      Propietarios.CODIGO != '',
+      Propietarios.CODIGO != None
+    ).count()
+
+    return JSONResponse(content={"owners_count": count}, status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()

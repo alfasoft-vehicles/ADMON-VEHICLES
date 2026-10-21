@@ -26,7 +26,8 @@
           *ngFor="let option of filteredOptions | async"
           [value]="option.unidad"
         >
-          {{ option.unidad }} - {{ option.placa }}
+          {{ option.unidad }} - {{ option.placa }} - {{ option.nro_cupo }} -
+          {{ option.propietario }}
         </mat-option>
       </mat-autocomplete>
     </mat-form-field>
@@ -117,10 +118,17 @@
     <mat-divider></mat-divider>
 
     <form class="info-select" [formGroup]="infoChangeState">
-      <mat-error *ngIf="infoChangeState.get('state')?.hasError('required') && infoChangeState.get('state')?.touched">
+      <mat-error
+        *ngIf="
+          infoChangeState.get('state')?.hasError('required') &&
+          infoChangeState.get('state')?.touched
+        "
+      >
         El estado es obligatorio
       </mat-error>
-      <mat-error *ngIf="infoChangeState.get('state')?.hasError('sameAsCurrent')">
+      <mat-error
+        *ngIf="infoChangeState.get('state')?.hasError('sameAsCurrent')"
+      >
         No puedes seleccionar el mismo estado actual.
       </mat-error>
       <mat-form-field class="form-field">
@@ -178,7 +186,12 @@
         </mat-error> -->
       </mat-form-field>
 
-      <mat-error *ngIf="infoChangeState.get('description')?.hasError('required')  && infoChangeState.get('description')?.touched">
+      <mat-error
+        *ngIf="
+          infoChangeState.get('description')?.hasError('required') &&
+          infoChangeState.get('description')?.touched
+        "
+      >
         La descripción es obligatoria
       </mat-error>
       <mat-form-field class="text-area">
@@ -193,7 +206,12 @@
   <button
     mat-button
     cdkFocusInitial
-    [disabled]="!selectedVehicle || isLoadingVehicleInfo || isLoadingChange || infoChangeState.invalid"
+    [disabled]="
+      !selectedVehicle ||
+      isLoadingVehicleInfo ||
+      isLoadingChange ||
+      infoChangeState.invalid
+    "
     (click)="openConfirmationDialog()"
   >
     Confirmar

@@ -1,0 +1,56 @@
+<h2 mat-dialog-title *ngIf="data.vehicleNumber != ''">Vehículo {{ data.vehicleNumber }}</h2>
+
+<mat-dialog-content>
+  <table class="info-table" *ngIf="!isLoading">
+    <tbody>
+      <tr>
+        <td class="info-header">Placa</td>
+        <td class="info-data" (click)="copyToClipboard(vehicle.placa_vehiculo)">{{ vehicle.placa_vehiculo }}</td>
+      </tr>
+      <tr>
+        <td class="info-header">Número de Cupo</td>
+        <td class="info-data" (click)="copyToClipboard(vehicle.nro_cupo)">{{ vehicle.nro_cupo }}</td>
+      </tr>
+      <tr>
+        <td class="info-header">Propietario</td>
+        <td class="info-data" (click)="copyToClipboard(vehicle.propietario)">{{ vehicle.propietario }}</td>
+      </tr>
+      <tr>
+        <td class="info-header">Código Conductor</td>
+        <td class="info-data" (click)="copyToClipboard(vehicle.codigo_conductor)">{{ vehicle.codigo_conductor }}</td>
+      </tr>
+      <tr>
+        <td class="info-header">Conductor</td>
+        <td class="info-data" (click)="copyToClipboard(vehicle.nombre_conductor)">{{ vehicle.nombre_conductor }}</td>
+      </tr>
+      <tr>
+        <td class="info-header">Teléfono</td>
+        <td class="info-data" (click)="copyToClipboard(vehicle.telefono_conductor)">{{ vehicle.telefono_conductor }}</td>
+      </tr>
+      <tr>
+        <td class="info-header">PanaPass</td>
+        <td class="info-data" (click)="copyToClipboard(vehicle.panapass)">{{ vehicle.panapass }}</td>
+      </tr>
+      <tr>
+        <td class="info-header">Fecha de Entrega</td>
+        <td class="info-data" (click)="copyToClipboard(vehicle.fecha_contrato)">{{ vehicle.fecha_contrato }}</td>
+      </tr>
+      <tr>
+        <td class="info-header">Valor Cuota</td>
+        <td class="info-data" (click)="copyToClipboard(vehicle.valor_cuota)">${{ vehicle.valor_cuota }}</td>
+      </tr>
+      <tr>
+        <td class="info-header">Número Coutas / Pagas / Pendientes</td>
+        <td class="info-data" (click)="copyToClipboard(vehicle.numero_cuotas + ' / ' + vehicle.cuotas_pagas + ' / ' + vehicle.cuotas_pendientes)">{{ vehicle.numero_cuotas }} / {{ vehicle.cuotas_pagas }} / {{ vehicle.cuotas_pendientes }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <mat-progress-bar
+    mode="indeterminate"
+    *ngIf="isLoading"
+  ></mat-progress-bar>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close cdkFocusInitial>Cerrar</button>
+</mat-dialog-actions>

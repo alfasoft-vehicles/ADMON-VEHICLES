@@ -27,7 +27,7 @@
             *ngFor="let option of filteredOptions | async"
             [value]="option.unidad"
           >
-            {{ option.unidad }} - {{ option.placa }}
+            {{ option.unidad }} - {{ option.placa }} - {{ option.nro_cupo }} - {{ option.propietario }}
           </mat-option>
         </mat-autocomplete>
       </mat-form-field>
@@ -139,6 +139,13 @@
         >
           El vehículo no tiene un conductor asociado.
         </p>
+
+        <p
+          class="message"
+          *ngIf="validationsVehicle.loaned_unit && unauthorizedVehicle"
+        >
+          El conductor ya tiene un vehículo prestado.
+        </p>
       </div>
     </div>
   </div>
@@ -172,7 +179,7 @@
             *ngFor="let option of filteredOptionsVehicleLoan | async"
             [value]="option.vehicle_number"
           >
-            {{ option.vehicle_number }} - {{ option.vehicle_plate }}
+            {{ option.vehicle_number }} - {{ option.vehicle_plate }} - {{ option.quota_number }} - {{ option.owner }}
           </mat-option>
         </mat-autocomplete>
       </mat-form-field>

@@ -1,4 +1,9 @@
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Component, effect, ElementRef, ViewChild } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { OwnersPandgstatusOptionsDialogComponent } from 'src/app/modules/options/owners/components/owners-pandgstatus/owners-pandgstatus-options-dialog/owners-pandgstatus-options-dialog.component';
+import { OwnersRelationshipOptionsComponent } from 'src/app/modules/options/owners/components/owners-relationshiprevenues/owners-relationship-options/owners-relationship-options.component';
+import { OwnersStatusfleetOptionsComponent } from 'src/app/modules/options/owners/components/owners-statusfleet/owners-statusfleet-options/owners-statusfleet-options.component';
 import { JwtService } from 'src/app/services/jwt.service';
 import { GlobalStatesService } from 'src/app/states/global-states.service';
 
@@ -11,8 +16,6 @@ export class HomeOwnersComponent {
   @ViewChild('videoPlayer') videoPlayer!: ElementRef<HTMLVideoElement>;
 
   options: any[] = [];
-
-  isAdmin: boolean = false;
 
   logoutIcon: string = '../../../../assets/icons/logout.svg';
   rightIcon: string = '../../../../assets/icons/rightArrow.svg';
@@ -42,6 +45,7 @@ export class HomeOwnersComponent {
   ownersRelationshiprevenuesGeneralVisible: boolean = false;
   ownersPartsrelationshipVisible: boolean = false;
   ownersPandgstatusVisible: boolean = false;
+  ownersPandgstatusGeneralVisible: boolean = false;
   ownersFeespaidVisible: boolean = false;
   infoCompanyVisible: boolean = false;
 
@@ -49,7 +53,9 @@ export class HomeOwnersComponent {
     private jwtService: JwtService,
     // private apiService: ApiService,
     // private router: Router,
-    private globalStatesService: GlobalStatesService
+    private globalStatesService: GlobalStatesService,
+    private dialog: MatDialog,
+    private breakpointObserver: BreakpointObserver,
   ) {
     effect(() => {
       this.infoCompanyVisible = this.globalStatesService.displayInfoCompany();
@@ -63,59 +69,42 @@ export class HomeOwnersComponent {
   }
 
   obtenerUsuario() {
-    this.permisos = this.jwtService.getUserData();
-    // console.log(this.permisos);
-
-    this.isAdmin = this.jwtService.isAdmin();
-
-    this.convertirValoresBooleanos(this.permisos);
+    this.permisos = this.jwtService.getUserPermissions();
 
     this.options = [
       {
-        name: 'Estado de Flota Resumen',
-        url: 'hoalalalal',
+        name: 'Estado de Flota',
+        url: 'devvvvv',
         disabled: false,
-        click: () => this.showModalOwnersStatusfleetsummary(),
-      },
-      {
-        name: 'Estado de Flota Detalle',
-        url: 'hoalalalal',
-        disabled: false,
-        click: () => this.showModalOwnersStatusfleetdetail(),
+        click: () => this.openStatusFleetOptionsDialog(),
       },
       {
         name: 'Valores de Compra y Piquera',
-        url: 'hoalalalal',
+        url: 'devvvvv',
         disabled: false,
         click: () => this.showModalOwnersPurchasevalueandpiquera(),
       },
       {
-        name: 'Relación Ingresos Unidades',
-        url: 'hoalalalal',
+        name: 'Relación Ingresos',
+        url: 'devvvvv',
         disabled: false,
-        click: () => this.showModalOwnersRelationshipprevenues(),
-      },
-      {
-        name: 'Relación Ingresos Generales',
-        url: 'hoalalalal',
-        disabled: false,
-        click: () => this.showModalOwnersRelationshiprevenuesGeneral(),
+        click: () => this.openRelationshipOptionsDialog(),
       },
       {
         name: 'Relación Piezas',
-        url: 'hoalalalal',
+        url: 'devvvvv',
         disabled: false,
         click: () => this.showModalOwnersPartsRelationship(),
       },
       {
         name: 'Estado de P y G',
-        url: 'hoalalalal',
+        url: 'devvvvv',
         disabled: false,
-        click: () => this.showModalOwnersPandgstatus(),
+        click: () => this.openPyGStatusOptionsDialog(),
       },
       {
         name: 'Cuotas Pagas por Conductor',
-        url: 'hoalalalal',
+        url: 'devvvvv',
         disabled: false,
         click: () => this.showModalOwnersFeespaid(),
       },
@@ -146,19 +135,6 @@ export class HomeOwnersComponent {
     this.currentVideo = this.videos[this.currentVideoIndex];
     this.videoPlayer.nativeElement.load(); // Cargar el nuevo video
     // this.videoPlayer.nativeElement.muted = true;
-  }
-
-  convertirValoresBooleanos(obj: any) {
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        const value = obj[key];
-        if (value === 'T') {
-          obj[key] = true;
-        } else if (value === 'F' || value === null) {
-          obj[key] = false;
-        }
-      }
-    }
   }
 
   showModalOwnersStatusfleetsummary() {
@@ -207,10 +183,74 @@ export class HomeOwnersComponent {
     document.body.style.overflow = 'hidden';
   }
 
+  showModalOwnersPandgstatusGeneral() {
+    this.ownersPandgstatusGeneralVisible =
+      !this.ownersPandgstatusGeneralVisible;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+  }
+
   showModalOwnersFeespaid() {
     this.ownersFeespaidVisible = !this.ownersFeespaidVisible;
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
+  }
+
+  openPyGStatusOptionsDialog() {
+    const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
+    const dialogWidth = isSmallScreen ? '90vw' : '60%';
+
+    const dialogRef = this.dialog.open(
+      OwnersPandgstatusOptionsDialogComponent,
+      {
+        width: dialogWidth,
+        disableClose: true,
+      },
+    );
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result === 'units') {
+        this.showModalOwnersPandgstatus();
+      } else if (result === 'general') {
+        this.showModalOwnersPandgstatusGeneral();
+      }
+    });
+  }
+
+  openStatusFleetOptionsDialog() {
+    const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
+    const dialogWidth = isSmallScreen ? '90vw' : '60%';
+
+    const dialogRef = this.dialog.open(OwnersStatusfleetOptionsComponent, {
+      width: dialogWidth,
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result === 'detail') {
+        this.showModalOwnersStatusfleetdetail();
+      } else if (result === 'summary') {
+        this.showModalOwnersStatusfleetsummary();
+      }
+    });
+  }
+
+  openRelationshipOptionsDialog() {
+    const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
+    const dialogWidth = isSmallScreen ? '90vw' : '60%';
+
+    const dialogRef = this.dialog.open(OwnersRelationshipOptionsComponent, {
+      width: dialogWidth,
+      disableClose: true,
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result === 'units') {
+        this.showModalOwnersRelationshipprevenues();
+      } else if (result === 'general') {
+        this.showModalOwnersRelationshiprevenuesGeneral();
+      }
+    });
   }
 
   hideModal() {
@@ -246,6 +286,11 @@ export class HomeOwnersComponent {
 
     if (this.ownersPandgstatusVisible) {
       this.ownersPandgstatusVisible = !this.ownersPandgstatusVisible;
+    }
+
+    if (this.ownersPandgstatusGeneralVisible) {
+      this.ownersPandgstatusGeneralVisible =
+        !this.ownersPandgstatusGeneralVisible;
     }
 
     if (this.ownersFeespaidVisible) {

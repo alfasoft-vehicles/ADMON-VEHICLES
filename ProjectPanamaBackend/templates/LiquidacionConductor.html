@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Liquidación de Cuenta</title>
+  <style type="text/css">
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      font-size: 15px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .header-title {
+      font-weight: bold;
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+
+    .doc-info {
+      text-align: center;
+      margin: 10px 0 20px 0;
+      font-size: 15px;
+    }
+
+    .conductor-section {
+      margin: 15px 0;
+      font-size: 15px;
+      border: 2px solid #000;
+      border-radius: 5px;
+      padding: 10px;
+      /* width: 100%; */
+    }
+
+    .conductor-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .conductor-table td {
+      padding: 3px 0;
+      vertical-align: top;
+    }
+
+    .conductor-left {
+      width: 150px;
+    }
+
+    .conductor-right {
+      padding-left: 20px;
+    }
+
+    .cc-celular {
+      margin: 3px 0;
+    }
+
+    .cc-celular span {
+      display: inline-block;
+      margin-right: 30px;
+    }
+
+    .two-columns-section {
+      margin: 15px 0;
+      border: 2px solid #000;
+      border-radius: 5px;
+      /* width: 100%; */
+    }
+
+    .two-columns-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .column-cell {
+      width: 50%;
+      padding: 10px;
+      vertical-align: top;
+    }
+
+    .section-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+      font-size: 18px;
+      padding: 5px;
+      text-align: center;
+    }
+
+    .section-content {
+      font-size: 15px;
+      padding: 5px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table td {
+      padding: 3px 0;
+    }
+
+    .data-label {
+      text-align: left;
+    }
+
+    .data-value {
+      text-align: right;
+      min-width: 80px;
+    }
+
+    .total-row {
+      font-weight: bold;
+      border-top: 1px solid #000;
+      padding-top: 5px;
+    }
+
+    .deudas-value {
+      color: #FF0000;
+    }
+
+    .otros-gastos {
+      margin: 15px 0;
+    }
+
+    .monto-final-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .monto-final-table td {
+      padding: 5px 0;
+      font-weight: bold;
+    }
+
+    .monto-label {
+      font-size: 18px;
+      text-align: left;
+    }
+
+    .monto-value {
+      text-align: right;
+    }
+
+    .detalle-section {
+      margin: 15px 0;
+      border: 2px solid #000;
+      border-radius: 5px;
+      padding: 10px;
+    }
+
+    .detalle-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+      font-size: 18px;
+    }
+
+    .detalle-content {
+      font-size: 15px;
+      font-style: italic;
+      margin-top: 5px;
+      line-height: 1.4;
+      padding: 8px;
+      min-height: 30px;
+    }
+
+    .firma-section {
+      margin-top: 30px;
+      text-align: left;
+    }
+
+    .firma-line {
+      border-top: 1px solid #000;
+      width: 300px;
+      margin: 100px auto 20px 0;
+    }
+
+    .spacer-20 {
+      height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <div class="doc-info">
+      <div class="header-title">LIQUIDACION DE CUENTA - Unidad: {{ data_view['vehicle_number']}}</div>
+    </div>
+
+    <!-- Información del Conductor -->
+    <div class="conductor-section">
+      <table class="conductor-table">
+        <tr>
+          <td class="conductor-left">
+            Conductor: {{ data_view['driver']['code'] }}
+          </td>
+          <td class="conductor-right">
+            <div>Nombre: {{ data_view['driver']['name'] }}</div>
+            <div class="cc-celular">
+              <span>Nº CC.: {{ data_view['driver']['cc'] }}</span>
+              <span>Celular: {{ data_view['driver']['cellphone'] }}</span>
+            </div>
+            <div>Dirección: {{ data_view['driver']['address'] }}</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Secciones en dos columnas -->
+    <div class="two-columns-section">
+      <table class="two-columns-table">
+        <tr>
+          <!-- Columna Izquierda: FONDOS y DEUDAS -->
+          <td class="column-cell">
+            <!-- FONDOS -->
+            <div class="section-title">FONDOS</div>
+            <div class="section-content">
+              <table class="data-table">
+                <tr>
+                  <td class="data-label">Inscripción:</td>
+                  <td class="data-value">{{ data_view['registration'] }}</td>
+                </tr>
+                <tr class="total-row">
+                  <td class="data-label">Total Fondos:</td>
+                  <td class="data-value">{{ data_view['registration'] }}</td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- Espaciador -->
+            <div class="spacer-20"></div>
+
+            <!-- DEUDAS -->
+            <div class="section-title">DEUDAS</div>
+            <div class="section-content">
+              <table class="data-table">
+                <tr>
+                  <td class="data-label">Renta Diaria:</td>
+                  <td class="data-value deudas-value">{{ data_view['daily_rent'] }}</td>
+                </tr>
+                <tr>
+                  <td class="data-label">Siniestros:</td>
+                  <td class="data-value deudas-value">{{ data_view['accidents'] }}</td>
+                </tr>
+                <tr>
+                  <td class="data-label">Otras Deudas:</td>
+                  <td class="data-value deudas-value">{{ data_view['other_debts'] }}</td>
+                </tr>
+                <tr>
+                  <td class="data-label">Panapass:</td>
+                  <td class="data-value deudas-value">{{ data_view['panapass'] }}</td>
+                </tr>
+                <tr class="total-row">
+                  <td class="data-label">Total Deudas:</td>
+                  <td class="data-value deudas-value">{{ data_view['total_debt'] }}</td>
+                </tr>
+              </table>
+            </div>
+          </td>
+
+          <!-- Columna Derecha: DEVOLUCIÓN -->
+          <td class="column-cell">
+            <div class="section-title">DEVOLUCION</div>
+            <div class="section-content">
+              <table class="data-table">
+                <tr>
+                  <td class="data-label">Por Inscripción:</td>
+                  <td class="data-value">{{ data_view['return_by_registration'] }}</td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- Otros Gastos y Montos Finales -->
+            <div class="otros-gastos">
+              <table class="monto-final-table">
+                <tr>
+                  <td class="monto-label">(+) Otros Gastos:</td>
+                  <td class="monto-value">{{ data_view['other_expenses'] }}</td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="height: 15px;"></td>
+                </tr>
+                <tr>
+                  <td class="monto-label">Monto a Devolver:</td>
+                  <td class="monto-value">{{ data_view['owed_to_driver'] }}</td>
+                </tr>
+                <tr>
+                  <td class="monto-label">Monto a Deudar:</td>
+                  <td class="monto-value">{{ data_view['owed_by_driver'] }}</td>
+                </tr>
+              </table>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Detalle -->
+    <div class="detalle-section">
+      <div class="detalle-title">Detalle:</div>
+      <div class="detalle-content">{{ data_view['details'] }}</div>
+    </div>
+
+    <!-- Firma -->
+    <div class="firma-section">
+      <div style="font-size: 15px;">Firma:</div>
+      <div class="firma-line"></div>
+      <div>CC./NIT.</div>
+    </div>
+  </div>
+</body>
+</html>

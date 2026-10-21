@@ -1,0 +1,392 @@
+<h2 mat-dialog-title>Detalles de Inspección</h2>
+
+<mat-dialog-content class="mat-typography">
+  <ng-template #loadingTemplate>
+    <div class="dialog-loader-container">
+      <div class="spinner-wrapper">
+        <mat-progress-spinner
+          mode="indeterminate"
+          [diameter]="52"
+          [strokeWidth]="4"
+          color="primary"
+          class="custom-spinner"
+        ></mat-progress-spinner>
+        <div class="spinner-center-icon">
+          <mat-icon>hourglass_top</mat-icon>
+        </div>
+      </div>
+      <div class="loader-text">
+        <h3 class="loader-title">Cargando detalles</h3>
+        <p class="loader-message">Obteniendo información de la inspección...</p>
+      </div>
+      <div class="progress-bar-wrapper">
+        <mat-progress-bar
+          mode="indeterminate"
+          color="primary"
+        ></mat-progress-bar>
+      </div>
+    </div>
+  </ng-template>
+  <div class="inspection-content" *ngIf="!isLoading; else loadingTemplate">
+    <!-- Información Principal -->
+    <mat-card class="info-section">
+      <mat-card-header>
+        <mat-card-title class="section-title">
+          <mat-icon>info</mat-icon>
+          Información General
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">ID:</span>
+            <span class="value">{{ inspectionData.id }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Empresa:</span>
+            <span class="value">{{ inspectionData.empresa }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Fecha y hora:</span>
+            <span class="value"
+              >{{ inspectionData.fecha }} {{ inspectionData.hora }}</span
+            >
+          </div>
+          <div class="info-item">
+            <span class="label">Usuario:</span>
+            <span class="value">{{ inspectionData.usuario || "N/A" }}</span>
+          </div>
+          <div class="info-item full-width">
+            <span class="label">Estado:</span>
+            <mat-chip
+              class="status-chip"
+              [class.status-pending]="
+                inspectionData.estado_inspeccion === 'PEN'
+              "
+              [class.status-finished]="
+                inspectionData.estado_inspeccion === 'FIN'
+              "
+              [class.status-suspended]="
+                inspectionData.estado_inspeccion === 'SUS'
+              "
+            >
+              {{ getStatusText(inspectionData.estado_inspeccion) }}
+            </mat-chip>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Información del Propietario -->
+    <mat-card class="info-section">
+      <mat-card-header>
+        <mat-card-title class="section-title">
+          <mat-icon>person</mat-icon>
+          Propietario
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Código:</span>
+            <span class="value">{{
+              getOwnerCode(inspectionData.propietario)
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Nombre:</span>
+            <span class="value">{{ inspectionData.nombre_propietario }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Información del Vehículo -->
+    <mat-card class="info-section">
+      <mat-card-header>
+        <mat-card-title class="section-title">
+          <mat-icon>directions_car</mat-icon>
+          Vehículo
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Unidad:</span>
+            <span class="value">{{ inspectionData.unidad }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Placa:</span>
+            <span class="value">{{ inspectionData.placa }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Cupo:</span>
+            <span class="value">{{ inspectionData.cupo || "N/A" }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Kilometraje:</span>
+            <span class="value"
+              >{{ inspectionData.kilometraje || "N/A" }} km</span
+            >
+          </div>
+          <div class="info-item">
+            <span class="label">Combustible:</span>
+            <span class="value">{{ inspectionData.combustible || "N/A" }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">PanaPass:</span>
+            <span class="value">{{ inspectionData.panapass || "N/A" }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Información del Conductor -->
+    <mat-card class="info-section">
+      <mat-card-header>
+        <mat-card-title class="section-title">
+          <mat-icon>drive_eta</mat-icon>
+          Conductor
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Código:</span>
+            <span class="value">{{ inspectionData.conductor || "N/A" }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Nombre:</span>
+            <span class="value">{{
+              inspectionData.nombre_conductor || "N/A"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Cédula:</span>
+            <span class="value">{{
+              inspectionData.cedula_conductor || "N/A"
+            }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Detalles de la Inspección -->
+    <mat-card class="info-section">
+      <mat-card-header>
+        <mat-card-title class="section-title">
+          <mat-icon>assignment</mat-icon>
+          Detalles de Inspección
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Tipo de Inspección:</span>
+            <span class="value">{{ inspectionData.tipo_inspeccion }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Mecánico:</span>
+            <span class="value">{{ inspectionData.mecanico }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Descripción:</span>
+            <span class="value description-text">{{
+              inspectionData.descripcion || "N/A"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Observaciones:</span>
+            <span class="value description-text">{{
+              inspectionData.observaciones || "N/A"
+            }}</span>
+          </div>
+
+          <!-- Items de Inspección -->
+          <div class="info-item">
+            <span class="label">Alfombra:</span>
+            <span class="value">{{
+              inspectionData.alfombra ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Antena:</span>
+            <span class="value">{{ inspectionData.antena ? "Sí" : "No" }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Carátula Radio:</span>
+            <span class="value">{{
+              inspectionData.caratradio ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Copas Rines:</span>
+            <span class="value">{{
+              inspectionData.copasrines ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Extinguidor:</span>
+            <span class="value">{{
+              inspectionData.extinguidor ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Formato Colisiones:</span>
+            <span class="value">{{
+              inspectionData.formatocolis ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Gato:</span>
+            <span class="value">{{ inspectionData.gato ? "Sí" : "No" }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">GPS:</span>
+            <span class="value">{{ inspectionData.gps ? "Sí" : "No" }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Lámparas:</span>
+            <span class="value">{{
+              inspectionData.lamparas ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Llanta Repuesto:</span>
+            <span class="value">{{
+              inspectionData.llantarepu ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Luces Delanteras:</span>
+            <span class="value">{{
+              inspectionData.luzdelante ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Luces Traseras:</span>
+            <span class="value">{{
+              inspectionData.luztracera ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Pago Municipio:</span>
+            <span class="value">{{
+              inspectionData.pagomunici ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Pipa:</span>
+            <span class="value">{{ inspectionData.pipa ? "Sí" : "No" }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Placa Municipal:</span>
+            <span class="value">{{
+              inspectionData.placamunic ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Póliza Seguro:</span>
+            <span class="value">{{
+              inspectionData.poliseguro ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Registro Vehículo:</span>
+            <span class="value">{{
+              inspectionData.regisvehic ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Retrovisor:</span>
+            <span class="value">{{
+              inspectionData.retrovisor ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Revisado:</span>
+            <span class="value">{{
+              inspectionData.revisado ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Tapicería:</span>
+            <span class="value">{{
+              inspectionData.tapiceria ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Triángulo:</span>
+            <span class="value">{{
+              inspectionData.triangulo ? "Sí" : "No"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Vidrios:</span>
+            <span class="value">{{
+              inspectionData.vidrios ? "Sí" : "No"
+            }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Sección de Fotos -->
+    <mat-card
+      class="info-section"
+      *ngIf="inspectionData.fotos && inspectionData.fotos.length > 0"
+    >
+      <mat-card-header>
+        <mat-card-title class="section-title">
+          <mat-icon>photo_library</mat-icon>
+          Fotografías ({{ inspectionData.fotos.length }})
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="photos-section">
+          <button
+            mat-raised-button
+            color="primary"
+            class="view-photos-btn"
+            (click)="closeDialog('viewPhotos')"
+          >
+            <mat-icon>visibility</mat-icon>
+            Ver Fotos
+          </button>
+          <p class="photos-info">
+            {{ inspectionData.fotos.length }} fotografía(s) disponible(s)
+          </p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="info-section" *ngIf="inspectionData.firma">
+      <mat-card-header>
+        <mat-card-title class="section-title">
+          <mat-icon>draw</mat-icon>
+          Firma del Conductor
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="photos-section">
+          <button
+            mat-raised-button
+            color="primary"
+            class="view-photos-btn"
+            (click)="closeDialog('viewSignature')"
+          >
+            <mat-icon>visibility</mat-icon>
+            Ver Firma
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close (click)="closeDialog('')">
+    <mat-icon>close</mat-icon>
+    Cerrar
+  </button>
+</mat-dialog-actions>

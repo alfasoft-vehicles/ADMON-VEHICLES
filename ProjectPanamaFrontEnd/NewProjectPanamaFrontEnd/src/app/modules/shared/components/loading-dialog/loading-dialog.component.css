@@ -1,0 +1,112 @@
+.loading-dialog-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 28px 24px 28px;
+  min-width: 300px;
+  max-width: 420px;
+  box-sizing: border-box;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.spinner-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  width: 64px;
+  height: 64px;
+}
+
+.custom-spinner {
+  filter: drop-shadow(0 2px 8px rgba(2, 132, 199, 0.25));
+}
+
+.spinner-center-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0284c7;
+  animation: pulse-icon 1.8s ease-in-out infinite;
+}
+
+.spinner-center-icon mat-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+@keyframes pulse-icon {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+.loading-dialog-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.loading-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.2px;
+}
+
+.loading-message {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #475569;
+  line-height: 1.45;
+  max-width: 320px;
+}
+
+.loading-submessage {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.progress-bar-wrapper {
+  width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.loading-progress-bar {
+  height: 4px;
+}
+
+::ng-deep .custom-loading-dialog-panel .mat-mdc-dialog-container {
+  padding: 0 !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18) !important;
+}
+
+::ng-deep .custom-loading-dialog-panel .mat-mdc-dialog-surface {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+}

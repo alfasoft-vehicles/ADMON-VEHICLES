@@ -1,16 +1,17 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import JSONResponse
 from config.dbconnection import session
 from models.vehiculos import Vehiculos
 from models.estados import Estados
 from models.conductores import Conductores
-from schemas.vehicles import VehicleUpdate, VehicleCreate
+from schemas.vehicles import VehicleUpdate, VehicleCreate, VehiclePagination, VehicleDirectory
 from models.centrales import Centrales
 from models.cajarecaudos import CajaRecaudos
 from models.propietarios import Propietarios
 from models.cajarecaudoscontado import CajasRecaudosContado
 from models.cartera import Cartera
 from models.movienca import Movienca
+from models.permisosusuario import PermisosUsuario
 from utils.reports import *
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime
@@ -20,19 +21,29 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import FileResponse
 import jinja2
 from utils.pdf import html2pdf
+from sqlalchemy import func, or_, cast, String
+import os
+import tempfile
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
+PDF_THREAD_POOL = ThreadPoolExecutor(max_workers=2)
 vehicles_router = APIRouter()
 
-@vehicles_router.get("/vehicles/{company_code}", tags=["Vehicles"])
+@vehicles_router.get("/vehicles/{company_code}/", tags=["Vehicles"])
 async def get_vehicles(company_code: str):
   db = session()
   try:
-    vehicles = db.query(Vehiculos.NUMERO, Vehiculos.PLACA).filter(Vehiculos.EMPRESA == company_code).all()
+    vehicles = db.query(Vehiculos.NUMERO, Vehiculos.PLACA, Vehiculos.PROPI_IDEN, Vehiculos.NRO_CUPO).filter(Vehiculos.EMPRESA == company_code).all()
+    owners = db.query(Propietarios.CODIGO, Propietarios.NOMBRE).filter(Propietarios.EMPRESA == company_code).all()
+    owners_dict = {owner.CODIGO: owner.NOMBRE for owner in owners}
 
     vehicles_list = [
       {
         'unidad': vehicle.NUMERO,
         'placa': vehicle.PLACA,
+        'propietario': owners_dict.get(vehicle.PROPI_IDEN, "") + ' (' + vehicle.PROPI_IDEN + ')',
+        'nro_cupo': vehicle.NRO_CUPO
       }
       for vehicle in vehicles
     ]
@@ -113,11 +124,11 @@ async def get_vehicles(company_code: str):
         'motor': vehicle.vehiculo_motor,
         'chasis': vehicle.vehiculo_chasis,
         'matricula': vehicle.vehiculo_fec_matricula,
-        'empresa': propietarios_dict.get(vehicle.vehiculo_propietario_codigo, ''),
-        'central': centrales_dict.get(vehicle.vehiculo_central_codigo, ''),
-        'conductor': conductores_dict.get(vehicle.vehiculo_conductor_codigo, ''),
+        'empresa': (propietarios_dict.get(vehicle.vehiculo_propietario_codigo, '') or '').title(),
+        'central': (centrales_dict.get(vehicle.vehiculo_central_codigo, '') or '').title(),
+        'conductor': (conductores_dict.get(vehicle.vehiculo_conductor_codigo, '') or '').title(),
         'estado': estados_dict.get(vehicle.vehiculo_estado_codigo, {}).get('sumar', ''),
-        'nombre_estado': estados_dict.get(vehicle.vehiculo_estado_codigo, {}).get('nombre', ''),
+        'nombre_estado': (estados_dict.get(vehicle.vehiculo_estado_codigo, {}).get('nombre', '') or '').title(),
         'vlr_cta': vehicle.vehiculo_cuota_diaria,
         'nro_ctas': vehicle.vehiculo_nro_Ctas,
         'panapass': vehicle.vehiculo_panapass,
@@ -135,11 +146,11 @@ async def get_vehicles(company_code: str):
 
 #-------------------------------------------------------------------------------------------
 
-@vehicles_router.get('/directorio-vehiculos/{company_code}/', tags=["Vehicles"]) 
-async def get_vehiculos_detalles(company_code: str):
+@vehicles_router.post('/directorio-vehiculos/', tags=["Vehicles"]) 
+async def get_vehiculos_detalles(data: VehicleDirectory):
     db = session()
     try:
-        vehiculos_detalles = db.query(
+        base_query = (db.query(
             Estados.NOMBRE.label('vehiculo_estado_nombre'),
             Vehiculos.PLACA.label('vehiculo_placa'),
             Vehiculos.NUMERO.label('vehiculo_unidad'),
@@ -155,15 +166,23 @@ async def get_vehiculos_detalles(company_code: str):
             Centrales.NOMBRE.label('vehiculo_central'),
         )   .join(Estados, Estados.CODIGO == Vehiculos.ESTADO) \
             .join(Centrales, Centrales.CODIGO == Vehiculos.CENTRAL) \
-            .filter(Vehiculos.EMPRESA == company_code) \
-            .all()
+            .filter(Vehiculos.EMPRESA == data.company_code)
+        )
+
+        if data.states:
+            base_query = base_query.filter(Vehiculos.ESTADO.in_(data.states))
+
+        vehiculos_detalles = base_query.all()
         
         propietarios = db.query(
             Propietarios.CODIGO,
             Propietarios.NOMBRE
-        ).filter(Propietarios.EMPRESA == company_code).all()
+        ).filter(Propietarios.EMPRESA == data.company_code).all()
 
         propietarios_dict = {prop.CODIGO: prop.NOMBRE for prop in propietarios}
+
+        user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user_code).first()
+        user = user.NOMBRE if user else ""
         
         vehiculos_detalles_list = []  
         for resultado in vehiculos_detalles:
@@ -184,68 +203,68 @@ async def get_vehiculos_detalles(company_code: str):
             }
             vehiculos_detalles_list.append(vehiculo_detalle)
 
-            data = agrupar_vehiculos_por_estado(vehiculos_detalles_list)
-            
-            # Datos de la fecha y hora actual
-            # Define la zona horaria de Ciudad de Panamá
-            panama_timezone = pytz.timezone('America/Panama')
-            # Obtén la hora actual en la zona horaria de Ciudad de Panamá
-            now_in_panama = datetime.now(panama_timezone)
-            # Formatea la fecha y la hora según lo requerido
-            fecha = now_in_panama.strftime("%d/%m/%Y")
-            hora_actual = now_in_panama.strftime("%I:%M:%S %p")
-            usuario = "admin"
-            titulo = 'Directorio Vehiculos'
+        vehicle_data = agrupar_vehiculos_por_estado(vehiculos_detalles_list)
+        
+        # Datos de la fecha y hora actual
+        # Define la zona horaria de Ciudad de Panamá
+        panama_timezone = pytz.timezone('America/Panama')
+        # Obtén la hora actual en la zona horaria de Ciudad de Panamá
+        now_in_panama = datetime.now(panama_timezone)
+        # Formatea la fecha y la hora según lo requerido
+        fecha = now_in_panama.strftime("%d/%m/%Y")
+        hora_actual = now_in_panama.strftime("%I:%M:%S %p")
+        #usuario = "admin"
+        titulo = 'Directorio Vehiculos'
 
-            def formatear_fecha(fecha_hora_str):
-              # Verificar si la fecha es una cadena
-              if isinstance(fecha_hora_str, str) and len(fecha_hora_str) >= 10:
-                  # Tomar solo los primeros 10 caracteres que corresponden a la fecha
-                  return fecha_hora_str[:10]
-              else:
-                  # En otros casos, devolver la cadena tal cual
-                  return fecha_hora_str
+        def formatear_fecha(fecha_hora_str):
+            # Verificar si la fecha es una cadena
+            if isinstance(fecha_hora_str, str) and len(fecha_hora_str) >= 10:
+                # Tomar solo los primeros 10 caracteres que corresponden a la fecha
+                return fecha_hora_str[:10]
+            else:
+                # En otros casos, devolver la cadena tal cual
+                return fecha_hora_str
 
-            # Inicializar el diccionario data_view con información común
-            data_view = {
-                "fecha": fecha,
-                "hora": hora_actual
-            }
+        # Inicializar el diccionario data_view con información común
+        data_view = {
+            "fecha": fecha,
+            "hora": hora_actual
+        }
 
-            for estado, info in data.items():
-              if estado:  # Asegurarse de ignorar el estado vacío (estado "")
-                  # Inicializar el diccionario para este estado
-                  data_view[estado] = {
-                      "nombre_estado": estado,
-                      "vehiculos": []
-                  }
-                  for vehiculo_placa, vehiculo_info in info.items():
-                      if isinstance(vehiculo_info, dict):
-                          # Crear el diccionario del vehículo con la información relevante
-                          vehiculo = {  
-                              "unidad": vehiculo_info.get("vehiculo_unidad", ""),
-                              "placa": vehiculo_info.get("vehiculo_placa", ""),
-                              "nro_cupo": vehiculo_info.get("vehiculo_nro_cupo", ""),
-                              "permiso": vehiculo_info.get("vehiculo_permiso_nro", ""),
-                              "marca": vehiculo_info.get("vehiculo_marca", ""),
-                              "linea": vehiculo_info.get("vehiculo_linea", ""),
-                              "año": vehiculo_info.get("vehiculo_año", ""),
-                              "motor": vehiculo_info.get("vehiculo_motor", ""),
-                              "chasis": vehiculo_info.get("vehiculo_chasis", ""),
-                              "fec_matricula": formatear_fecha(vehiculo_info.get("vehiculo_fec_matricula", "")),
-                              "empresa": vehiculo_info.get("vehiculo_empresa", ""),
-                              "central": vehiculo_info.get("vehiculo_central", ""),
-                          }
-                          # Agregar el vehículo a la lista de vehículos del estado
-                          data_view[estado]["vehiculos"].append(vehiculo)
+        for estado, info in vehicle_data.items():
+            if estado:  # Asegurarse de ignorar el estado vacío (estado "")
+                # Inicializar el diccionario para este estado
+                data_view[estado] = {
+                    "nombre_estado": estado,
+                    "vehiculos": []
+                }
+                for vehiculo_placa, vehiculo_info in info.items():
+                    if isinstance(vehiculo_info, dict):
+                        # Crear el diccionario del vehículo con la información relevante
+                        vehiculo = {  
+                            "unidad": vehiculo_info.get("vehiculo_unidad", ""),
+                            "placa": vehiculo_info.get("vehiculo_placa", ""),
+                            "nro_cupo": vehiculo_info.get("vehiculo_nro_cupo", ""),
+                            "permiso": vehiculo_info.get("vehiculo_permiso_nro", ""),
+                            "marca": vehiculo_info.get("vehiculo_marca", ""),
+                            "linea": vehiculo_info.get("vehiculo_linea", ""),
+                            "año": vehiculo_info.get("vehiculo_año", ""),
+                            "motor": vehiculo_info.get("vehiculo_motor", ""),
+                            "chasis": vehiculo_info.get("vehiculo_chasis", ""),
+                            "fec_matricula": formatear_fecha(vehiculo_info.get("vehiculo_fec_matricula", "")),
+                            "empresa": vehiculo_info.get("vehiculo_empresa", ""),
+                            "central": vehiculo_info.get("vehiculo_central", ""),
+                        }
+                        # Agregar el vehículo a la lista de vehículos del estado
+                        data_view[estado]["vehiculos"].append(vehiculo)
 
-            data_view["usuario"] = usuario
+        data_view["usuario"] = user
 
-            headers = {
-              "Content-Disposition": "attachment; detalles-vehiculos.pdf"
-            }  
+        headers = {
+            "Content-Disposition": "attachment; detalles-vehiculos.pdf"
+        }  
 
-            template_loader = jinja2.FileSystemLoader(searchpath="./templates")
+        template_loader = jinja2.FileSystemLoader(searchpath="./templates")
         template_env = jinja2.Environment(loader=template_loader)
         template_file = "DirectorioVehiculos.html"
         header_file = "header.html"
@@ -257,28 +276,45 @@ async def get_vehiculos_detalles(company_code: str):
         output_header = header.render(data_view=data_view)
         output_footer = footer.render(data_view=data_view)
 
-        html_path = f'./templates/renderDirectorioVehiculos.html'
-        header_path = f'./templates/renderheader.html'
-        footer_path = f'./templates/renderfooter.html'
-        html_file = open(html_path, 'w')
-        header_file = open(header_path, 'w')
-        html_footer = open(footer_path, 'w') 
-        html_file.write(output_text)
-        header_file.write(output_header)
-        html_footer.write(output_footer) 
-        html_file.close()
-        header_file.close()
-        html_footer.close()
-        pdf_path = 'Vehiculos-detalles.pdf'
-        html2pdf(titulo, html_path, pdf_path, header_path=header_path, footer_path=footer_path)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode='w') as html_file:
+            html_path = html_file.name
+            html_file.write(output_text)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode='w') as header_file:
+            header_path = header_file.name
+            header_file.write(output_header)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode='w') as footer_file:
+            footer_path = footer_file.name
+            footer_file.write(output_footer)
+        pdf_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf").name
 
-        response = FileResponse(pdf_path, media_type='application/pdf', filename='templates/Vehoculos-detalles.pdf', headers=headers)
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(
+           PDF_THREAD_POOL,
+           html2pdf,
+           titulo,
+           html_path, 
+           pdf_path,
+           header_path,
+           footer_path
+        )
+
+        background_tasks = BackgroundTasks()
+        background_tasks.add_task(os.remove, html_path)
+        background_tasks.add_task(os.remove, header_path)
+        background_tasks.add_task(os.remove, footer_path)
+        background_tasks.add_task(os.remove, pdf_path)
+
+        response = FileResponse(
+           pdf_path, media_type='application/pdf', 
+           filename='templates/Vehiculos-detalles.pdf', 
+           headers=headers,
+           background=background_tasks
+        )
         
         return response
-
-        """ return JSONResponse(content=jsonable_encoder(data))
+    
     except Exception as e:
-        return JSONResponse(content={"error": str(e)}) """
+        return JSONResponse(content={"message": str(e)}, status_code=500)
     finally:
         db.close()
 
@@ -721,6 +757,50 @@ def update_vehicle(vehicle_id: str, vehicle: VehicleUpdate):
 
 #-------------------------------------------------------------------------------------------
 
+@vehicles_router.get("/vehicles_data/{company_code}/", tags=["Vehicles"])
+async def vehicles_data(company_code: str):
+  db = session()
+  try:
+    vehicles = db.query(Vehiculos).filter(Vehiculos.EMPRESA == company_code, Vehiculos.PLACA != "", Vehiculos.NUMERO != "").all()
+    if not vehicles:
+      return JSONResponse(content={"message": "Vehicles not found"}, status_code=404)
+    
+    owners = db.query(Propietarios).filter(Propietarios.EMPRESA == company_code, Propietarios.CODIGO != "").all()
+    owners_dict = {owner.CODIGO: owner.NOMBRE for owner in owners}
+
+    states = db.query(Estados).filter(Estados.EMPRESA == company_code).all()
+    states_dict = {state.CODIGO: state.NOMBRE for state in states}
+
+    result = []
+
+    for vehicle in vehicles:
+      owner_name = owners_dict.get(vehicle.PROPI_IDEN, "")
+      state_name = states_dict.get(vehicle.ESTADO, "")
+      
+      result.append({
+        "placa_vehiculo": vehicle.PLACA,
+        "numero_unidad": vehicle.NUMERO,
+        "codigo_conductor": vehicle.CONDUCTOR,
+        "codigo_propietario": vehicle.PROPI_IDEN,
+        "nombre_propietario": owner_name,
+        "propietario": owner_name + " (" + vehicle.PROPI_IDEN + ")" if owner_name else vehicle.PROPI_IDEN,
+        "kilometraje": vehicle.KILOMETRAJ if vehicle.KILOMETRAJ else "",
+        "estado_vehiculo": state_name,
+        "marca": vehicle.NOMMARCA,
+        "linea": vehicle.LINEA,
+        "modelo": vehicle.MODELO,
+        "nro_cupo": vehicle.NRO_CUPO,
+      })
+
+    return JSONResponse(content=jsonable_encoder(result), status_code=200)
+
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-------------------------------------------------------------------------------------------
+
 @vehicles_router.delete("/vehicle/{vehicle_id}/", tags=["Vehicles"])
 async def verify_vehicle_delete(vehicle_id: str):
     db = session()
@@ -823,18 +903,175 @@ async def get_vehicle_codes():
 async def get_vehicles_by_state(company_code: str, state_code: str):
     db = session()
     try:
-        vehicles = db.query(Vehiculos).filter(
-            Vehiculos.EMPRESA == company_code,
-            Vehiculos.ESTADO == state_code
-        ).all()
+        if state_code == '1':
+           state_list = db.query(Estados.CODIGO).filter(Estados.EMPRESA == company_code, Estados.SUMAR == 1).all()
+           state_codes = [state.CODIGO for state in state_list]
+
+           vehicles = db.query(Vehiculos).filter(
+              Vehiculos.EMPRESA == company_code,
+              Vehiculos.ESTADO.in_(state_codes)
+           ).all()
+        else:
+            vehicles = db.query(Vehiculos).filter(
+                Vehiculos.EMPRESA == company_code,
+                Vehiculos.ESTADO == state_code
+            ).all()
 
         if not vehicles:
             return JSONResponse(content={"message": "No hay vehículos disponibles para la empresa y estado dados"}, status_code=404)
+        
+        owners = db.query(Propietarios.CODIGO, Propietarios.NOMBRE).filter(Propietarios.EMPRESA == company_code).all()
+        owners_dict = {owner.CODIGO: owner.NOMBRE for owner in owners}
 
-        response = [{'vehicle_number': vehicle.NUMERO, 'vehicle_plate': vehicle.PLACA} for vehicle in vehicles]
+        response = [
+            {
+              'vehicle_number': vehicle.NUMERO, 
+              'vehicle_plate': vehicle.PLACA,
+              'owner': owners_dict.get(vehicle.PROPI_IDEN, "") + ' (' + vehicle.PROPI_IDEN + ')',
+              'quota_number': vehicle.NRO_CUPO
+            } for vehicle in vehicles
+        ]
 
         return JSONResponse(content=jsonable_encoder(response), status_code=200)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+    finally:
+        db.close()
+
+#-------------------------------------------------------------------------------------------
+
+@vehicles_router.get("/vehicles-count/{company_code}/", tags=["Vehicles"])
+async def get_vehicles_count(company_code: str):
+    db = session()
+    try:
+        vehicle_count = db.query(func.count(Vehiculos.NUMERO)).filter(
+            Vehiculos.EMPRESA == company_code,
+            Vehiculos.PLACA != '',
+            Vehiculos.PLACA.isnot(None)
+        ).scalar()
+
+        return JSONResponse(content={"vehicle_count": vehicle_count}, status_code=200)
+    except Exception as e:
+        return JSONResponse(content={"message": str(e)}, status_code=500)
+    finally:
+        db.close()
+
+#-------------------------------------------------------------------------------------------
+
+@vehicles_router.post("/vehicles-pagination/{company_code}", tags=["Vehicles"])
+async def post_vehicles_pagination(company_code: str, pagination: VehiclePagination):
+    db = session()
+    try:
+        if pagination.page_number < 1 or pagination.page_size < 1:
+            return JSONResponse(content={"message": "Invalid page number or page size"}, status_code=400)
+        
+        offset = (pagination.page_number - 1) * pagination.page_size
+
+
+        vehicles = db.query(
+        Vehiculos.NUMERO.label('vehicle_number'),
+        Vehiculos.CONSECUTIV.label('vehicle_consecutive'),
+        Vehiculos.PLACA.label('vehicle_plate'),
+        Vehiculos.MODELO.label('vehicle_model'),
+        Vehiculos.NRO_CUPO.label('vehicle_nro_cupo'),
+        Vehiculos.PERMISONRO.label('vehicle_permit_nro'),
+        Vehiculos.MOTORNRO.label('vehicle_motor'),
+        Vehiculos.CHASISNRO.label('vehicle_chassis'),
+        Vehiculos.FEC_MATRIC.label('vehicle_fec_registration'),
+        Vehiculos.PROPI_IDEN.label('vehicle_owner_code'),
+        Vehiculos.CENTRAL.label('vehicle_central_code'),
+        Vehiculos.NRO_LLAVES.label('vehicle_nro_keys'),
+        Vehiculos.ESTADO.label('vehicle_state_code'),
+        Vehiculos.CONDUCTOR.label('vehicle_driver_code'),
+        Vehiculos.CUO_DIARIA.label('vehicle_daily_fee'),
+        Vehiculos.NROENTREGA.label('vehicle_nro_Ctas'),
+        Vehiculos.PANAPASSNU.label('vehicle_panapass'),
+        Vehiculos.PANAPASSPW.label('vehicle_panapass_pwd'),
+        Vehiculos.SDO_PANAPA.label('vehicle_panapass_balance'),
+        ).filter(Vehiculos.EMPRESA == company_code,
+            Vehiculos.PLACA != '',
+            Vehiculos.PLACA.isnot(None)
+        ).all()
+
+        drivers = db.query(
+            Conductores.CODIGO,
+            Conductores.NOMBRE
+        ).filter(Conductores.EMPRESA == company_code).all()
+
+        drivers_dict = {driver.CODIGO: driver.NOMBRE for driver in drivers}
+
+        states = db.query(
+            Estados.CODIGO,
+            Estados.NOMBRE,
+            Estados.SUMAR
+        ).filter(Estados.EMPRESA == company_code).all()
+
+        states_dict = {state.CODIGO: {'nombre': state.NOMBRE, 'sumar': state.SUMAR} for state in states}
+
+        centrals = db.query(
+            Centrales.CODIGO,
+            Centrales.NOMBRE
+        ).filter(Centrales.EMPRESA == company_code).all()
+
+        centrals_dict = {central.CODIGO: central.NOMBRE for central in centrals}
+
+        owners = db.query(
+            Propietarios.CODIGO,
+            Propietarios.NOMBRE
+        ).filter(Propietarios.EMPRESA == company_code).all()
+
+        owners_dict = {owner.CODIGO: owner.NOMBRE for owner in owners}
+
+        vehicles_list = [
+            {
+                'unidad': vehicle.vehicle_number,
+                'consecutivo': vehicle.vehicle_consecutive,
+                'placa': vehicle.vehicle_plate,
+                'modelo': vehicle.vehicle_model,
+                'nro_cupo': vehicle.vehicle_nro_cupo,
+                'permiso': vehicle.vehicle_permit_nro,
+                'motor': vehicle.vehicle_motor,
+                'chasis': vehicle.vehicle_chassis,
+                'matricula': vehicle.vehicle_fec_registration,
+                'empresa': owners_dict.get(vehicle.vehicle_owner_code, ''),
+                'central': centrals_dict.get(vehicle.vehicle_central_code, ''),
+                'conductor': drivers_dict.get(vehicle.vehicle_driver_code, ''),
+                'estado': states_dict.get(vehicle.vehicle_state_code, {}).get('sumar', ''),
+                'nombre_estado': states_dict.get(vehicle.vehicle_state_code, {}).get('nombre', ''),
+                'vlr_cta': vehicle.vehicle_daily_fee,
+                'nro_ctas': vehicle.vehicle_nro_Ctas,
+                'panapass': vehicle.vehicle_panapass,
+                'clave': vehicle.vehicle_panapass_pwd,
+                'saldo': vehicle.vehicle_panapass_balance,
+                'nro_llaves': vehicle.vehicle_nro_keys
+            }
+            for vehicle in vehicles
+        ]
+
+        if pagination.index:
+            term = pagination.index.lower()
+            def matches(vehicle):
+                for key, value in vehicle.items():
+                    if value is None:
+                        continue
+                    if term in str(value).lower():
+                        return True
+                return False
+            vehicles_list = [v for v in vehicles_list if matches(v)]
+        
+        total_vehicles = len(vehicles_list)
+        vehicles_list = vehicles_list[offset:offset + pagination.page_size]
+        total_pages = (total_vehicles + pagination.page_size - 1) // pagination.page_size
+
+        response = {
+            'page_number': pagination.page_number,
+            'total_vehicles': total_vehicles,
+            'total_pages': total_pages,
+            'data': vehicles_list
+        }
+
+        return JSONResponse(content=jsonable_encoder(response), status_code=200)
+    except Exception as e:
+        return JSONResponse(content={"message": str(e)}, status_code=500)
     finally:
         db.close()

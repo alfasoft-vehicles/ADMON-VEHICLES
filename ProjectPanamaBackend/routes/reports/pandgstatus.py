@@ -1,13 +1,15 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import JSONResponse
 from models.infoempresas import InfoEmpresas
 from models.propietarios import Propietarios
 from config.dbconnection import session
-from sqlalchemy import func, case
+from sqlalchemy import func, case, or_, and_
 from models.vehiculos import Vehiculos
 from models.cajarecaudos import CajaRecaudos
 from models.reclamoscolisiones import ReclamosColisiones
 from models.movimien import Movimien
+from models.chapisteriamanoobra import ChapisteriaManoObra
+from models.estados import Estados
 from schemas.reports import PandGStatusReport
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime
@@ -17,6 +19,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import FileResponse
 import jinja2
 from utils.pdf import html2pdf
+import tempfile
 
 templateJinja = Jinja2Templates(directory="templates")
 
@@ -29,338 +32,391 @@ async def pandgstatus_report(company_code: str, data: PandGStatusReport):
     if data.primeraFecha > data.ultimaFecha:
       return JSONResponse(status_code=400, content={"message": "La primera fecha no puede ser mayor que la última fecha"})
     
-    user_admin = os.getenv("USER_ADMIN")
+    owners_codes = data.empresa
 
-    #* Si el usuario seleccionó todas las unidades o dejó vacío el campo
-    if data.unidad == "" or data.unidad == "TODOS":
+    # Diccionario para mapear códigos de propietario a nombres
+    owners_info = db.query(Propietarios.CODIGO, Propietarios.NOMBRE).filter(
+      Propietarios.CODIGO.in_(owners_codes), 
+      Propietarios.EMPRESA == company_code
+    ).all()
 
-      #* Si el usuario no es el administrador, se obtiene la información de las unidades de la empresa a la que pertenece
-      # if data.usuario != user_admin:
-        # empresa = db.query(Propietarios.CODIGO).filter(Propietarios.NOMBRE == data.empresa).first()
-        # if len(empresa) == 0:
-        #   return JSONResponse(status_code=400, content={"error": "No se encontró la empresa"})
+    owners_dict = {owner.CODIGO: owner.NOMBRE for owner in owners_info}
+    
+    if not owners_dict:
+      return JSONResponse(status_code=404, content={"message": "No se encontraron propietarios para las empresas proporcionadas"})
+    
+    # Consulta de estados
+    status_list = db.query(
+      Estados.CODIGO,
+      Estados.NOMBRE
+    ).filter(
+      Estados.EMPRESA == company_code
+    ).all()
+    
+    # Crear diccionario de estados (código -> nombre)
+    estados_dict = {estado.CODIGO: estado.NOMBRE for estado in status_list}
+    
+    # Identificar todas las unidades que tuvieron movimientos con los propietarios consultados
+    incomes = db.query(
+      CajaRecaudos.PROPI_IDEN,
+      CajaRecaudos.NUMERO,
+      func.coalesce(func.sum(CajaRecaudos.DEU_RENTA), 0).label('total_renta'),
+      func.coalesce(func.sum(CajaRecaudos.FON_INSCRI), 0).label('total_gastos'),
+      func.coalesce(func.sum(CajaRecaudos.DEU_SINIES), 0).label('total_recaudo')
+    ).filter(
+      CajaRecaudos.EMPRESA == company_code,
+      CajaRecaudos.FEC_RECIBO >= data.primeraFecha,
+      CajaRecaudos.FEC_RECIBO <= data.ultimaFecha,
+      CajaRecaudos.PROPI_IDEN.in_(owners_codes)
+    ).group_by(CajaRecaudos.PROPI_IDEN, CajaRecaudos.NUMERO).all()
 
-        empresa = data.empresa
+    # Consulta de seguros 
+    insurances = db.query(
+      ReclamosColisiones.PROPI_IDEN,
+      ReclamosColisiones.NUMERO,
+      func.coalesce(func.sum(ReclamosColisiones.BCO_VALOR), 0).label('total_insurance'),
+      func.sum(case((ReclamosColisiones.CERRADO == "F", 1), else_=0)).label('pending')
+    ).filter(
+      ReclamosColisiones.EMPRESA == company_code,
+      or_(
+        and_(
+          ReclamosColisiones.BCO_FECHA >= data.primeraFecha,
+          ReclamosColisiones.BCO_FECHA <= data.ultimaFecha
+        ),
+        ReclamosColisiones.CERRADO == 'F'
+      ),
+      ReclamosColisiones.PROPI_IDEN.in_(owners_codes)
+    ).group_by(ReclamosColisiones.PROPI_IDEN, ReclamosColisiones.NUMERO).all()
 
-        # Obtener vehículos con sus recaudos en una sola consulta
-        vehiculos_con_recaudos = db.query(
-          Vehiculos.NUMERO,
-          Vehiculos.FEC_CREADO,
-          Vehiculos.MODELO,
-          Vehiculos.VLR_COMPRA,
-          Vehiculos.NOMESTADO,
-          func.coalesce(func.sum(CajaRecaudos.DEU_RENTA), 0).label('total_recaudos'),
-          func.coalesce(func.sum(CajaRecaudos.FON_INSCRI), 0).label('total_fondo_inscripcion'),
-          func.coalesce(func.sum(CajaRecaudos.DEU_SINIES), 0).label('total_deuda_siniestro'),
-        ).outerjoin(
-          CajaRecaudos,
-          (CajaRecaudos.NUMERO == Vehiculos.NUMERO) & 
-          (CajaRecaudos.FEC_RECIBO >= data.primeraFecha) & 
-          (CajaRecaudos.FEC_RECIBO <= data.ultimaFecha) &
-          (CajaRecaudos.PROPI_IDEN.in_(empresa))
-        ).filter(
-          Vehiculos.PROPI_IDEN.in_(empresa),
-          Vehiculos.EMPRESA == company_code,
-          CajaRecaudos.EMPRESA == company_code,
-        ).group_by(
-          Vehiculos.NUMERO,
-          Vehiculos.FEC_CREADO,
-          Vehiculos.MODELO,
-          Vehiculos.VLR_COMPRA,
-          Vehiculos.NOMESTADO
-        ).all()
+    # Consulta de mano de obra
+    labor = db.query(
+      ChapisteriaManoObra.PROPI_IDEN,
+      ChapisteriaManoObra.NUMERO,
+      func.coalesce(func.sum(ChapisteriaManoObra.VLR_MANOBR), 0).label('total_labor')
+    ).filter(
+      ChapisteriaManoObra.EMPRESA == company_code,
+      ChapisteriaManoObra.FECHA >= data.primeraFecha,
+      ChapisteriaManoObra.FECHA <= data.ultimaFecha,
+      ChapisteriaManoObra.PROPI_IDEN.in_(owners_codes)
+    ).group_by(ChapisteriaManoObra.PROPI_IDEN, ChapisteriaManoObra.NUMERO).all()
 
-        # Obtener los números de unidades para usarlos en la siguiente consulta
-        numeros_unidades = [v.NUMERO for v in vehiculos_con_recaudos]
+    # Consulta de movimientos
+    movements = db.query(
+      Movimien.PROPI_IDEN,
+      Movimien.UNIDAD,
+      func.coalesce(func.sum(Movimien.VALOR), 0).label('total_movement'),
+      func.coalesce(func.sum(case((Movimien.TIPO == '024', Movimien.TOTAL), else_=0)), 0).label('tipo_024'),
+      func.coalesce(func.sum(case((Movimien.TIPO == '027', Movimien.TOTAL), else_=0)), 0).label('tipo_027'),
+      func.coalesce(func.sum(case((Movimien.TIPO == '026', Movimien.TOTAL), else_=0)), 0).label('tipo_026'),
+      func.coalesce(func.sum(case((Movimien.TIPO == '022', Movimien.TOTAL), else_=0)), 0).label('tipo_022'),
+      func.coalesce(func.sum(case((Movimien.TIPO == '016', Movimien.TOTAL), else_=0)), 0).label('tipo_016')
+    ).filter(
+      Movimien.EMPRESA == company_code,
+      Movimien.FECHA >= data.primeraFecha,
+      Movimien.FECHA <= data.ultimaFecha,
+      Movimien.PROPI_IDEN.in_(owners_codes),
+      Movimien.TIPO.in_(['024', '027', '026', '022', '016'])
+    ).group_by(Movimien.PROPI_IDEN, Movimien.UNIDAD).all()
 
-        # Obtener totales de movimientos por tipo y unidad en una sola consulta
-        movimientos_por_tipo = db.query(
-          Movimien.UNIDAD,
-          Movimien.TIPO,
-          func.sum(Movimien.TOTAL).label('total_tipo')
-        ).filter(
-          Movimien.UNIDAD.in_(numeros_unidades),
-          Movimien.FECHA >= data.primeraFecha,
-          Movimien.FECHA <= data.ultimaFecha,
-          Movimien.TIPO.in_(['024', '027', '026', '022', '016']),
-          Movimien.PROPI_IDEN.in_(empresa),
-          Movimien.EMPRESA == company_code,
-          # Movimien.FORMAPAGO.in_(['01', '02', '03', '04', '05'])
-        ).group_by(
-          Movimien.UNIDAD,
-          Movimien.TIPO
-        ).all()
-
-        # Organizar los totales por unidad y tipo
-        totales_movimientos = {}
-        for mov in movimientos_por_tipo:
-          if mov.UNIDAD not in totales_movimientos:
-            totales_movimientos[mov.UNIDAD] = {
-              '024': 0, '027': 0, '026': 0, '022': 0, '016': 0
-            }
-          totales_movimientos[mov.UNIDAD][mov.TIPO] = mov.total_tipo
-
-        # Construir la respuesta final
-        info_unidades = []
-        for vehiculo in vehiculos_con_recaudos:
-          # Obtener los totales de movimiento para esta unidad (o valores predeterminados)
-          movs = totales_movimientos.get(vehiculo.NUMERO, {'024': 0, '027': 0, '026': 0, '022': 0, '016': 0})
-          
-          total_024 = movs.get('024', 0)
-          total_027 = movs.get('027', 0)
-          total_026 = movs.get('026', 0)
-          total_022 = movs.get('022', 0)
-          total_016 = movs.get('016', 0)
-          total_almacen = total_022 - total_016
-
-          recaudos = vehiculo.total_recaudos + vehiculo.total_fondo_inscripcion + vehiculo.total_deuda_siniestro
-          
-          # Calcular el balance de pérdidas y ganancias
-          estado_pyg = recaudos - total_024 - total_027 - total_026 - total_almacen
-          
-          # Verificar si la unidad tiene algún movimiento
-          tiene_movimientos = (
-            vehiculo.NUMERO != "" and  # Verificar que el número no esté vacío
-            (recaudos != 0 or
-            total_024 != 0 or
-            total_027 != 0 or
-            total_026 != 0 or
-            total_almacen != 0 or
-            estado_pyg != 0)
-          )
-          
-          # Solo agregar unidades con movimientos
-          if tiene_movimientos:
-              # Crear el diccionario con la información procesada
-              info_unidad_dict = {
-                  "NUMERO": vehiculo.NUMERO,
-                  "FEC_CREADO": vehiculo.FEC_CREADO.strftime('%Y-%m-%d') if vehiculo.FEC_CREADO else None,
-                  "MODELO": vehiculo.MODELO,
-                  "VLR_COMPRA": vehiculo.VLR_COMPRA,
-                  "NOMESTADO": vehiculo.NOMESTADO,
-                  "INGRESOS": {
-                      "INGRESOS": recaudos,
-                      "SEGUROS": 0  # !PENDIENTE, REALIZAR LA RECOLECCIÓN DE LA INFORMACIÓN DE LA TABLA RECLAMOSCOLISIONES
-                  },
-                  "GASTOS": {
-                      "GASTO_CAJA": total_024,
-                      "GENERALES": total_027,
-                      "OTRO_GASTO": 0
-                  },
-                  "PIEZAS_MOBRA": {
-                      "CHAPISTERIA": total_026,
-                      "ALMACEN": total_almacen
-                  },
-                  "ESTADOPyG": estado_pyg,  # Utilidad si es valor positivo, pérdida si es valor negativo
-              }
-              
-              info_unidades.append(info_unidad_dict)
-
-      #* Si el usuario es el administrador, se obtiene la información de todas las unidades
-      # else:  
-      #   #* Obtengo la información de todas las unidades en una sola consulta
-      #   info_unidad = db.query(
-      #     Vehiculos.NUMERO,
-      #     Vehiculos.FEC_CREADO,
-      #     Vehiculos.MODELO,
-      #     Vehiculos.VLR_COMPRA,
-      #     Vehiculos.NOMESTADO
-      #   ).all()
-        
-      #   # Obtener todos los números de unidades para usarlos en las siguientes consultas
-      #   numeros_unidades = [v.NUMERO for v in info_unidad]
-        
-      #   #* Obtengo la información de recaudos para todas las unidades en una sola consulta
-      #   recaudos_por_unidad = db.query(
-      #     CajaRecaudos.NUMERO,
-      #     func.sum(CajaRecaudos.DEU_RENTA).label('total_recaudos')
-      #   ).filter(
-      #     CajaRecaudos.NUMERO.in_(numeros_unidades),
-      #     CajaRecaudos.FEC_RECIBO >= data.primeraFecha,
-      #     CajaRecaudos.FEC_RECIBO <= data.ultimaFecha
-      #   ).group_by(
-      #     CajaRecaudos.NUMERO
-      #   ).all()
-        
-      #   # Crear un diccionario para acceder fácilmente a los recaudos por unidad
-      #   dict_recaudos = {recaudo.NUMERO: recaudo.total_recaudos for recaudo in recaudos_por_unidad}
-        
-      #   #* Obtengo la información de movimientos para todas las unidades en una sola consulta
-      #   movimientos_por_tipo = db.query(
-      #     Movimien.UNIDAD,
-      #     Movimien.TIPO,
-      #     func.sum(Movimien.TOTAL).label('total_tipo')
-      #   ).filter(
-      #     Movimien.UNIDAD.in_(numeros_unidades),
-      #     Movimien.FECHA >= data.primeraFecha,
-      #     Movimien.FECHA <= data.ultimaFecha,
-      #     Movimien.TIPO.in_(['024', '027', '026', '022', '016'])
-      #   ).group_by(
-      #     Movimien.UNIDAD,
-      #     Movimien.TIPO
-      #   ).all()
-        
-      #   # Organizar los totales por unidad y tipo
-      #   totales_movimientos = {}
-      #   for mov in movimientos_por_tipo:
-      #     if mov.UNIDAD not in totales_movimientos:
-      #       totales_movimientos[mov.UNIDAD] = {
-      #         '024': 0, '027': 0, '026': 0, '022': 0, '016': 0
-      #       }
-      #     totales_movimientos[mov.UNIDAD][mov.TIPO] = mov.total_tipo
-        
-      #   #* Itero sobre cada unidad para construir el resultado final
-      #   info_unidades = []
-      #   for unidad in info_unidad:
-      #     # Obtener los recaudos para esta unidad (o 0 si no hay)
-      #     total_deu_renta = dict_recaudos.get(unidad.NUMERO, 0)
-          
-      #     # Obtener los totales de movimiento para esta unidad (o valores predeterminados)
-      #     movs = totales_movimientos.get(unidad.NUMERO, {'024': 0, '027': 0, '026': 0, '022': 0, '016': 0})
-          
-      #     total_024 = movs.get('024', 0)
-      #     total_027 = movs.get('027', 0)
-      #     total_026 = movs.get('026', 0)
-      #     total_022 = movs.get('022', 0)
-      #     total_016 = movs.get('016', 0)
-      #     total_almacen = total_022 - total_016
-          
-      #     # Calcular el balance de pérdidas y ganancias
-      #     estado_pyg = total_deu_renta - total_024 - total_027 - total_026 - total_almacen
-          
-      #     # Verificar si la unidad tiene algún movimiento
-      #     tiene_movimientos = (
-      #       unidad.NUMERO != "" and  # Verificar que el número no esté vacío
-      #       (total_deu_renta != 0 or
-      #       total_024 != 0 or
-      #       total_027 != 0 or
-      #       total_026 != 0 or
-      #       total_almacen != 0 or
-      #       estado_pyg != 0)
-      #     )
-          
-      #     # Solo agregar unidades con movimientos
-      #     if tiene_movimientos:
-      #         #* Creo un diccionario con la información de la unidad
-      #         info_unidad_dict = {
-      #             "NUMERO": unidad.NUMERO,
-      #             "FEC_CREADO": unidad.FEC_CREADO.isoformat() if hasattr(unidad.FEC_CREADO, 'isoformat') else unidad.FEC_CREADO,
-      #             "MODELO": unidad.MODELO,
-      #             "VLR_COMPRA": unidad.VLR_COMPRA,
-      #             "NOMESTADO": unidad.NOMESTADO,
-      #             "INGRESOS": {
-      #                 "INGRESOS": total_deu_renta,
-      #                 "SEGUROS": 0 # !PENDIENTE, REALIZAR LA RECOLECCIÓN DE LA INFORMACIÓN DE LA TABLA RECLAMOSCOLISIONES
-      #             },
-      #             "GASTOS": {
-      #                 "GASTO_CAJA": total_024,
-      #                 "GENERALES": total_027,
-      #                 "OTRO_GASTO": 0
-      #             },
-      #             "PIEZAS_MOBRA": {
-      #                 "CHAPISTERIA": total_026,
-      #                 "ALMACEN": total_almacen
-      #             },
-      #             "ESTADOPyG": estado_pyg, #* Utilidad si es valor positivo, pérdida si es valor negativo
-      #             "AVANCE": 0
-      #         }
-              
-      #         #* Agrego el diccionario a la lista de unidades
-      #         info_unidades.append(info_unidad_dict)
-
-    elif data.unidad != "" and data.unidad != "TODOS":
-      # Optimizado: Obtener información del vehículo en una sola consulta
-      # empresa = db.query(Propietarios.CODIGO).filter(Propietarios.NOMBRE == data.empresa).first()
-      empresa = data.empresa
-
-      info_unidad = db.query(
-        Vehiculos.NUMERO,
-        Vehiculos.FEC_CREADO,
-        Vehiculos.MODELO,
-        Vehiculos.VLR_COMPRA,
-        Vehiculos.NOMESTADO,
-        func.coalesce(func.sum(CajaRecaudos.DEU_RENTA), 0).label('total_recaudos'),
-        func.coalesce(func.sum(CajaRecaudos.FON_INSCRI), 0).label('total_fondo_inscripcion'),
-        func.coalesce(func.sum(CajaRecaudos.DEU_SINIES), 0).label('total_deuda_siniestro'),
-      ).outerjoin(
-        CajaRecaudos,
-        (CajaRecaudos.NUMERO == Vehiculos.NUMERO) & 
-        (CajaRecaudos.FEC_RECIBO >= data.primeraFecha) & 
-        (CajaRecaudos.FEC_RECIBO <= data.ultimaFecha) &
-        (CajaRecaudos.PROPI_IDEN.in_(empresa))
-      ).filter(
-        Vehiculos.NUMERO == data.unidad,
-        Vehiculos.EMPRESA == company_code,
-        CajaRecaudos.EMPRESA == company_code,
-      ).group_by(
-        Vehiculos.NUMERO,
-        Vehiculos.FEC_CREADO,
-        Vehiculos.MODELO,
-        Vehiculos.VLR_COMPRA,
-        Vehiculos.NOMESTADO
-      ).first()
-
-      if not info_unidad:
-        return JSONResponse(status_code=404, content={"error": "No se encontró la unidad"})
-
-      # Optimizado: Obtener totales de movimientos por tipo en una sola consulta
-      movimientos_por_tipo = db.query(
-        Movimien.TIPO,
-        func.sum(Movimien.TOTAL).label('total_tipo')
-      ).filter(
-        Movimien.UNIDAD == data.unidad,
-        Movimien.FECHA >= data.primeraFecha,
-        Movimien.FECHA <= data.ultimaFecha,
-        Movimien.TIPO.in_(['024', '027', '026', '022', '016']),
-        Movimien.PROPI_IDEN.in_(empresa),
-        Movimien.EMPRESA == company_code,
-        # Movimien.FORMAPAGO.in_(['01', '02', '03', '04', '05'])
-      ).group_by(
-        Movimien.TIPO
-      ).all()
-
-      # Crear un diccionario para los totales de cada tipo
-      totales = {'024': 0, '027': 0, '026': 0, '022': 0, '016': 0}
-      for mov in movimientos_por_tipo:
-        totales[mov.TIPO] = mov.total_tipo
-
-      # Calcular totales
-      total_024 = totales['024']
-      total_027 = totales['027']
-      total_026 = totales['026']
-      total_022 = totales['022']
-      total_016 = totales['016']
-      total_almacen = total_022 - total_016
-
-      recaudos = info_unidad.total_recaudos + info_unidad.total_fondo_inscripcion + info_unidad.total_deuda_siniestro
-
-      # Calcular estado de pérdidas y ganancias
-      estado_pyg = recaudos - total_024 - total_027 - total_026 - total_almacen
-
-      # Crear diccionario con la información procesada
-      info_unidad_dict = {
-        "NUMERO": data.unidad,
-        "FEC_CREADO": info_unidad.FEC_CREADO.strftime('%Y-%m-%d') if info_unidad.FEC_CREADO else None,
-        "MODELO": info_unidad.MODELO,
-        "VLR_COMPRA": info_unidad.VLR_COMPRA,
-        "NOMESTADO": info_unidad.NOMESTADO,
-        "INGRESOS": {
-          "INGRESOS": recaudos,
-          "SEGUROS": 0  # !PENDIENTE, REALIZAR LA RECOLECCIÓN DE LA INFORMACIÓN DE LA TABLA RECLAMOSCOLISIONES
-        },
-        "GASTOS": {
-          "GASTO_CAJA": total_024,
-          "GENERALES": total_027,
-          "OTRO_GASTO": 0
-        },
-        "PIEZAS_MOBRA": {
-          "CHAPISTERIA": total_026,
-          "ALMACEN": total_almacen
-        },
-        "ESTADOPyG": estado_pyg,  # Utilidad si es valor positivo, pérdida si es valor negativo
+    # Recopilar todas las unidades únicas que aparecen en los movimientos históricos
+    all_units_from_movements = set()
+    
+    for income in incomes:
+      all_units_from_movements.add(income.NUMERO)
+    
+    for insurance in insurances:
+      all_units_from_movements.add(insurance.NUMERO)
+    
+    for lab in labor:
+      all_units_from_movements.add(lab.NUMERO)
+    
+    for mov in movements:
+      all_units_from_movements.add(mov.UNIDAD)
+    
+    # Buscar información de todas estas unidades
+    vehicles = db.query(
+      Vehiculos.NUMERO,
+      Vehiculos.MODELO,
+      Vehiculos.ESTADO,
+      Vehiculos.VLR_COMPRA,
+      Vehiculos.FEC_CREADO
+    ).filter(
+      Vehiculos.EMPRESA == company_code,
+      Vehiculos.NUMERO.in_(list(all_units_from_movements))
+    ).all()
+    
+    # Crear diccionario de vehículos por unidad
+    vehicles_dict = {}
+    for vehicle in vehicles:
+      unidad = vehicle.NUMERO
+      estado_nombre = estados_dict.get(vehicle.ESTADO, "") if vehicle.ESTADO else ""
+      vehicles_dict[unidad] = {
+        "modelo": vehicle.MODELO or "",
+        "estado": estado_nombre.title(),
+        "estado_codigo": vehicle.ESTADO or "",
+        "valor_compra": vehicle.VLR_COMPRA or "",
+        "fecha_creacion": vehicle.FEC_CREADO if vehicle.FEC_CREADO else ""
       }
 
-      info_unidades = info_unidad_dict
+    # Consolidar la información por unidad
+    consolidated_by_owner_unit = {}
+    
+    # Procesar ingresos
+    for income in incomes:
+      key = (income.PROPI_IDEN, income.NUMERO)
+      #unidad = income.NUMERO
+      total_income = income.total_renta + income.total_gastos + income.total_recaudo
+      # Usar la unidad como clave
+      if key not in consolidated_by_owner_unit:
+        vehicle_info = vehicles_dict.get(income.NUMERO, {})
+        consolidated_by_owner_unit[key] = {
+          "propietario": income.PROPI_IDEN,
+          "propietario_nombre": owners_dict.get(income.PROPI_IDEN, ""),
+          "unidad": income.NUMERO,
+          "modelo": vehicle_info.get("modelo", ""),
+          "estado": vehicle_info.get("estado", ""),
+          "estado_codigo": vehicle_info.get("estado_codigo", ""),
+          "valor_compra": vehicle_info.get("valor_compra", ""),
+          "fecha_creacion": vehicle_info.get("fecha_creacion", ""),
+          "incomes": 0,
+          "insurances": 0,
+          "pending_insurance": "",
+          "total_labor": 0,
+          "gasto_caja": 0,
+          "generales": 0,
+          "otro_gasto": 0,
+          "026": 0,
+          "022": 0,
+          "016": 0,
+          "almacen": 0,
+          "chapisteria": 0,
+          "estado_pyg": 0
+        }
+      consolidated_by_owner_unit[key]["incomes"] += total_income
+    
+    # Procesar seguros
+    for insurance in insurances:
+      key = (insurance.PROPI_IDEN, insurance.NUMERO)
+      if key not in consolidated_by_owner_unit:
+        vehicle_info = vehicles_dict.get(insurance.NUMERO, {})
+        consolidated_by_owner_unit[key] = {
+          "propietario": insurance.PROPI_IDEN,
+          "propietario_nombre": owners_dict.get(insurance.PROPI_IDEN, ""),
+          "unidad": insurance.NUMERO,
+          "modelo": vehicle_info.get("modelo", ""),
+          "estado": vehicle_info.get("estado", ""),
+          "estado_codigo": vehicle_info.get("estado_codigo", ""),
+          "valor_compra": vehicle_info.get("valor_compra", ""),
+          "fecha_creacion": vehicle_info.get("fecha_creacion", ""),
+          "incomes": 0,
+          "insurances": 0,
+          "pending_insurance": "",
+          "total_labor": 0,
+          "gasto_caja": 0,
+          "generales": 0,
+          "otro_gasto": 0,
+          "026": 0,
+          "022": 0,
+          "016": 0,
+          "almacen": 0,
+          "chapisteria": 0,
+          "estado_pyg": 0
+        }
+      consolidated_by_owner_unit[key]["insurances"] += insurance.total_insurance
+      if insurance.pending and insurance.pending > 0:
+        consolidated_by_owner_unit[key]["pending_insurance"] = "Pen"
+
+    # Procesar mano de obra
+    for lab in labor:
+      key = (lab.PROPI_IDEN, lab.NUMERO)
+      if key not in consolidated_by_owner_unit:
+        vehicle_info = vehicles_dict.get(lab.NUMERO, {})
+        consolidated_by_owner_unit[key] = {
+          "propietario": lab.PROPI_IDEN,
+          "propietario_nombre": owners_dict.get(lab.PROPI_IDEN, ""),
+          "unidad": lab.NUMERO,
+          "modelo": vehicle_info.get("modelo", ""),
+          "estado": vehicle_info.get("estado", ""),
+          "estado_codigo": vehicle_info.get("estado_codigo", ""),
+          "valor_compra": vehicle_info.get("valor_compra", ""),
+          "fecha_creacion": vehicle_info.get("fecha_creacion", ""),
+          "incomes": 0,
+          "insurances": 0,
+          "pending_insurance": "",
+          "total_labor": 0,
+          "gasto_caja": 0,
+          "generales": 0,
+          "otro_gasto": 0,
+          "026": 0,
+          "022": 0,
+          "016": 0,
+          "almacen": 0,
+          "chapisteria": 0,
+          "estado_pyg": 0
+        }
+      consolidated_by_owner_unit[key]["total_labor"] += lab.total_labor
+    
+    # Procesar movimientos
+    for mov in movements:
+      key = (mov.PROPI_IDEN, mov.UNIDAD)
+      if key not in consolidated_by_owner_unit:
+        vehicle_info = vehicles_dict.get(mov.UNIDAD, {})
+        consolidated_by_owner_unit[key] = {
+          "propietario": mov.PROPI_IDEN,
+          "propietario_nombre": owners_dict.get(mov.PROPI_IDEN, ""),
+          "unidad": mov.UNIDAD,
+          "modelo": vehicle_info.get("modelo", ""),
+          "estado": vehicle_info.get("estado", ""),
+          "estado_codigo": vehicle_info.get("estado_codigo", ""),
+          "valor_compra": vehicle_info.get("valor_compra", ""),
+          "fecha_creacion": vehicle_info.get("fecha_creacion", ""),
+          "incomes": 0,
+          "insurances": 0,
+          "pending_insurance": "",
+          "total_labor": 0,
+          "gasto_caja": 0,
+          "generales": 0,
+          "otro_gasto": 0,
+          "026": 0,
+          "022": 0,
+          "016": 0,
+          "almacen": 0,
+          "chapisteria": 0,
+          "estado_pyg": 0
+        }
+      # consolidated_by_unit[unidad]["total_movement"] += mov.total_movement
+      consolidated_by_owner_unit[key]["gasto_caja"] += mov.tipo_024
+      consolidated_by_owner_unit[key]["generales"] += mov.tipo_027
+      consolidated_by_owner_unit[key]["026"] += mov.tipo_026
+      consolidated_by_owner_unit[key]["022"] += mov.tipo_022
+      consolidated_by_owner_unit[key]["016"] += mov.tipo_016
+      consolidated_by_owner_unit[key]["almacen"] = consolidated_by_owner_unit[key]["022"] - consolidated_by_owner_unit[key]["016"]
+      consolidated_by_owner_unit[key]["chapisteria"] = consolidated_by_owner_unit[key]["026"] + consolidated_by_owner_unit[key]["total_labor"]
+
+    for key, item in consolidated_by_owner_unit.items():
+      item["estado_pyg"] = item["incomes"] - item["gasto_caja"] - item["generales"] - item["chapisteria"] - item["almacen"]
+    
+    # Filtrar unidades sin movimientos
+    filtered_units = {}
+    for key, item in consolidated_by_owner_unit.items():
+      numeric_fields = [
+        "incomes", "insurances", "total_labor", "gasto_caja",
+        "generales", "otro_gasto", "026", "022", "016", "almacen", "chapisteria"
+      ]
+
+      has_movements = any(item.get(field, 0) != 0 for field in numeric_fields)
+      has_pending_insurance = item.get("pending_insurance") != ""
+
+      if has_movements or has_pending_insurance:
+        filtered_units[key] = item
+    
+    # Agrupar por propietario
+    consolidated_by_owner = {}
+
+    for unidad, item in filtered_units.items():
+      owner_code = item["propietario"]
+      if owner_code not in consolidated_by_owner:
+        consolidated_by_owner[owner_code] = {
+          "propietario": owner_code,
+          "propietario_nombre": item["propietario_nombre"],
+          "unidades": [],
+          "totales": {
+            "cantidad_unidades": 0,
+            "incomes": 0,
+            "insurances": 0,
+            "total_labor": 0,
+            "gasto_caja": 0,
+            "generales": 0,
+            "otro_gasto": 0,
+            "026": 0,
+            "022": 0,
+            "016": 0,
+            "almacen": 0,
+            "chapisteria": 0,
+            "estado_pyg": 0
+          }
+        }
+      consolidated_by_owner[owner_code]["unidades"].append(item)
+
+      # Sumar totales por propietario
+      consolidated_by_owner[owner_code]["totales"]["cantidad_unidades"] += 1
+      consolidated_by_owner[owner_code]["totales"]["incomes"] += item["incomes"]
+      consolidated_by_owner[owner_code]["totales"]["insurances"] += item["insurances"]
+      consolidated_by_owner[owner_code]["totales"]["total_labor"] += item["total_labor"]
+      consolidated_by_owner[owner_code]["totales"]["gasto_caja"] += item["gasto_caja"]
+      consolidated_by_owner[owner_code]["totales"]["generales"] += item["generales"]
+      consolidated_by_owner[owner_code]["totales"]["otro_gasto"] += item["otro_gasto"]
+      consolidated_by_owner[owner_code]["totales"]["026"] += item["026"]
+      consolidated_by_owner[owner_code]["totales"]["022"] += item["022"]
+      consolidated_by_owner[owner_code]["totales"]["016"] += item["016"]
+      consolidated_by_owner[owner_code]["totales"]["almacen"] += item["almacen"]
+      consolidated_by_owner[owner_code]["totales"]["chapisteria"] += item["chapisteria"]
+      consolidated_by_owner[owner_code]["totales"]["estado_pyg"] += item["estado_pyg"]
+
+    # Calcular totales generales
+    totales_generales = {
+      "cantidad_unidades": 0,
+      "incomes": 0,
+      "insurances": 0,
+      "total_labor": 0,
+      "gasto_caja": 0,
+      "generales": 0,
+      "otro_gasto": 0,
+      "026": 0,
+      "022": 0,
+      "016": 0,
+      "almacen": 0,
+      "chapisteria": 0,
+      "estado_pyg": 0
+    }
+
+    # Convertir a lista y formatear valores
+    response_by_owner = []
+
+    sorted_owner_codes = sorted(consolidated_by_owner.keys())
+
+    for owner_code in sorted_owner_codes:
+      owner_data = consolidated_by_owner[owner_code]
+      owner_data["unidades"] = sorted(
+        owner_data["unidades"], 
+        key=lambda x: x["unidad"]
+      )
+      # Formatear valores numéricos para las unidades del propietario
+      for unidad in owner_data["unidades"]:
+        numeric_fields = ["incomes", "insurances", "total_labor", "gasto_caja", "generales", "026", "022", "016", "almacen", "chapisteria"]
+        for field in numeric_fields:
+          if field in unidad and unidad[field] == 0:
+            unidad[field] = ""
+          elif field in unidad:
+            unidad[field] = round(unidad[field], 2)
+      
+      # Formatear totales del propietario
+      for field in totales_generales:
+        if owner_data["totales"][field] == 0:
+          owner_data["totales"][field] = ""
+        else:
+          owner_data["totales"][field] = round(owner_data["totales"][field], 2)
+          
+        # Sumar a totales generales
+        if owner_data["totales"][field] != "":
+          totales_generales[field] += owner_data["totales"][field]
+      
+      # Filtrar propietarios que tengan al menos una unidad con valores
+      has_values = any(
+          any(unidad.get(field) not in [0, "", None] 
+          for field in ["incomes", "insurances", "total_labor", "gasto_caja", "generales", "026", "022", "016", "almacen", "chapisteria"])
+          for unidad in owner_data["unidades"]
+      )
+      
+      if has_values:
+        response_by_owner.append(owner_data)
+
+    # Formatear totales generales
+    for field in totales_generales:
+      if totales_generales[field] == 0:
+        totales_generales[field] = ""
+      else:
+        totales_generales[field] = round(totales_generales[field], 2)
 
     # Get current date
     panama_timezone = pytz.timezone('America/Panama')
@@ -371,226 +427,37 @@ async def pandgstatus_report(company_code: str, data: PandGStatusReport):
     hora_actual = now_in_panama.strftime("%I:%M:%S %p")
     titulo = 'Estado de Pérdidas y Ganancias'
 
-    if data.usuario == user_admin:
-      usuario = "Administrador"
-    else:
-      usuario = data.usuario
-
-    # Reorganizar las unidades por empresa
-    empresas_dict = {}
-
-    if data.unidad != "" and data.unidad != "TODOS":
-        # Caso de una unidad específica - obtener su empresa
-        empresa_info = db.query(
-            Propietarios.EMPRESA.label('codigo_e'),
-            Propietarios.CODIGO,
-            Propietarios.NOMBRE
-        ).join(
-            Vehiculos, Vehiculos.PROPI_IDEN == Propietarios.CODIGO
-        ).filter(
-            Vehiculos.NUMERO == data.unidad,
-            Propietarios.EMPRESA == company_code,
-            Vehiculos.EMPRESA == company_code,
-        ).first()
-        
-        if empresa_info:
-            codigo_empresa = empresa_info.CODIGO
-            nombre_empresa = empresa_info.NOMBRE
-
-            id_empresa = empresa_info.codigo_e
-            
-            # Crear la estructura para esta empresa
-            empresas_dict[nombre_empresa] = {
-                "codigo": codigo_empresa,
-                "nombre": nombre_empresa,
-                "unidades": [info_unidades],  # Es un solo objeto, no una lista
-                "totales_empresa": {
-                    "cantidad_unidades": 1,
-                    "ingresos": info_unidades['INGRESOS']['INGRESOS'],
-                    "seguros": info_unidades['INGRESOS']['SEGUROS'],
-                    "gasto_caja": info_unidades['GASTOS']['GASTO_CAJA'],
-                    "generales": info_unidades['GASTOS']['GENERALES'],
-                    "otro_gasto": info_unidades['GASTOS']['OTRO_GASTO'],
-                    "chapisteria": info_unidades['PIEZAS_MOBRA']['CHAPISTERIA'],
-                    "almacen": info_unidades['PIEZAS_MOBRA']['ALMACEN'],
-                    "utilidad": max(0, info_unidades['ESTADOPyG']),
-                    "perdida": max(0, -info_unidades['ESTADOPyG']),
-                }
-            }
-    else:
-        # Caso de múltiples unidades - obtener empresa para cada unidad
-        # Obtener información de todas las empresas y sus vehículos
-        empresas_info = db.query(
-            Propietarios.EMPRESA.label('codigo_empresa'),
-            Vehiculos.NUMERO,
-            Propietarios.CODIGO,
-            Propietarios.NOMBRE
-        ).join(
-            Propietarios, Vehiculos.PROPI_IDEN == Propietarios.CODIGO
-        ).filter(
-            Vehiculos.NUMERO.in_([u["NUMERO"] for u in info_unidades]),
-            Propietarios.EMPRESA == company_code,
-            Vehiculos.EMPRESA == company_code,
-        ).all()
-
-        id_empresa = empresas_info[0].codigo_empresa
-        
-        # Crear un diccionario para mapear unidades a empresas
-        unidad_a_empresa = {e.NUMERO: {"codigo": e.CODIGO, "nombre": e.NOMBRE} for e in empresas_info}
-        
-        # Crear un diccionario para almacenar unidades temporalmente por empresa
-        unidades_por_empresa = {}
-        
-        # Agrupar unidades por empresa
-        for unidad in info_unidades:
-            empresa_info = unidad_a_empresa.get(unidad["NUMERO"])
-            if empresa_info:
-                nombre_empresa = empresa_info["nombre"]
-                
-                # Si la empresa no existe en el diccionario temporal, crearla
-                if nombre_empresa not in unidades_por_empresa:
-                    unidades_por_empresa[nombre_empresa] = {
-                        "codigo": empresa_info["codigo"],
-                        "unidades": []
-                    }
-                
-                # Añadir la unidad al diccionario temporal
-                unidades_por_empresa[nombre_empresa]["unidades"].append(unidad)
-        
-        # Procesar cada empresa, ordenando sus unidades
-        for nombre_empresa, info in unidades_por_empresa.items():
-            # Ordenar las unidades por número alfabéticamente
-            unidades_ordenadas = sorted(info["unidades"], key=lambda u: u["NUMERO"])
-            
-            # Inicializar totales de la empresa
-            totales_empresa = {
-                "cantidad_unidades": len(unidades_ordenadas),
-                "ingresos": 0,
-                "seguros": 0,
-                "gasto_caja": 0,
-                "generales": 0,
-                "otro_gasto": 0,
-                "chapisteria": 0,
-                "almacen": 0,
-                "utilidad": 0,
-                "perdida": 0,
-            }
-            
-            # Calcular totales de la empresa con las unidades ya ordenadas
-            for unidad in unidades_ordenadas:
-                totales_empresa["ingresos"] += unidad["INGRESOS"]["INGRESOS"]
-                totales_empresa["seguros"] += unidad["INGRESOS"]["SEGUROS"]
-                totales_empresa["gasto_caja"] += unidad["GASTOS"]["GASTO_CAJA"]
-                totales_empresa["generales"] += unidad["GASTOS"]["GENERALES"]
-                totales_empresa["otro_gasto"] += unidad["GASTOS"]["OTRO_GASTO"]
-                totales_empresa["chapisteria"] += unidad["PIEZAS_MOBRA"]["CHAPISTERIA"]
-                totales_empresa["almacen"] += unidad["PIEZAS_MOBRA"]["ALMACEN"]
-                
-                if unidad["ESTADOPyG"] > 0:
-                    totales_empresa["utilidad"] += unidad["ESTADOPyG"]
-                else:
-                    totales_empresa["perdida"] += -unidad["ESTADOPyG"]
-
-            # Ajustar utilidad y pérdida
-            total_pyg_empresa = totales_empresa["utilidad"] - totales_empresa["perdida"]
-            if total_pyg_empresa > 0:
-                totales_empresa["utilidad"] = total_pyg_empresa
-                totales_empresa["perdida"] = 0
-            else:
-                totales_empresa["perdida"] = -total_pyg_empresa
-                totales_empresa["utilidad"] = 0
-            
-            # Agregar la empresa con sus unidades ordenadas al diccionario final
-            empresas_dict[nombre_empresa] = {
-                "codigo": info["codigo"],
-                "nombre": nombre_empresa,
-                "unidades": unidades_ordenadas,
-                "totales_empresa": totales_empresa
-            }
-
-    # Calcular totales generales sumando los totales de cada empresa
-    totales_generales = {
-        "cantidad_unidades": 0,
-        "ingresos": 0,
-        "seguros": 0,
-        "gasto_caja": 0,
-        "generales": 0,
-        "otro_gasto": 0,
-        "chapisteria": 0,
-        "almacen": 0,
-        "utilidad": 0,
-        "perdida": 0,
-    }
-
-    # Solo calculamos los totales si hay empresas en el diccionario
-    if empresas_dict:
-        totales_generales = {
-            "cantidad_unidades": sum(e["totales_empresa"]["cantidad_unidades"] for e in empresas_dict.values()),
-            "ingresos": sum(e["totales_empresa"]["ingresos"] for e in empresas_dict.values()),
-            "seguros": sum(e["totales_empresa"]["seguros"] for e in empresas_dict.values()),
-            "gasto_caja": sum(e["totales_empresa"]["gasto_caja"] for e in empresas_dict.values()),
-            "generales": sum(e["totales_empresa"]["generales"] for e in empresas_dict.values()),
-            "otro_gasto": sum(e["totales_empresa"]["otro_gasto"] for e in empresas_dict.values()),
-            "chapisteria": sum(e["totales_empresa"]["chapisteria"] for e in empresas_dict.values()),
-            "almacen": sum(e["totales_empresa"]["almacen"] for e in empresas_dict.values()),
-            "utilidad": sum(e["totales_empresa"]["utilidad"] for e in empresas_dict.values()),
-            "perdida": sum(e["totales_empresa"]["perdida"] for e in empresas_dict.values()),
-        }
-
-    total_pyg = totales_generales["utilidad"] - totales_generales["perdida"]
-    if total_pyg > 0:
-        totales_generales["utilidad"] = total_pyg
-        totales_generales["perdida"] = 0
-    else:
-        totales_generales["perdida"] = -total_pyg
-        totales_generales["utilidad"] = 0
-
     info_empresa = db.query(
-        InfoEmpresas.NOMBRE,
-        InfoEmpresas.NIT,
-        InfoEmpresas.LOGO
-    ).filter(InfoEmpresas.ID == id_empresa).first()
-
-    # Convertir 0 a cadenas vacías para la presentación final
-    def format_for_display(value):
-        return '' if value == 0 else value
-
-    # Aplicar formato de presentación a los totales de empresas
-    for empresa in empresas_dict.values():
-        empresa["totales_empresa"]["utilidad"] = format_for_display(empresa["totales_empresa"]["utilidad"])
-        empresa["totales_empresa"]["perdida"] = format_for_display(empresa["totales_empresa"]["perdida"])
-
-    # Aplicar formato de presentación a los totales generales
-    totales_generales["utilidad"] = format_for_display(totales_generales["utilidad"])
-    totales_generales["perdida"] = format_for_display(totales_generales["perdida"])
-
-    # Construir la respuesta final
+      InfoEmpresas.NOMBRE,
+      InfoEmpresas.NIT,
+      InfoEmpresas.LOGO
+    ).filter(InfoEmpresas.ID == company_code).first()
+    
+    # Construir respuesta final
     response = {
-        "empresas": empresas_dict,
-        "totales": totales_generales,
-        "fechas": {
-            "primeraFecha": data.primeraFecha,
-            "ultimaFecha": data.ultimaFecha
-        },
-        "usuario": usuario,
-        "fecha": fecha,
-        "hora": hora_actual,
-        "nombre_empresa": info_empresa.NOMBRE,
-        "nit_empresa": info_empresa.NIT,
-        "logo_empresa": info_empresa.LOGO,
+      "propietarios": response_by_owner,
+      "totales_generales": totales_generales,
+      "fechas": {
+        "primeraFecha": data.primeraFecha,
+        "ultimaFecha": data.ultimaFecha
+      },
+      "usuario": data.usuario,
+      "fecha": fecha,
+      "hora": hora_actual,
+      "nombre_empresa": info_empresa.NOMBRE,
+      "nit_empresa": info_empresa.NIT,
+      "logo_empresa": info_empresa.LOGO,
     }
 
     headers = {
       "Content-Disposition": "attachment; estado-perdidas-ganancias.pdf"
-    }  
-
-    # return JSONResponse(status_code=200, content=jsonable_encoder(response))
+    }
 
     data_reporte = response
 
     template_loader = jinja2.FileSystemLoader(searchpath="./templates")
     template_env = jinja2.Environment(loader=template_loader)
-    template_file = "EstadoPyG2.html"
+    template_file = "EstadoPyG3.html"
     header_file = "header2.html"
     footer_file = "footer1.html"
     template = template_env.get_template(template_file)
@@ -600,25 +467,515 @@ async def pandgstatus_report(company_code: str, data: PandGStatusReport):
     output_header = header.render(data_reporte)
     output_footer = footer.render(data_reporte)
 
-    html_path = f'./templates/renderform1.html'
-    header_path = f'./templates/renderheader1.html'
-    footer_path = f'./templates/renderfooter1.html'
-    html_file = open(html_path, 'w')
-    header_file = open(header_path, 'w')
-    html_footer = open(footer_path, 'w')
-    html_file.write(output_text)
-    header_file.write(output_header)
-    html_footer.write(output_footer)
-    html_file.close()
-    header_file.close()
-    html_footer.close()
-    pdf_path = 'estado-perdidas-ganancias.pdf'
-    html2pdf(titulo,html_path, pdf_path, header_path=header_path, footer_path=footer_path)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode="w") as html_file:
+      html_path = html_file.name
+      html_file.write(output_text)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode="w") as header_file:
+      header_path = header_file.name
+      header_file.write(output_header)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode="w") as footer_file:
+      footer_path = footer_file.name
+      footer_file.write(output_footer)
 
-    response = FileResponse(pdf_path, media_type='application/pdf', filename='templates/estado-perdidas-ganancias.pdf', headers=headers)
+    pdf_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf").name
+
+    html2pdf(titulo, html_path, pdf_path, header_path=header_path, footer_path=footer_path)
+
+    background_tasks = BackgroundTasks()
+    background_tasks.add_task(os.remove, html_path)
+    background_tasks.add_task(os.remove, header_path)
+    background_tasks.add_task(os.remove, footer_path)
+    background_tasks.add_task(os.remove, pdf_path)
+
+    response = FileResponse(
+        pdf_path, 
+        media_type='application/pdf', 
+        filename='templates/estado-perdidas-ganancias.pdf', 
+        headers=headers,
+        background=background_tasks
+      )
 
     return response
+
   except Exception as e:
-    return JSONResponse(status_code=500, content={"error": str(e)})
+    return JSONResponse(status_code=500, content={"message": str(e)})
+  finally:
+    db.close()
+
+#---------------------------------------------------------------------------------------------------------------
+
+@pandgstatus_router.post("/pandgstatus-summary/{company_code}/", tags=["Reports"])
+async def pandgstatus_report_summary(company_code: str, data: PandGStatusReport):
+  db = session()
+  try:
+    # Aceptar fechas como string y convertir a objetos date para las comparaciones
+    for _attr in ("primeraFecha", "ultimaFecha"):
+      val = getattr(data, _attr, None)
+      if isinstance(val, str):
+        for _fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y"):
+          try:
+            setattr(data, _attr, datetime.strptime(val, _fmt).date())
+            break
+          except ValueError:
+            continue
+
+    if data.primeraFecha > data.ultimaFecha:
+      return JSONResponse(status_code=400, content={"message": "La primera fecha no puede ser mayor que la última fecha"})
+    
+    owners_codes = data.empresa
+
+    # Diccionario para mapear códigos de propietario a nombres
+    owners_info = db.query(Propietarios.CODIGO, Propietarios.NOMBRE).filter(
+        Propietarios.CODIGO.in_(owners_codes), 
+        Propietarios.EMPRESA == company_code
+    ).all()
+
+    owners_dict = {owner.CODIGO: owner.NOMBRE for owner in owners_info}
+    
+    if not owners_dict:
+      return JSONResponse(status_code=404, content={"message": "No se encontraron propietarios para las empresas proporcionadas"})
+        
+      # Consulta de estados
+    status_list = db.query(
+      Estados.CODIGO,
+      Estados.NOMBRE
+    ).filter(
+      Estados.EMPRESA == company_code
+    ).all()
+    
+    # Crear diccionario de estados (código -> nombre)
+    estados_dict = {estado.CODIGO: estado.NOMBRE for estado in status_list}
+    
+    # Identificar todas las unidades que tuvieron movimientos con los propietarios consultados
+    incomes = db.query(
+      CajaRecaudos.PROPI_IDEN,
+      CajaRecaudos.NUMERO,
+      func.coalesce(func.sum(CajaRecaudos.DEU_RENTA), 0).label('total_renta'),
+      func.coalesce(func.sum(CajaRecaudos.FON_INSCRI), 0).label('total_gastos'),
+      func.coalesce(func.sum(CajaRecaudos.DEU_SINIES), 0).label('total_recaudo')
+    ).filter(
+      CajaRecaudos.EMPRESA == company_code,
+      CajaRecaudos.FEC_RECIBO >= data.primeraFecha,
+      CajaRecaudos.FEC_RECIBO <= data.ultimaFecha,
+      CajaRecaudos.PROPI_IDEN.in_(owners_codes)
+    ).group_by(CajaRecaudos.PROPI_IDEN, CajaRecaudos.NUMERO).all()
+
+    # Consulta de seguros 
+    insurances = db.query(
+      ReclamosColisiones.PROPI_IDEN,
+      ReclamosColisiones.NUMERO,
+      func.coalesce(func.sum(ReclamosColisiones.BCO_VALOR), 0).label('total_insurance'),
+      func.sum(case((ReclamosColisiones.CERRADO == "F", 1), else_=0)).label('pending')
+    ).filter(
+      ReclamosColisiones.EMPRESA == company_code,
+      or_(
+        and_(
+          ReclamosColisiones.BCO_FECHA >= data.primeraFecha,
+          ReclamosColisiones.BCO_FECHA <= data.ultimaFecha
+        ),
+        ReclamosColisiones.CERRADO == 'F'
+      ),
+      ReclamosColisiones.PROPI_IDEN.in_(owners_codes)
+    ).group_by(ReclamosColisiones.PROPI_IDEN, ReclamosColisiones.NUMERO).all()
+
+    # Consulta de mano de obra
+    labor = db.query(
+      ChapisteriaManoObra.PROPI_IDEN,
+      ChapisteriaManoObra.NUMERO,
+      func.coalesce(func.sum(ChapisteriaManoObra.VLR_MANOBR), 0).label('total_labor')
+    ).filter(
+      ChapisteriaManoObra.EMPRESA == company_code,
+      ChapisteriaManoObra.FECHA >= data.primeraFecha,
+      ChapisteriaManoObra.FECHA <= data.ultimaFecha,
+      ChapisteriaManoObra.PROPI_IDEN.in_(owners_codes)
+    ).group_by(ChapisteriaManoObra.PROPI_IDEN, ChapisteriaManoObra.NUMERO).all()
+
+    # Consulta de movimientos
+    movements = db.query(
+      Movimien.PROPI_IDEN,
+      Movimien.UNIDAD,
+      func.coalesce(func.sum(Movimien.VALOR), 0).label('total_movement'),
+      func.coalesce(func.sum(case((Movimien.TIPO == '024', Movimien.TOTAL), else_=0)), 0).label('tipo_024'),
+      func.coalesce(func.sum(case((Movimien.TIPO == '027', Movimien.TOTAL), else_=0)), 0).label('tipo_027'),
+      func.coalesce(func.sum(case((Movimien.TIPO == '026', Movimien.TOTAL), else_=0)), 0).label('tipo_026'),
+      func.coalesce(func.sum(case((Movimien.TIPO == '022', Movimien.TOTAL), else_=0)), 0).label('tipo_022'),
+      func.coalesce(func.sum(case((Movimien.TIPO == '016', Movimien.TOTAL), else_=0)), 0).label('tipo_016')
+    ).filter(
+      Movimien.EMPRESA == company_code,
+      Movimien.FECHA >= data.primeraFecha,
+      Movimien.FECHA <= data.ultimaFecha,
+      Movimien.PROPI_IDEN.in_(owners_codes),
+      Movimien.TIPO.in_(['024', '027', '026', '022', '016'])
+    ).group_by(Movimien.PROPI_IDEN, Movimien.UNIDAD).all()
+
+    # Recopilar todas las unidades únicas que aparecen en los movimientos históricos
+    all_units_from_movements = set()
+    
+    for income in incomes:
+      all_units_from_movements.add(income.NUMERO)
+    
+    for insurance in insurances:
+      all_units_from_movements.add(insurance.NUMERO)
+    
+    for lab in labor:
+      all_units_from_movements.add(lab.NUMERO)
+    
+    for mov in movements:
+      all_units_from_movements.add(mov.UNIDAD)
+    
+    # Buscar información de todas estas unidades
+    vehicles = db.query(
+      Vehiculos.NUMERO,
+      Vehiculos.MODELO,
+      Vehiculos.ESTADO,
+      Vehiculos.VLR_COMPRA,
+      Vehiculos.FEC_CREADO
+    ).filter(
+      Vehiculos.EMPRESA == company_code,
+      Vehiculos.NUMERO.in_(list(all_units_from_movements))
+    ).all()
+    
+    # Crear diccionario de vehículos por unidad
+    vehicles_dict = {}
+    for vehicle in vehicles:
+      unidad = vehicle.NUMERO
+      estado_nombre = estados_dict.get(vehicle.ESTADO, "") if vehicle.ESTADO else ""
+      vehicles_dict[unidad] = {
+        "modelo": vehicle.MODELO or "",
+        "estado": estado_nombre.title(),
+        "estado_codigo": vehicle.ESTADO or "",
+        "valor_compra": vehicle.VLR_COMPRA or "",
+        "fecha_creacion": vehicle.FEC_CREADO if vehicle.FEC_CREADO else ""
+      }
+
+    # Consolidar la información por unidad
+    consolidated_by_owner_unit = {}
+    
+    # Procesar ingresos
+    for income in incomes:
+      key = (income.PROPI_IDEN, income.NUMERO)
+      #unidad = income.NUMERO
+      total_income = income.total_renta + income.total_gastos + income.total_recaudo
+      # Usar la unidad como clave
+      if key not in consolidated_by_owner_unit:
+        vehicle_info = vehicles_dict.get(income.NUMERO, {})
+        consolidated_by_owner_unit[key] = {
+          "propietario": income.PROPI_IDEN,
+          "propietario_nombre": owners_dict.get(income.PROPI_IDEN, ""),
+          "unidad": income.NUMERO,
+          "modelo": vehicle_info.get("modelo", ""),
+          "estado": vehicle_info.get("estado", ""),
+          "estado_codigo": vehicle_info.get("estado_codigo", ""),
+          "valor_compra": vehicle_info.get("valor_compra", ""),
+          "fecha_creacion": vehicle_info.get("fecha_creacion", ""),
+          "incomes": 0,
+          "insurances": 0,
+          "pending_insurance": "",
+          "total_labor": 0,
+          "gasto_caja": 0,
+          "generales": 0,
+          "otro_gasto": 0,
+          "026": 0,
+          "022": 0,
+          "016": 0,
+          "almacen": 0,
+          "chapisteria": 0,
+          "estado_pyg": 0
+        }
+      consolidated_by_owner_unit[key]["incomes"] += total_income
+    
+    # Procesar seguros
+    for insurance in insurances:
+      key = (insurance.PROPI_IDEN, insurance.NUMERO)
+      if key not in consolidated_by_owner_unit:
+        vehicle_info = vehicles_dict.get(insurance.NUMERO, {})
+        consolidated_by_owner_unit[key] = {
+          "propietario": insurance.PROPI_IDEN,
+          "propietario_nombre": owners_dict.get(insurance.PROPI_IDEN, ""),
+          "unidad": insurance.NUMERO,
+          "modelo": vehicle_info.get("modelo", ""),
+          "estado": vehicle_info.get("estado", ""),
+          "estado_codigo": vehicle_info.get("estado_codigo", ""),
+          "valor_compra": vehicle_info.get("valor_compra", ""),
+          "fecha_creacion": vehicle_info.get("fecha_creacion", ""),
+          "incomes": 0,
+          "insurances": 0,
+          "pending_insurance": "",
+          "total_labor": 0,
+          "gasto_caja": 0,
+          "generales": 0,
+          "otro_gasto": 0,
+          "026": 0,
+          "022": 0,
+          "016": 0,
+          "almacen": 0,
+          "chapisteria": 0,
+          "estado_pyg": 0
+        }
+      consolidated_by_owner_unit[key]["insurances"] += insurance.total_insurance
+      if insurance.pending and insurance.pending > 0:
+        consolidated_by_owner_unit[key]["pending_insurance"] = "Pen"
+
+    # Procesar mano de obra
+    for lab in labor:
+      key = (lab.PROPI_IDEN, lab.NUMERO)
+      if key not in consolidated_by_owner_unit:
+        vehicle_info = vehicles_dict.get(lab.NUMERO, {})
+        consolidated_by_owner_unit[key] = {
+          "propietario": lab.PROPI_IDEN,
+          "propietario_nombre": owners_dict.get(lab.PROPI_IDEN, ""),
+          "unidad": lab.NUMERO,
+          "modelo": vehicle_info.get("modelo", ""),
+          "estado": vehicle_info.get("estado", ""),
+          "estado_codigo": vehicle_info.get("estado_codigo", ""),
+          "valor_compra": vehicle_info.get("valor_compra", ""),
+          "fecha_creacion": vehicle_info.get("fecha_creacion", ""),
+          "incomes": 0,
+          "insurances": 0,
+          "pending_insurance": "",
+          "total_labor": 0,
+          "gasto_caja": 0,
+          "generales": 0,
+          "otro_gasto": 0,
+          "026": 0,
+          "022": 0,
+          "016": 0,
+          "almacen": 0,
+          "chapisteria": 0,
+          "estado_pyg": 0
+        }
+      consolidated_by_owner_unit[key]["total_labor"] += lab.total_labor
+    
+    # Procesar movimientos
+    for mov in movements:
+      key = (mov.PROPI_IDEN, mov.UNIDAD)
+      if key not in consolidated_by_owner_unit:
+        vehicle_info = vehicles_dict.get(mov.UNIDAD, {})
+        consolidated_by_owner_unit[key] = {
+          "propietario": mov.PROPI_IDEN,
+          "propietario_nombre": owners_dict.get(mov.PROPI_IDEN, ""),
+          "unidad": mov.UNIDAD,
+          "modelo": vehicle_info.get("modelo", ""),
+          "estado": vehicle_info.get("estado", ""),
+          "estado_codigo": vehicle_info.get("estado_codigo", ""),
+          "valor_compra": vehicle_info.get("valor_compra", ""),
+          "fecha_creacion": vehicle_info.get("fecha_creacion", ""),
+          "incomes": 0,
+          "insurances": 0,
+          "pending_insurance": "",
+          "total_labor": 0,
+          "gasto_caja": 0,
+          "generales": 0,
+          "otro_gasto": 0,
+          "026": 0,
+          "022": 0,
+          "016": 0,
+          "almacen": 0,
+          "chapisteria": 0,
+          "estado_pyg": 0
+        }
+      # consolidated_by_unit[unidad]["total_movement"] += mov.total_movement
+      consolidated_by_owner_unit[key]["gasto_caja"] += mov.tipo_024
+      consolidated_by_owner_unit[key]["generales"] += mov.tipo_027
+      consolidated_by_owner_unit[key]["026"] += mov.tipo_026
+      consolidated_by_owner_unit[key]["022"] += mov.tipo_022
+      consolidated_by_owner_unit[key]["016"] += mov.tipo_016
+      consolidated_by_owner_unit[key]["almacen"] = consolidated_by_owner_unit[key]["022"] - consolidated_by_owner_unit[key]["016"]
+      consolidated_by_owner_unit[key]["chapisteria"] = consolidated_by_owner_unit[key]["026"] + consolidated_by_owner_unit[key]["total_labor"]
+
+    for key, item in consolidated_by_owner_unit.items():
+      item["estado_pyg"] = item["incomes"] - item["gasto_caja"] - item["generales"] - item["chapisteria"] - item["almacen"]
+    
+    # Filtrar unidades sin movimientos
+    filtered_units = {}
+    for key, item in consolidated_by_owner_unit.items():
+      numeric_fields = [
+        "incomes", "insurances", "total_labor", "gasto_caja",
+        "generales", "otro_gasto", "026", "022", "016", "almacen", "chapisteria"
+      ]
+
+      has_movements = any(item.get(field, 0) != 0 for field in numeric_fields)
+      has_pending_insurance = item.get("pending_insurance") != ""
+
+      if has_movements or has_pending_insurance:
+        filtered_units[key] = item
+
+    # Crear estructura solo con totales por propietario
+    summary_by_owner = {}
+
+    for key, item in filtered_units.items():
+      owner_code = item["propietario"]
+      if owner_code not in summary_by_owner:
+        summary_by_owner[owner_code] = {
+          "propietario": owner_code,
+          "propietario_nombre": item["propietario_nombre"],
+          "totales": {
+              "cantidad_unidades": 0,
+              "cantidad_propietarios": 0,
+              "incomes": 0,
+              "insurances": 0,
+              "total_labor": 0,
+              "gasto_caja": 0,
+              "generales": 0,
+              "otro_gasto": 0,
+              "026": 0,
+              "022": 0,
+              "016": 0,
+              "almacen": 0,
+              "chapisteria": 0,
+              "estado_pyg": 0
+          }
+        }
+      
+      # Sumar directamente a los totales del propietario
+      summary_by_owner[owner_code]["totales"]["cantidad_unidades"] += 1
+      summary_by_owner[owner_code]["totales"]["incomes"] += item["incomes"]
+      summary_by_owner[owner_code]["totales"]["insurances"] += item["insurances"]
+      summary_by_owner[owner_code]["totales"]["total_labor"] += item["total_labor"]
+      summary_by_owner[owner_code]["totales"]["gasto_caja"] += item["gasto_caja"]
+      summary_by_owner[owner_code]["totales"]["generales"] += item["generales"]
+      summary_by_owner[owner_code]["totales"]["otro_gasto"] += item["otro_gasto"]
+      summary_by_owner[owner_code]["totales"]["026"] += item["026"]
+      summary_by_owner[owner_code]["totales"]["022"] += item["022"]
+      summary_by_owner[owner_code]["totales"]["016"] += item["016"]
+      summary_by_owner[owner_code]["totales"]["almacen"] += item["almacen"]
+      summary_by_owner[owner_code]["totales"]["chapisteria"] += item["chapisteria"]
+      summary_by_owner[owner_code]["totales"]["estado_pyg"] += item["estado_pyg"]
+
+    # Calcular totales generales
+    totales_generales = {
+        "cantidad_unidades": 0,
+        "cantidad_propietarios": 0,
+        "incomes": 0,
+        "insurances": 0,
+        "total_labor": 0,
+        "gasto_caja": 0,
+        "generales": 0,
+        "otro_gasto": 0,
+        "026": 0,
+        "022": 0,
+        "016": 0,
+        "almacen": 0,
+        "chapisteria": 0,
+        "estado_pyg": 0
+    }
+
+    # Convertir a lista y formatear valores
+    response_summary = []
+
+    sorted_owner_codes = sorted(summary_by_owner.keys())
+
+    for owner_code in sorted_owner_codes:
+      owner_data = summary_by_owner[owner_code]
+      
+      # Formatear totales del propietario
+      for field in totales_generales:
+        if owner_data["totales"][field] == 0:
+          owner_data["totales"][field] = ""
+        else:
+          owner_data["totales"][field] = round(owner_data["totales"][field], 2)
+            
+        # Sumar a totales generales
+        if owner_data["totales"][field] != "":
+          totales_generales[field] += owner_data["totales"][field]
+      
+      # Solo incluir propietarios que tengan valores
+      has_values = any(
+        owner_data["totales"].get(field) not in [0, "", None] 
+        for field in ["incomes", "insurances", "total_labor", "gasto_caja", "generales", "026", "022", "016", "almacen", "chapisteria"]
+      )
+      
+      if has_values:
+        response_summary.append(owner_data)
+        totales_generales["cantidad_propietarios"] += 1
+
+    # Formatear totales generales
+    for field in totales_generales:
+      if totales_generales[field] == 0:
+        totales_generales[field] = ""
+      else:
+        totales_generales[field] = round(totales_generales[field], 2)
+
+    # Get current date
+    panama_timezone = pytz.timezone('America/Panama')
+    # Obtén la hora actual en la zona horaria de Ciudad de Panamá
+    now_in_panama = datetime.now(panama_timezone)
+    # Formatea la fecha y la hora según lo requerido
+    fecha = now_in_panama.strftime("%d/%m/%Y")
+    hora_actual = now_in_panama.strftime("%I:%M:%S %p")
+    titulo = 'Estado de Pérdidas y Ganancias'
+
+    info_empresa = db.query(
+      InfoEmpresas.NOMBRE,
+      InfoEmpresas.NIT,
+      InfoEmpresas.LOGO
+    ).filter(InfoEmpresas.ID == company_code).first()
+
+    # Construir respuesta final unidades
+    response = {
+      "propietarios": response_summary,
+      "totales_generales": totales_generales,
+      "fechas": {
+          "primeraFecha": data.primeraFecha,
+          "ultimaFecha": data.ultimaFecha
+      },
+      "usuario": data.usuario,
+      "fecha": fecha,
+      "hora": hora_actual,
+      "nombre_empresa": info_empresa.NOMBRE,
+      "nit_empresa": info_empresa.NIT,
+      "logo_empresa": info_empresa.LOGO,
+    }
+
+    headers = {
+      "Content-Disposition": "attachment; resumen-estado-perdidas-ganancias.pdf"
+    }
+
+    data_reporte = response
+
+    template_loader = jinja2.FileSystemLoader(searchpath="./templates")
+    template_env = jinja2.Environment(loader=template_loader)
+    template_file = "ResumenEstadoPyG.html"
+    header_file = "header2.html"
+    footer_file = "footer1.html"
+    template = template_env.get_template(template_file)
+    header = template_env.get_template(header_file)
+    footer = template_env.get_template(footer_file)
+    output_text = template.render(data=data_reporte) 
+    output_header = header.render(data_reporte)
+    output_footer = footer.render(data_reporte)
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode="w") as html_file:
+      html_path = html_file.name
+      html_file.write(output_text)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode="w") as header_file:
+      header_path = header_file.name
+      header_file.write(output_header)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode="w") as footer_file:
+      footer_path = footer_file.name
+      footer_file.write(output_footer)
+
+    pdf_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf").name
+
+    html2pdf(titulo, html_path, pdf_path, header_path=header_path, footer_path=footer_path, orientation='Landscape')
+
+    background_tasks = BackgroundTasks()
+    background_tasks.add_task(os.remove, html_path)
+    background_tasks.add_task(os.remove, header_path)
+    background_tasks.add_task(os.remove, footer_path)
+    background_tasks.add_task(os.remove, pdf_path)
+
+    response = FileResponse(
+        pdf_path, 
+        media_type='application/pdf', 
+        filename='templates/resumen-estado-perdidas-ganancias.pdf', 
+        headers=headers,
+        background=background_tasks
+      )
+
+    return response
+
+  except Exception as e:
+    return JSONResponse(status_code=500, content={"message": str(e)})
   finally:
     db.close()

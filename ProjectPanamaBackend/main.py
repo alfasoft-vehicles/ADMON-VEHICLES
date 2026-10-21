@@ -1,4 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError, HTTPException as FastAPIHTTPException
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from config.dbconnection import Base, engine
 from fastapi.staticfiles import StaticFiles
@@ -26,13 +29,19 @@ from routes.collection_account import collectionAccount_router
 from routes.inspections import inspections_router
 from routes.documents import documents_router
 from routes.yards import yards_router
+from routes.driver_data import driver_data_router
+from routes.mechanics import mechanics_router
+from routes.vehicles_to_repair import vehicles_to_repair_router
+from routes.wallet import wallet_router
+from routes.surcharges_types import surcharges_router
+from routes.search import search_router
 import os
 
 load_dotenv()
 
 app = FastAPI()
 #* Quitar el comentario de la siguiente línea para deshabilitar la documentación de FastAPI
-#app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+# app = FastAPI(root_path="/api", docs_url=None, redoc_url=None, openapi_url=None)
 
 app.add_middleware(
     CORSMiddleware,
@@ -41,6 +50,36 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+  print(f"Error de validación en {request.url}: {exc.errors()}")
+  return JSONResponse(
+      status_code=422,
+      content={"message": "Error de validación", "details": exc.errors()},
+  )
+
+@app.exception_handler(FastAPIHTTPException)
+async def fastapi_http_exception_handler(request: Request, exc: FastAPIHTTPException):
+  return JSONResponse(
+      status_code=exc.status_code,
+      content={"message": exc.detail if isinstance(exc.detail, str) else str(exc.detail)},
+  )
+
+@app.exception_handler(StarletteHTTPException)
+async def starlette_http_exception_handler(request: Request, exc: StarletteHTTPException):
+  return JSONResponse(
+      status_code=exc.status_code,
+      content={"message": exc.detail if isinstance(exc.detail, str) else str(exc.detail)},
+  )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+  print(f"Error no controlado en {request.url}: {exc}")
+  return JSONResponse(
+      status_code=500,
+      content={"message": f"Error interno en el servidor: {str(exc)}"},
+  )
 
 Base.metadata.create_all(bind=engine)
 
@@ -67,8 +106,17 @@ app.include_router(collectionAccount_router)
 app.include_router(inspections_router)
 app.include_router(documents_router)
 app.include_router(yards_router)
+app.include_router(driver_data_router)
+app.include_router(mechanics_router)
+app.include_router(vehicles_to_repair_router)
+app.include_router(wallet_router)
+app.include_router(surcharges_router)
+app.include_router(search_router)
 
 app.mount("/assets", StaticFiles(directory="assets"), name="assets")
+
+UPLOADS_DIR = os.getenv('DIRECTORY_IMG')
+app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 
 @app.get("/")
 def main():

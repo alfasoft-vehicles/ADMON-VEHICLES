@@ -3,7 +3,7 @@ from config.dbconnection import Base
 
 class Movienca(Base):
     __tablename__ = 'MOVIENCA'
-
+    EMPRESA = Column(CHAR(2), nullable=False)
     TIPO = Column(CHAR(3), primary_key=True)
     TIPNOM = Column(CHAR(4))
     FACTURA = Column(CHAR(8))

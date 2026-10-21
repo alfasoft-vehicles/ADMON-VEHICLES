@@ -1,0 +1,73 @@
+<mat-card class="capture-card">
+  <mat-card-header>
+    <mat-card-title>Captura de Fotos del Vehículo</mat-card-title>
+    <mat-card-subtitle>
+      {{ photos.length }} / {{ MAX_PHOTOS }} fotos capturadas
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="camera-view" [class.hidden]="photos.length >= MAX_PHOTOS">
+      <video #videoElement autoplay playsinline>
+        La cámara no está disponible.
+      </video>
+    </div>
+
+    <div *ngIf="photos.length >= MAX_PHOTOS" class="limit-reached">
+      <mat-icon>check_circle</mat-icon>
+      <span>Límite de 16 fotos alcanzado.</span>
+    </div>
+
+    <div class="main-actions">
+      <button
+        (click)="takePhoto()"
+        [disabled]="photos.length >= MAX_PHOTOS || isUploading"
+        mat-fab
+        color="primary"
+        matTooltip="Tomar Foto"
+      >
+        <mat-icon>camera_alt</mat-icon>
+      </button>
+    </div>
+    <div *ngIf="photos.length > 0" class="photo-gallery">
+      <div
+        class="thumbnail-item"
+        *ngFor="let photo of photos; let i = index"
+        (click)="openPreview(i)"
+      >
+        <img
+          [src]="photo.previewUrl"
+          alt="Vista previa de la foto {{ i + 1 }}"
+        />
+      </div>
+    </div>
+
+    <div *ngIf="isUploading" class="upload-status-container">
+      <div class="upload-spinner-box">
+        <mat-progress-spinner
+          mode="indeterminate"
+          [diameter]="36"
+          [strokeWidth]="3"
+          color="primary"
+        ></mat-progress-spinner>
+        <div class="upload-spinner-center">
+          <mat-icon>cloud_upload</mat-icon>
+        </div>
+      </div>
+      <div class="upload-text-box">
+        <span class="upload-title">{{ uploadStatus }}</span>
+        <span class="upload-subtitle"
+          >Guardando fotografías en el servidor...</span
+        >
+      </div>
+      <div class="upload-bar-wrapper">
+        <mat-progress-bar
+          mode="indeterminate"
+          color="primary"
+        ></mat-progress-bar>
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+<canvas #canvasElement class="hidden"></canvas>

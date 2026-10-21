@@ -1,0 +1,31 @@
+.buttons-container {
+  display: flex;
+  justify-content: space-evenly;
+  gap: 10px;
+}
+
+.buttons-container button {
+  /* background-color: #e7eeff; */
+  height: 46px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.buttons-container button mat-icon {
+  flex-shrink: 0;
+  margin-right: 8px; /* Adjust spacing if needed */
+}
+
+.buttons-container button span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 600px) {
+  .buttons-container {
+    flex-direction: column;
+  }
+}

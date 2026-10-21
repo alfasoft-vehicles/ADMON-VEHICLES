@@ -1,3 +1,4 @@
+from fastapi import BackgroundTasks
 from fastapi.responses import JSONResponse
 from config.dbconnection import session
 from sqlalchemy.orm import aliased
@@ -8,6 +9,7 @@ from models.cajarecaudos import CajaRecaudos
 from models.cajarecaudoscontado import CajasRecaudosContado
 from models.cartera import Cartera
 from models.movienca import Movienca
+from models.permisosusuario import PermisosUsuario
 from schemas.drivers import *
 from middlewares.JWTBearer import JWTBearer
 from fastapi.encoders import jsonable_encoder
@@ -19,6 +21,12 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import FileResponse
 import jinja2
 from utils.pdf import html2pdf
+import tempfile
+import os
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
+PDF_THREAD_POOL = ThreadPoolExecutor(max_workers=2)
 
 async def drivers(company_code: str):
   db = session()
@@ -71,7 +79,7 @@ async def drivers_all(company_code: str):
       {
         'codigo': driver.CODIGO,
         'unidad': driver.UND_NRO + ' - ' + driver.UND_PRE,
-        'nombre': driver.NOMBRE,
+        'nombre': (driver.NOMBRE or '' ).title(),
         'cedula': driver.CEDULA,
         'telefono': driver.TELEFONO,
         'fecha_ingreso': driver.FEC_INGRES,
@@ -80,8 +88,8 @@ async def drivers_all(company_code: str):
         'nro_pago': driver.NROENTPAGO,
         'nro_saldo': driver.NROENTSDO,
         'vce_licen': driver.LICEN_VCE,
-        'contacto': driver.CONTACTO + ' - ' + driver.TEL_CONTAC + ' - ' + driver.PAR_CONTAC,
-        'contacto1': driver.CONTACTO1 + ' - ' + driver.TEL_CONTA1 + ' - ' + driver.PAR_CONTA1
+        'contacto': (driver.CONTACTO + ' - ' + driver.TEL_CONTAC + ' - ' + driver.PAR_CONTAC).title(),
+        'contacto1': (driver.CONTACTO1 + ' - ' + driver.TEL_CONTA1 + ' - ' + driver.PAR_CONTA1).title()
       }
       for driver in drivers
     ]
@@ -93,7 +101,42 @@ async def drivers_all(company_code: str):
 
 #-----------------------------------------------------------------------------------------------
 
-async def conductores_detalles():
+async def drivers_data(company_code: str):
+  db = session()
+  try:
+    drivers = db.query(Conductores.CODIGO, Conductores.UND_NRO, Conductores.NOMBRE,
+                       Conductores.CEDULA, Vehiculos.PROPI_IDEN
+                      ).outerjoin(
+                        Vehiculos, Conductores.CODIGO == Vehiculos.CONDUCTOR
+                      ).filter(
+                        Conductores.EMPRESA == company_code, 
+                        Conductores.CODIGO != ""
+                      ).all()
+    
+    if not drivers:
+      return JSONResponse(content={"message": "Drivers not found"}, status_code=404)
+
+    result = []
+
+    for driver in drivers:
+      result.append({
+        "codigo_conductor": driver.CODIGO,
+        "numero_unidad": driver.UND_NRO,
+        "nombre_conductor": driver.NOMBRE,
+        "cedula": driver.CEDULA,
+        "codigo_propietario": driver.PROPI_IDEN or ""
+      })
+
+    return JSONResponse(content=jsonable_encoder(result), status_code=200)
+
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
+async def conductores_detalles(company_code: str, user_code: str):
   db = session()
   try:
     conductores_detalles = db.query(
@@ -106,8 +149,12 @@ async def conductores_detalles():
       Conductores.TELEFONO.label('conductor_telefono'),
       Conductores.UND_NRO.label('conductor_und'),
       Conductores.UND_PRE.label('conductor_und_pre'),
-    ).join(Ciudades, Conductores.CIUDAD == Ciudades.CODIGO) \
-      .all()
+    ).join(Ciudades, Conductores.CIUDAD == Ciudades.CODIGO
+    ).filter(
+      Conductores.EMPRESA == company_code,
+      Conductores.UND_NRO != '',
+      Conductores.UND_NRO != None
+    ).all()
     
     # Convertir los resultados en un formato JSON
     conductores_detalles_list = []
@@ -127,10 +174,12 @@ async def conductores_detalles():
 
     data = agrupar_conductores_por_estado(conductores_detalles_list)
 
+    user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == user_code).first()
+    user = user.NOMBRE if user else ""
+
     # Datos de la fecha y hora actual
     fecha = datetime.now().strftime("%Y-%m-%d")
     hora_actual = datetime.now().strftime("%H:%M:%S")
-    usuario = "admin"
     titulo = 'Directorio Conductores'
 
     # Inicializar el diccionario data_view con información común
@@ -159,7 +208,7 @@ async def conductores_detalles():
             }
             data_view[estado]["conductores"].append(conductor)
 
-    data_view["usuario"] = usuario
+    data_view["usuario"] = user
 
     headers = {
       "Content-Disposition": "attachment; detalles-conductores.pdf"
@@ -177,26 +226,44 @@ async def conductores_detalles():
     output_header = header.render(data_view=data_view)
     output_footer = footer.render(data_view=data_view)
 
-    html_path = f'./templates/renderDirectorioConductores.html'
-    header_path = f'./templates/renderheader.html'
-    footer_path = f'./templates/renderfooter.html'
-    html_file = open(html_path, 'w')
-    header_file = open(header_path, 'w')
-    html_footer = open(footer_path, 'w') 
-    html_file.write(output_text)
-    header_file.write(output_header)
-    html_footer.write(output_footer) 
-    html_file.close()
-    header_file.close()
-    html_footer.close()
-    pdf_path = 'Conductores-detalles.pdf'
-    html2pdf(titulo, html_path, pdf_path, header_path=header_path, footer_path=footer_path)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode="w") as html_file:
+      html_path = html_file.name
+      html_file.write(output_text)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode="w") as header_file:
+      header_path = header_file.name
+      header_file.write(output_header)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode="w") as footer_file:
+      footer_path = footer_file.name
+      footer_file.write(output_footer)
+    pdf_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf").name
 
-    response = FileResponse(pdf_path, media_type='application/pdf', filename='templates/Conductores-detalles.pdf', headers=headers)
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(
+      PDF_THREAD_POOL,
+      html2pdf,
+      titulo,
+      html_path, 
+      pdf_path,
+      header_path,
+      footer_path
+    )
+
+    background_tasks = BackgroundTasks()
+    background_tasks.add_task(os.remove, html_path)
+    background_tasks.add_task(os.remove, header_path)
+    background_tasks.add_task(os.remove, footer_path)
+    background_tasks.add_task(os.remove, pdf_path)
+
+    response = FileResponse(
+      pdf_path, media_type='application/pdf',
+      filename='templates/Conductores-detalles.pdf',
+      headers=headers,
+      background=background_tasks
+    )
     
     return response
   except Exception as e:
-    return JSONResponse(content={"message": str(e)})
+    return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
       db.close()
 
@@ -498,5 +565,22 @@ async def create_driver_info(driver: ConductorCreate):
   except Exception as e:
     db.rollback()
     return JSONResponse(content={"message": str(e)})
+  finally:
+    db.close()
+
+#-----------------------------------------------------------------------------------------------
+
+async def drivers_count(company_code: str):
+  db = session()
+  try:
+    drivers_count = db.query(Conductores).filter(
+      Conductores.EMPRESA == company_code,
+      Conductores.CODIGO != '',
+      Conductores.CODIGO != None
+    ).count()
+    
+    return JSONResponse(content={"drivers_count": drivers_count}, status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()

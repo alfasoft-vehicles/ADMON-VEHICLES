@@ -1,0 +1,48 @@
+<mat-card class="capture-card">
+  <mat-card-header>
+    <mat-card-title>Captura de Fotos</mat-card-title>
+    <mat-card-subtitle>
+      {{ photos.length }} / {{ maxPhotos }} fotos capturadas
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="camera-view" [class.hidden]="photos.length >= maxPhotos">
+      <video #videoElement autoplay playsinline>
+        La cámara no está disponible.
+      </video>
+    </div>
+
+    <div *ngIf="photos.length >= maxPhotos" class="limit-reached">
+      <mat-icon>check_circle</mat-icon>
+      <span>Límite de {{ maxPhotos }} fotos alcanzado.</span>
+    </div>
+
+    <div class="main-actions">
+      <button
+        (click)="takePhoto()"
+        [disabled]="photos.length >= maxPhotos"
+        mat-fab
+        color="primary"
+        matTooltip="Tomar Foto"
+      >
+        <mat-icon>camera_alt</mat-icon>
+      </button>
+    </div>
+
+    <div *ngIf="photos.length > 0" class="photo-gallery">
+      <div
+        class="thumbnail-item"
+        *ngFor="let photo of photos; let i = index"
+        (click)="openPreview(i)"
+      >
+        <img
+          [src]="photo.previewUrl"
+          alt="Vista previa de la foto {{ i + 1 }}"
+        />
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+<canvas #canvasElement class="hidden"></canvas>

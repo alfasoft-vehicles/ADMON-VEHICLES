@@ -1,0 +1,71 @@
+<div class="dialog-header-container">
+  <div class="dialog-header-info">
+    <h2 class="dialog-title">Consultas de Caja</h2>
+    <p class="dialog-subtitle">
+      Acceso rápido a informes, reportes y resúmenes de recaudos
+    </p>
+  </div>
+  <button
+    mat-icon-button
+    (click)="close()"
+    class="close-button"
+    matTooltip="Cerrar"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-divider></mat-divider>
+
+<mat-dialog-content class="dialog-content-custom">
+  <!-- Barra de búsqueda rápida -->
+  <div class="search-toolbar">
+    <div class="search-box-wrapper">
+      <mat-icon class="search-box-icon">search</mat-icon>
+      <input
+        type="text"
+        class="search-box-input"
+        [(ngModel)]="filterTerm"
+        placeholder="Buscar consulta o reporte..."
+      />
+      <button
+        *ngIf="filterTerm"
+        type="button"
+        class="search-box-clear"
+        (click)="filterTerm = ''"
+        matTooltip="Limpiar búsqueda"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Grid de Consultas -->
+  <div class="queries-grid">
+    <button
+      *ngFor="let item of filteredOptions"
+      class="query-tile-btn"
+      matRipple
+      (click)="selectQuery(item)"
+    >
+      <div class="query-icon-container" [ngClass]="item.bgClass">
+        <mat-icon [ngClass]="item.colorClass">{{ item.icon }}</mat-icon>
+      </div>
+      <span class="query-tile-label">{{ item.label }}</span>
+    </button>
+  </div>
+
+  <!-- Sin resultados -->
+  <div *ngIf="filteredOptions.length === 0" class="no-results">
+    <mat-icon>search_off</mat-icon>
+    <span>No se encontraron consultas para "{{ filterTerm }}"</span>
+  </div>
+</mat-dialog-content>
+
+<mat-divider></mat-divider>
+
+<mat-dialog-actions align="end" class="dialog-actions-custom">
+  <button mat-button type="button" (click)="close()" class="action-btn">
+    <mat-icon>close</mat-icon> Cerrar
+  </button>
+</mat-dialog-actions>

@@ -88,7 +88,7 @@ export class StatevehiclefleetComponent implements OnInit {
         this.owners.sort((a, b) => a.name.localeCompare(b.name));
       },
       (error) => {
-        console.log(error);
+        console.error(error);
       }
     );
   }
@@ -111,10 +111,9 @@ export class StatevehiclefleetComponent implements OnInit {
         
           return a.name.localeCompare(b.name);
         });
-        console.log(response);
       },
       (error) => {
-        console.log(error);
+        console.error(error);
       }
     );
   }
@@ -161,7 +160,6 @@ export class StatevehiclefleetComponent implements OnInit {
 
   onEmpresaSeleccionar() {
     this.empresasSeleccionadas.sort((a, b) => parseInt(a) - parseInt(b));
-    console.log('Empresas seleccionadas:', this.empresasSeleccionadas);
     this.mostrarOpcionesEmpresas = false; // Cierra el cuadro después de la selección
     this.clearEmpresasSelections();
   }
@@ -176,7 +174,6 @@ export class StatevehiclefleetComponent implements OnInit {
 
   onEstadoSeleccionar() {
     this.estadosSeleccionados.sort((a, b) => parseInt(a) - parseInt(b));
-    console.log('Estados seleccionadas:', this.estadosSeleccionados);
     this.mostrarOpcionesEstados = false; 
     this.clearEstadosSelections();
   }

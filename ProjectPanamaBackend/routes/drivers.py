@@ -13,15 +13,13 @@ async def get_drivers(company_code: str):
 async def get_drivers(company_code: str):
   return await drivers_all(company_code)
 
-@drivers_router.get('/directorio-conductores/', tags=["Drivers"])
-async def get_conductores_detalles():
-  return await conductores_detalles()
+@drivers_router.get("/drivers_data/{company_code}/", tags=["Drivers"])
+async def get_drivers_data(company_code: str):
+  return await drivers_data(company_code)
 
-#-----------------------------------------------------------------------------------------------
-#? Ver si se puede eliminar
-#@drivers_router.post("/driver", response_model=DriverCreate, tags=["Drivers"])
-
-#-----------------------------------------------------------------------------------------------
+@drivers_router.get('/directorio-conductores/{company_code}/{user_code}/', tags=["Drivers"])
+async def get_conductores_detalles(company_code: str, user_code: str):
+  return await conductores_detalles(company_code, user_code)
 
 @drivers_router.get("/driver/{driver_id}/", tags=["Drivers"])
 async def get_driver_info(driver_id: int):
@@ -46,3 +44,7 @@ async def get_owner_codes():
 @drivers_router.post("/drivers/", response_model=ConductorCreate, tags=["Drivers"])
 async def create_driver(driver: ConductorCreate):
   return await create_driver_info(driver)
+
+@drivers_router.get("/drivers-count/{company_code}/", tags=["Drivers"])
+async def get_drivers_count(company_code: str):
+  return await drivers_count(company_code)

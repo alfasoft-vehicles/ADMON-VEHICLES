@@ -10,17 +10,175 @@
         formControlName="conductor"
         [matAutocomplete]="auto2"
       />
-      <mat-autocomplete #auto2="matAutocomplete" [displayWith]="displayDriverName">
-        <mat-option [value]="">
-          -
-        </mat-option>
+      <mat-autocomplete
+        #auto2="matAutocomplete"
+        [displayWith]="displayDriverName"
+        (optionSelected)="selectedOptionDriver($event)"
+        (opened)="resetAutocomplete()"
+      >
+        <!-- <mat-option [value]=""> - </mat-option> -->
         <mat-option
           *ngFor="let option of optionsDrivers | async"
           [value]="option"
         >
-          {{ option.nombre_conductor }} - {{ option.cedula }}
+          {{ option.nombre_conductor }} - {{ option.cedula }} -
+          {{ option.codigo_conductor }}
         </mat-option>
       </mat-autocomplete>
     </mat-form-field>
+    <mat-progress-bar
+      mode="indeterminate"
+      *ngIf="loadingDocumentsInfoDrivers"
+    ></mat-progress-bar>
+  </div>
+
+  <div class="documents-options-container" *ngIf="displayInfoDriver">
+    <div class="info-vehicle-container">
+      <button mat-raised-button class="button" (click)="openInfoDriverDialog()">
+        <mat-icon>garage_check</mat-icon>
+        <span>INFORMACIÓN DEL CONDUCTOR</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="documents-options-container" *ngIf="selectedDriver">
+    <div class="required-documents-container">
+      <button
+        mat-raised-button
+        class="button"
+        [disabled]="!documentsInfo[0].existe"
+        (click)="
+          validateDocumentDriver(
+            documentsInfo[0],
+            'Escaneado Total'
+          )
+        "
+      >
+        <mat-icon>description</mat-icon>
+        <span>Escaneado Total</span>
+      </button>
+      <button
+        mat-raised-button
+        class="button"
+        [disabled]="!documentsInfo[1].existe"
+        (click)="
+          validateDocumentDriver(
+            documentsInfo[1],
+            'Formato de Datos Personales'
+          )
+        "
+      >
+        <mat-icon>description</mat-icon>
+        <span>Formato de Datos Personales</span>
+      </button>
+      <button
+        mat-raised-button
+        class="button"
+        [disabled]="!documentsInfo[2].existe"
+        (click)="
+          validateDocumentDriver(
+            documentsInfo[2],
+            'Paz y Salvo de la Autoridad de Tránsito'
+          )
+        "
+      >
+        <mat-icon>description</mat-icon>
+        <span>Paz y Salvo de la Autoridad de Tránsito</span>
+      </button>
+      <button
+        mat-raised-button
+        class="button"
+        [disabled]="!documentsInfo[3].existe"
+        (click)="
+          validateDocumentDriver(
+            documentsInfo[3],
+            'Historial del Conductor de la Autoridad de Tránsito'
+          )
+        "
+      >
+        <mat-icon>description</mat-icon>
+        <span>Historial del Conductor de la Autoridad de Tránsito</span>
+      </button>
+      <button
+        mat-raised-button
+        class="button"
+        [disabled]="!documentsInfo[4].existe"
+        (click)="validateDocumentDriver(documentsInfo[4], 'Record Policivo')"
+      >
+        <mat-icon>description</mat-icon>
+        <span>Record Policivo</span>
+      </button>
+    </div>
+
+    <div class="required-documents-container">
+      <button
+        mat-raised-button
+        class="button"
+        [disabled]="!documentsInfo[5].existe"
+        (click)="
+          validateDocumentDriver(documentsInfo[5], 'Cédula de Ciudadanía')
+        "
+      >
+        <mat-icon>description</mat-icon>
+        <span>Cédula de Ciudadanía</span>
+      </button>
+      <button
+        mat-raised-button
+        class="button"
+        [disabled]="!documentsInfo[6].existe"
+        (click)="
+          validateDocumentDriver(
+            documentsInfo[6],
+            'Licencia de Conducción al día'
+          )
+        "
+      >
+        <mat-icon>description</mat-icon>
+        <span>Licencia de Conducción al día</span>
+      </button>
+      <button
+        mat-raised-button
+        class="button"
+        [disabled]="!documentsInfo[7].existe"
+        (click)="
+          validateDocumentDriver(
+            documentsInfo[7],
+            'Contrato y Declaración Jurada'
+          )
+        "
+      >
+        <mat-icon>description</mat-icon>
+        <span>Contrato y Declaración Jurada</span>
+      </button>
+      <button
+        mat-raised-button
+        class="button"
+        [disabled]="!documentsInfo[8].existe"
+        (click)="
+          validateDocumentDriver(
+            documentsInfo[8],
+            'Autorización de Trámite para Recuperación del Vehículo'
+          )
+        "
+      >
+        <mat-icon>description</mat-icon>
+        <span>Autorización de Trámite para Recuperación del Vehículo</span>
+      </button>
+
+      <button
+        mat-raised-button
+        class="button"
+        [disabled]="!documentsInfo[9].existe"
+        (click)="
+          validateDocumentDriver(
+            documentsInfo[9],
+            'Hoja de Inspección de la Unidad al Momento de la Entrega'
+          )
+        "
+      >
+        <mat-icon>description</mat-icon>
+        <span>Hoja de Inspección de la Unidad al Momento de la Entrega</span>
+      </button>
+    </div>
   </div>
 </form>

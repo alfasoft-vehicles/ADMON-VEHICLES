@@ -1,0 +1,82 @@
+.capture-card {
+  max-width: 600px;
+  margin: 25px auto;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.camera-view, .limit-reached {
+  width: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: #303030;
+  margin-bottom: 16px;
+}
+
+.camera-view video {
+  width: 100%;
+  display: block;
+  aspect-ratio: 16 / 9;
+  background-color: #000;
+}
+
+.limit-reached {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0;
+  background-color: #f5f5f5;
+  color: #757575;
+}
+
+.limit-reached mat-icon {
+  font-size: 52px;
+  width: 52px;
+  height: 52px;
+  color: #4caf50;
+}
+
+.main-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 16px 0 24px 0;
+}
+
+.photo-gallery {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.thumbnail-item {
+  aspect-ratio: 1 / 1;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+  background-color: #f0f0f0;
+}
+
+.thumbnail-item:hover {
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+.thumbnail-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hidden {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .camera-view video {
+    aspect-ratio: 3 / 4; 
+  }
+}

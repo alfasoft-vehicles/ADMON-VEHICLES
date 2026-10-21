@@ -1,0 +1,151 @@
+<div class="main-container">
+  <h3>Situación del vehículo {{ vehicleNumber }}</h3>
+
+  <form [formGroup]="vehicleForm">
+    <div class="checklist" formArrayName="checklistItems">
+      <div class="checklist-header">
+        <span class="checklist-label">ÍTEM</span>
+
+        <div class="checklist-options-container">
+          <span class="options-title">OPCIONES</span>
+          <div class="checklist-options-header">
+            <mat-icon class="icon-green" matTooltip="Sí" (click)="setAllChecklistItems(true)">check_circle</mat-icon>
+            <mat-icon class="icon-red" matTooltip="No" (click)="setAllChecklistItems(false)">cancel</mat-icon>
+          </div>
+        </div>
+      </div>
+      <div
+        class="checklist-row"
+        *ngFor="let itemGroup of checklistItemsArray.controls; let i = index"
+        [formGroupName]="i"
+      >
+        <div class="item-label-container">
+          <span class="checklist-label"
+            >{{ itemGroup.get("label")?.value }}:</span
+          >
+          <mat-error
+            *ngIf="
+              itemGroup.get('value')?.invalid && itemGroup.get('value')?.touched
+            "
+          >
+            Selecciona una opción para este ítem.
+          </mat-error>
+        </div>
+
+        <mat-radio-group class="checklist-options" formControlName="value">
+          <mat-radio-button [value]="true" color="primary"></mat-radio-button>
+          <mat-radio-button [value]="false" color="warn"></mat-radio-button>
+        </mat-radio-group>
+      </div>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <div class="additional-fields">
+      <mat-form-field class="full-width" (click)="vehicleForm.get('mecanico')?.setValue('')">
+        <mat-label>Mecánico</mat-label>
+        <input
+          matInput
+          formControlName="mecanico"
+          [matAutocomplete]="autoMechanic"
+          (click)="vehicleForm.get('mecanico')?.setValue('')"
+        />
+        <mat-autocomplete
+          #autoMechanic="matAutocomplete"
+          [displayWith]="displayMechanicCode"
+        >
+          <mat-option
+            *ngFor="let mechanic of optionsMechanics | async"
+            [value]="mechanic"
+          >
+            {{ mechanic.code }} - {{ mechanic.name }}
+          </mat-option>
+        </mat-autocomplete>
+        <mat-error
+          *ngIf="
+            vehicleForm.get('mecanico')?.invalid &&
+            vehicleForm.get('mecanico')?.touched
+          "
+        >
+          Este campo es obligatorio.
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="full-width">
+        <mat-label>Combustible</mat-label>
+        <input matInput formControlName="combustible" />
+        <mat-error
+          *ngIf="
+            vehicleForm.get('combustible')?.invalid &&
+            vehicleForm.get('combustible')?.touched
+          "
+        >
+          Este campo es obligatorio.
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="full-width">
+        <mat-label>Kilometraje</mat-label>
+        <input
+          matInput
+          formControlName="kilometraje"
+          (keypress)="onlyNumbers($event)"
+        />
+        <mat-error
+          *ngIf="
+            vehicleForm.get('kilometraje')?.invalid &&
+            vehicleForm.get('kilometraje')?.touched
+          "
+        >
+          Este campo es obligatorio.
+        </mat-error>
+      </mat-form-field>
+
+      <div class="panapass-container">
+        <mat-form-field class="full-width">
+          <mat-label>Panapass</mat-label>
+          <input matInput formControlName="panapass" />
+          <mat-error
+            *ngIf="
+              vehicleForm.get('panapass')?.invalid &&
+              vehicleForm.get('panapass')?.touched
+            "
+          >
+            Este campo es obligatorio.
+          </mat-error>
+        </mat-form-field>
+        <!-- <div class="example-button-container"> -->
+        <button
+          mat-mini-fab
+          class="panapass-button"
+          aria-label="Buscar panapass"
+          (click)="openGetPanapassDialog()"
+        >
+          <mat-icon>search</mat-icon>
+        </button>
+        <!-- </div> -->
+      </div>
+
+      <mat-form-field class="full-width">
+        <mat-label>Descripción</mat-label>
+        <textarea matInput formControlName="descripcion"></textarea>
+        <mat-error
+          *ngIf="
+            vehicleForm.get('descripcion')?.invalid &&
+            vehicleForm.get('descripcion')?.touched
+          "
+        >
+          Este campo es obligatorio.
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="full-width">
+        <mat-label>Notas</mat-label>
+        <textarea matInput formControlName="nota"></textarea>
+        <!-- <mat-error *ngIf="vehicleForm.get('nota')?.invalid && vehicleForm.get('nota')?.touched">
+          Este campo es obligatorio.
+        </mat-error> -->
+      </mat-form-field>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,13 @@
+<h2 mat-dialog-title>Vista Previa</h2>
+
+<mat-dialog-content class="mat-typography">
+  <img [src]="data.imageUrl" alt="Vista previa de la imagen">
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cerrar</button>
+  <button mat-flat-button color="warn" [mat-dialog-close]="{ delete: true }">
+    <mat-icon>delete</mat-icon>
+    Eliminar
+  </button>
+</mat-dialog-actions>

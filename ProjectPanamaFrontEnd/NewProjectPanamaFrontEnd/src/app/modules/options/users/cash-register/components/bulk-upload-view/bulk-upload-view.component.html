@@ -1,0 +1,638 @@
+<div class="bu-main-container" *ngIf="activeStrategy">
+  <!-- Encabezado Superior -->
+  <header class="bu-top-header mat-elevation-z2">
+    <div class="bu-header-left">
+      <button
+        mat-stroked-button
+        class="cr-button cr-btn-pastel-red bu-header-exit-btn"
+        routerLink="/cash-register"
+      >
+        <mat-icon>arrow_back</mat-icon>
+        <span>Regresar</span>
+      </button>
+      <div class="bu-header-divider"></div>
+      <div class="bu-title-group">
+        <h1 class="bu-title">{{ activeStrategy.title }}</h1>
+        <div
+          class="bu-gateway-badge bu-yappy-badge"
+          [style.background]="
+            activeStrategy.badgeConfig.gradient ||
+            'linear-gradient(135deg, #0077c8 0%, #00a4e4 100%)'
+          "
+        >
+          <mat-icon class="bu-gateway-icon bu-yappy-icon">{{
+            activeStrategy.badgeConfig.icon
+          }}</mat-icon>
+          <span class="bu-gateway-text bu-yappy-text">{{
+            activeStrategy.badgeConfig.text
+          }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bu-header-right">
+      <div class="bu-sort-container">
+        <span class="bu-sort-label">
+          <mat-icon class="bu-sort-label-icon">sort</mat-icon>
+          <span>Ordenar:</span>
+        </span>
+        <mat-button-toggle-group
+          [value]="sortOrder"
+          (change)="onSortChange($event.value)"
+          hideSingleSelectionIndicator="true"
+          name="sortOrder"
+          aria-label="Criterio de ordenamiento"
+          class="bu-sort-toggle-group"
+        >
+          <mat-button-toggle
+            value="default"
+            class="bu-sort-toggle-btn bu-toggle-default"
+          >
+            <mat-icon class="bu-toggle-icon">swap_vert</mat-icon>
+            <span>Por Defecto</span>
+          </mat-button-toggle>
+
+          <mat-button-toggle
+            value="revision"
+            class="bu-sort-toggle-btn bu-toggle-warn"
+          >
+            <mat-icon class="bu-toggle-icon">warning_amber</mat-icon>
+            <span>Revisión</span>
+            <span class="bu-toggle-pill bu-pill-warn">{{
+              metrics.registrosPendientes
+            }}</span>
+          </mat-button-toggle>
+
+          <mat-button-toggle
+            value="ready"
+            class="bu-sort-toggle-btn bu-toggle-ok"
+          >
+            <mat-icon class="bu-toggle-icon">check_circle</mat-icon>
+            <span>Listos</span>
+            <span class="bu-toggle-pill bu-pill-ok">{{
+              metrics.registrosValidados
+            }}</span>
+          </mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+
+      <!-- Botón para limpiar todos los registros de la tabla -->
+      <button
+        mat-icon-button
+        class="bu-btn-clear-table"
+        matTooltip="Limpiar todos los registros"
+        (click)="clearAllRecords()"
+        aria-label="Limpiar todos los registros"
+      >
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  <!-- Contenedor Principal: Tabla de Datos -->
+  <main class="bu-table-section mat-elevation-z4">
+    <div class="bu-table-toolbar">
+      <div class="bu-toolbar-left">
+        <span class="bu-table-legend-title">Detalle de Transacciones</span>
+        <span class="bu-legend-item bu-legend-warn bu-chip-desktop-hidden">
+          <span class="bu-dot bu-dot-warn"></span>
+          {{ metrics.registrosPendientes }} Requieren Revisión
+        </span>
+      </div>
+      <div class="bu-toolbar-right">
+        <span class="bu-legend-item bu-legend-warn bu-chip-mobile-hidden">
+          <span class="bu-dot bu-dot-warn"></span>
+          {{ metrics.registrosPendientes }} Requieren Revisión
+        </span>
+
+        <div
+          class="bu-search-box-wrapper"
+          [class.bu-search-expanded]="isSearchExpanded || !!searchTerm"
+        >
+          <button
+            type="button"
+            class="bu-search-box-btn"
+            (click)="toggleSearch()"
+            matTooltip="Buscar registros"
+            aria-label="Buscar registros"
+          >
+            <mat-icon class="bu-search-box-icon">search</mat-icon>
+          </button>
+          <input
+            id="bu-search-input"
+            type="text"
+            class="bu-search-box-input"
+            [(ngModel)]="searchTerm"
+            placeholder="Buscar por nombre, celular, código, unidad..."
+            aria-label="Buscar registros por nombre, celular, código o unidad"
+          />
+          <button
+            *ngIf="searchTerm"
+            type="button"
+            class="bu-search-box-clear"
+            (click)="clearSearch()"
+            matTooltip="Limpiar búsqueda"
+            aria-label="Limpiar búsqueda"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+          <button
+            *ngIf="isSearchExpanded && !searchTerm"
+            type="button"
+            class="bu-search-box-close"
+            (click)="collapseSearch()"
+            matTooltip="Cerrar buscador"
+            aria-label="Cerrar buscador"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenedor Scroll de la Tabla -->
+    <div class="bu-table-scroll-container">
+      <table
+        class="bu-data-table"
+        [class.bu-table-empty]="filteredRecords.length === 0"
+      >
+        <thead>
+          <tr>
+            <th class="th-w-date">Fecha</th>
+            <th class="th-w-time">Hora</th>
+            <th class="th-w-name">Nombre</th>
+            <th class="th-w-phone">Celular</th>
+            <th class="th-w-comment">Comentario</th>
+            <th class="th-num th-w-amount">Crédito</th>
+            <th class="th-num th-w-sm">Comis</th>
+            <th class="th-num th-w-sm">Inscrip</th>
+            <th class="th-num th-w-sm">Multas</th>
+            <th class="th-num th-w-sm">Panapa</th>
+            <th class="th-num th-w-sm">Siniest</th>
+            <th class="th-w-id">Cédula</th>
+            <th class="th-center th-w-code">Código</th>
+            <th class="th-center th-w-unit">Unidad</th>
+            <th class="th-center th-w-unit">Otra Und</th>
+            <th class="th-center th-w-status">Estado</th>
+            <th class="th-center th-w-code">Identifica</th>
+            <th class="th-num th-w-pending">Pendiente</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let row of filteredRecords"
+            (click)="selectRow(row.id)"
+            [class.bu-row-selected]="row.id === selectedRowId"
+            [class.bu-row-alert]="isRecordInReview(row)"
+          >
+            <!-- Fecha y Hora -->
+            <td class="td-date">{{ row.fecha }}</td>
+            <td class="td-time">{{ row.hora }}</td>
+
+            <!-- Nombre -->
+            <td class="td-name">
+              <div class="bu-cell-name">
+                <span
+                  class="bu-driver-name"
+                  [class.bu-name-alert]="isRecordInReview(row)"
+                  >{{ row.nombre }}</span
+                >
+              </div>
+            </td>
+
+            <!-- Celular -->
+            <td class="td-phone">
+              <span class="bu-phone-pill">{{ row.celular }}</span>
+            </td>
+
+            <!-- Comentario -->
+            <td class="td-comment" [title]="row.comentario">
+              {{ row.comentario || "-" }}
+            </td>
+
+            <!-- Crédito (Verde Destacado) -->
+            <td class="td-num td-credito">
+              <span class="bu-num-green">{{ row.credito }}</span>
+            </td>
+
+            <!-- Comisión (Rojo Destacado) -->
+            <td class="td-num td-comis">
+              <span class="bu-num-red">{{ row.comision }}</span>
+            </td>
+
+            <!-- Rubros Adicionales (Editables con doble clic) -->
+            <!-- Inscripción -->
+            <td
+              class="td-num td-muted td-editable"
+              (dblclick)="startCellEdit(row, 'inscripcion', $event)"
+              [class.td-editing]="isEditing(row.id, 'inscripcion')"
+              matTooltip="Doble clic para editar"
+            >
+              <ng-container
+                *ngIf="!isEditing(row.id, 'inscripcion'); else editInscripTpl"
+              >
+                <span class="bu-cell-val">{{ row.inscripcion || "0.00" }}</span>
+              </ng-container>
+              <ng-template #editInscripTpl>
+                <input
+                  [id]="'edit-cell-' + row.id + '-inscripcion'"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="bu-cell-input"
+                  [(ngModel)]="editValue"
+                  (keydown.enter)="saveCellEdit(row, 'inscripcion')"
+                  (keydown.escape)="cancelCellEdit()"
+                  (blur)="saveCellEdit(row, 'inscripcion')"
+                  (click)="$event.stopPropagation()"
+                  (dblclick)="$event.stopPropagation()"
+                />
+              </ng-template>
+            </td>
+
+            <!-- Multas -->
+            <td
+              class="td-num td-muted td-editable"
+              (dblclick)="startCellEdit(row, 'multas', $event)"
+              [class.td-editing]="isEditing(row.id, 'multas')"
+              matTooltip="Doble clic para editar"
+            >
+              <ng-container
+                *ngIf="!isEditing(row.id, 'multas'); else editMultasTpl"
+              >
+                <span class="bu-cell-val">{{ row.multas || "0.00" }}</span>
+              </ng-container>
+              <ng-template #editMultasTpl>
+                <input
+                  [id]="'edit-cell-' + row.id + '-multas'"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="bu-cell-input"
+                  [(ngModel)]="editValue"
+                  (keydown.enter)="saveCellEdit(row, 'multas')"
+                  (keydown.escape)="cancelCellEdit()"
+                  (blur)="saveCellEdit(row, 'multas')"
+                  (click)="$event.stopPropagation()"
+                  (dblclick)="$event.stopPropagation()"
+                />
+              </ng-template>
+            </td>
+
+            <!-- Panapass -->
+            <td
+              class="td-num td-muted td-editable"
+              (dblclick)="startCellEdit(row, 'panapass', $event)"
+              [class.td-editing]="isEditing(row.id, 'panapass')"
+              matTooltip="Doble clic para editar"
+            >
+              <ng-container
+                *ngIf="!isEditing(row.id, 'panapass'); else editPanapassTpl"
+              >
+                <span class="bu-cell-val">{{ row.panapass || "0.00" }}</span>
+              </ng-container>
+              <ng-template #editPanapassTpl>
+                <input
+                  [id]="'edit-cell-' + row.id + '-panapass'"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="bu-cell-input"
+                  [(ngModel)]="editValue"
+                  (keydown.enter)="saveCellEdit(row, 'panapass')"
+                  (keydown.escape)="cancelCellEdit()"
+                  (blur)="saveCellEdit(row, 'panapass')"
+                  (click)="$event.stopPropagation()"
+                  (dblclick)="$event.stopPropagation()"
+                />
+              </ng-template>
+            </td>
+
+            <!-- Siniestros -->
+            <td
+              class="td-num td-muted td-editable"
+              (dblclick)="startCellEdit(row, 'siniestros', $event)"
+              [class.td-editing]="isEditing(row.id, 'siniestros')"
+              matTooltip="Doble clic para editar"
+            >
+              <ng-container
+                *ngIf="!isEditing(row.id, 'siniestros'); else editSiniestrosTpl"
+              >
+                <span class="bu-cell-val">{{ row.siniestros || "0.00" }}</span>
+              </ng-container>
+              <ng-template #editSiniestrosTpl>
+                <input
+                  [id]="'edit-cell-' + row.id + '-siniestros'"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="bu-cell-input"
+                  [(ngModel)]="editValue"
+                  (keydown.enter)="saveCellEdit(row, 'siniestros')"
+                  (keydown.escape)="cancelCellEdit()"
+                  (blur)="saveCellEdit(row, 'siniestros')"
+                  (click)="$event.stopPropagation()"
+                  (dblclick)="$event.stopPropagation()"
+                />
+              </ng-template>
+            </td>
+
+            <!-- Cédula -->
+            <td class="td-id">{{ row.cedula || "-" }}</td>
+
+            <!-- Código -->
+            <td class="td-center td-code">{{ row.codigo || "-" }}</td>
+
+            <!-- Unidad (Resaltado muy evidente si falta) -->
+            <td
+              class="td-center td-clickable-unit"
+              (click)="openSearchUnitDialog(row); $event.stopPropagation()"
+              matTooltip="Clic para buscar y asignar unidad"
+            >
+              <span *ngIf="row.unidad" class="bu-badge-unit">{{
+                row.unidad
+              }}</span>
+              <span *ngIf="!row.unidad" class="bu-badge-missing">
+                <mat-icon>warning</mat-icon> SIN UNIDAD
+              </span>
+            </td>
+
+            <!-- Otra Und -->
+            <td class="td-center td-muted">{{ row.otraUnd || "—" }}</td>
+
+            <!-- Estado -->
+            <td class="td-center">
+              <span
+                *ngIf="row.estado === 'Activos'"
+                class="bu-badge-status bu-status-active"
+              >
+                Activos
+              </span>
+              <span
+                *ngIf="row.estado === 'Bacupk'"
+                class="bu-badge-status bu-status-backup"
+              >
+                Bacupk
+              </span>
+              <span *ngIf="!row.estado" class="bu-badge-status bu-status-none"
+                >—</span
+              >
+            </td>
+
+            <!-- Identifica -->
+            <td class="td-center td-identifica">{{ row.identifica || "-" }}</td>
+
+            <!-- Pendiente -->
+            <td class="td-num td-pending">
+              <span *ngIf="row.pendiente !== '0.00'" class="bu-pending-alert">
+                <mat-icon class="bu-pending-icon">warning</mat-icon>
+                ${{ row.pendiente }}
+              </span>
+              <span *ngIf="row.pendiente === '0.00'" class="bu-pending-zero">
+                0.00
+              </span>
+            </td>
+          </tr>
+
+          <!-- Estado cuando no hay registros que coincidan con la búsqueda -->
+          <tr *ngIf="filteredRecords.length === 0" class="bu-empty-row">
+            <td colspan="18" class="bu-empty-cell">
+              <div class="bu-empty-state">
+                <mat-icon class="bu-empty-icon">search_off</mat-icon>
+                <div class="bu-empty-text-wrap">
+                  <span class="bu-empty-title" *ngIf="searchTerm">
+                    No se encontraron registros que coincidan con "{{
+                      searchTerm
+                    }}"
+                  </span>
+                  <span class="bu-empty-title" *ngIf="!searchTerm">
+                    No hay registros disponibles en la tabla
+                  </span>
+                  <span class="bu-empty-subtitle" *ngIf="searchTerm">
+                    Intente buscar con otro nombre, celular, código o unidad
+                  </span>
+                </div>
+                <button
+                  *ngIf="searchTerm"
+                  type="button"
+                  mat-stroked-button
+                  class="bu-empty-clear-btn"
+                  (click)="clearSearch()"
+                >
+                  <mat-icon>clear</mat-icon>
+                  Limpiar búsqueda
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Barra Inferior: Totales y Acciones -->
+  <footer class="bu-bottom-dock">
+    <!-- Panel 1: Resumen y Totales (Conciliación de Lote - Dashboard Modular 4 Bloques) -->
+    <div class="bu-dock-card bu-summary-card mat-elevation-z4">
+      <div class="bu-summary-header-row">
+        <div class="bu-card-header-left">
+          <mat-icon class="bu-header-ico">fact_check</mat-icon>
+          <span class="bu-card-header-label">Conciliación de Lote</span>
+        </div>
+        <div class="bu-badge-total-records">
+          Total Registros: <strong>{{ metrics.totalRegistros }}</strong>
+        </div>
+      </div>
+
+      <div class="bu-dashboard-grid">
+        <!-- Bloque 1: Auditoría y Estado de Conciliación -->
+        <div class="bu-dash-block bu-block-audit">
+          <div class="bu-block-header">
+            <mat-icon class="bu-block-ico">verified_user</mat-icon>
+            <span class="bu-block-title">Auditoría de Lote</span>
+          </div>
+
+          <div class="bu-audit-chips-row">
+            <div class="bu-status-chip bu-chip-success">
+              <mat-icon>check_circle</mat-icon>
+              <span
+                ><strong>{{ metrics.registrosValidados }}</strong>
+                Validados</span
+              >
+            </div>
+            <div class="bu-status-chip bu-chip-danger">
+              <mat-icon>warning</mat-icon>
+              <span
+                ><strong>{{ metrics.registrosPendientes }}</strong> Sin Unidad
+                (${{ metrics.montoPendiente }})</span
+              >
+            </div>
+          </div>
+
+          <div class="bu-progress-wrapper">
+            <div class="bu-progress-track">
+              <div
+                class="bu-progress-fill"
+                [style.width.%]="metrics.porcentajeConciliado"
+              ></div>
+            </div>
+            <span class="bu-progress-label"
+              >{{ metrics.porcentajeConciliado }}% Conciliado</span
+            >
+          </div>
+        </div>
+
+        <div class="bu-dash-divider"></div>
+
+        <!-- Bloque 2: Movimiento de Fondos / Totales -->
+        <div class="bu-dash-block bu-block-totals">
+          <div class="bu-block-header">
+            <mat-icon class="bu-block-ico">payments</mat-icon>
+            <span class="bu-block-title">Movimiento de Caja</span>
+          </div>
+
+          <div class="bu-kpi-cards-grid">
+            <div class="bu-mini-kpi bu-kpi-debit">
+              <div class="bu-mini-kpi-top">
+                <mat-icon>arrow_downward</mat-icon>
+                <span>DÉBITOS</span>
+              </div>
+              <strong class="bu-kpi-amount">${{ metrics.debitos }}</strong>
+            </div>
+
+            <div class="bu-mini-kpi bu-kpi-credit">
+              <div class="bu-mini-kpi-top">
+                <mat-icon>arrow_upward</mat-icon>
+                <span>CRÉDITOS</span>
+              </div>
+              <strong class="bu-kpi-amount">${{ metrics.creditos }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="bu-dash-divider"></div>
+
+        <!-- Bloque 3 y 4 Combinados: Distribución de Rubros + Banco (Fondo Azul) -->
+        <div class="bu-bank-combined-card">
+          <div class="bu-bank-rubros-section">
+            <div class="bu-block-header bu-header-white">
+              <mat-icon class="bu-block-ico bu-ico-white">pie_chart</mat-icon>
+              <span class="bu-block-title bu-title-white"
+                >Distribución de Rubros</span
+              >
+            </div>
+
+            <div class="bu-rubros-chips-grid">
+              <div
+                class="bu-rubro-chip bu-chip-comis"
+                [matTooltip]="
+                  'Comisión retenida por ' +
+                  (activeStrategy.badgeConfig.text || 'Pasarela')
+                "
+              >
+                <span class="bu-chip-lbl">Comisión</span>
+                <strong class="bu-chip-val">${{ metrics.comision }}</strong>
+              </div>
+              <div
+                class="bu-rubro-chip bu-chip-inscrip"
+                matTooltip="Abono a Inscripciones"
+              >
+                <span class="bu-chip-lbl">Inscripción</span>
+                <strong class="bu-chip-val">${{ metrics.inscripcion }}</strong>
+              </div>
+              <div
+                class="bu-rubro-chip bu-chip-siniest"
+                matTooltip="Abono a Siniestros"
+              >
+                <span class="bu-chip-lbl">Siniestros</span>
+                <strong class="bu-chip-val">${{ metrics.siniestros }}</strong>
+              </div>
+              <div
+                class="bu-rubro-chip bu-chip-panapass"
+                matTooltip="Recarga de Panapass"
+              >
+                <span class="bu-chip-lbl">Panapass</span>
+                <strong class="bu-chip-val">${{ metrics.panapass }}</strong>
+              </div>
+              <div
+                class="bu-rubro-chip bu-chip-multas"
+                matTooltip="Cobro de Multas"
+              >
+                <span class="bu-chip-lbl">Multas</span>
+                <strong class="bu-chip-val">${{ metrics.multas }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="bu-bank-inner-divider"></div>
+
+          <div class="bu-bank-total-section">
+            <div class="bu-bank-hero-top">
+              <mat-icon class="bu-bank-mini-icon">{{
+                activeStrategy.bankCardConfig.icon
+              }}</mat-icon>
+              <span class="bu-bank-tag">{{
+                activeStrategy.bankCardConfig.tag
+              }}</span>
+            </div>
+            <div class="bu-bank-hero-center">
+              <span class="bu-bank-label-text">{{
+                activeStrategy.bankCardConfig.label
+              }}</span>
+              <span class="bu-bank-amount-val">${{ metrics.totalBanco }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 2: Botones de Acción -->
+    <div class="bu-dock-card bu-actions-card mat-elevation-z4">
+      <div class="bu-card-mini-header">
+        <mat-icon class="bu-header-ico">bolt</mat-icon>
+        <span class="bu-card-header-label">Acciones</span>
+      </div>
+
+      <div class="bu-action-buttons-grid">
+        <button
+          mat-flat-button
+          class="cr-button cr-btn-pastel-blue bu-action-btn"
+        >
+          <mat-icon>edit_calendar</mat-icon>
+          <span>Ajuste Festivo</span>
+        </button>
+
+        <button
+          mat-flat-button
+          class="cr-button cr-btn-pastel-blue bu-action-btn"
+        >
+          <mat-icon>print</mat-icon>
+          <span>Imprimir</span>
+        </button>
+
+        <button
+          mat-flat-button
+          class="cr-button bu-btn-recaudar bu-action-btn bu-btn-full"
+          (click)="confirmRecaudo()"
+        >
+          <mat-icon>point_of_sale</mat-icon>
+          <span>Recaudar</span>
+        </button>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- Loader de respaldo en caso de carga inicial -->
+<div class="bu-loading-backdrop" *ngIf="!activeStrategy">
+  <div class="bu-loading-content">
+    <mat-progress-spinner
+      mode="indeterminate"
+      [diameter]="54"
+      [strokeWidth]="4"
+      color="primary"
+    ></mat-progress-spinner>
+    <h3 class="bu-loading-title">Cargando conciliación</h3>
+    <p class="bu-loading-subtitle">Obteniendo información del servidor...</p>
+  </div>
+</div>

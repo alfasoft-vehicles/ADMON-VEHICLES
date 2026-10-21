@@ -1,122 +1,433 @@
-<h2 mat-dialog-title>Nueva Inspección</h2>
+<h2 mat-dialog-title *ngIf="!isEditMode && inspectionCreateID === ''">
+  Nueva Inspección
+</h2>
+<h2 mat-dialog-title *ngIf="isEditMode && inspectionType">Editar Inspección</h2>
+<h2
+  mat-dialog-title
+  *ngIf="
+    inspectionCreateID !== '' &&
+    inspectionType &&
+    !isEditMode &&
+    !showSignaturePad
+  "
+>
+  Subir Fotos de la Inspección
+</h2>
+<h2
+  mat-dialog-title
+  *ngIf="inspectionCreateID !== '' && !inspectionType && !isEditMode"
+>
+  Inspección
+</h2>
+<h2 mat-dialog-title *ngIf="showSignaturePad && !isEditMode">
+  Firma del Conductor
+</h2>
 
 <mat-dialog-content>
-  <form [formGroup]="vehiclesForm">
-    <div class="inputs-container">
-      <mat-progress-bar
+  <!-- Barra de carga durante la creación de la inspección -->
+  <div
+    class="dialog-loader-container"
+    *ngIf="
+      !isEditMode && inspectionCreateID === '' && isLoading && showCompactView
+    "
+  >
+    <div class="spinner-wrapper">
+      <mat-progress-spinner
         mode="indeterminate"
-        *ngIf="isLoading"
-      ></mat-progress-bar>
+        [diameter]="52"
+        [strokeWidth]="4"
+        color="primary"
+        class="custom-spinner"
+      ></mat-progress-spinner>
+      <div class="spinner-center-icon">
+        <mat-icon>hourglass_top</mat-icon>
+      </div>
     </div>
-    <div class="inputs-container" *ngIf="!isLoading">
-      <mat-form-field class="field-input">
-        <mat-label>Vehículo</mat-label>
-        <input
-          type="text"
-          placeholder="Selecciona un vehículo"
-          matInput
-          formControlName="vehiculo"
-          [matAutocomplete]="auto3"
-        />
-        <mat-autocomplete
-          #auto3="matAutocomplete"
-          [displayWith]="displayVehicleData"
-          (optionSelected)="selectedOptionVehicle($event)"
+    <div class="loader-text">
+      <h3 class="loader-title">Creando inspección</h3>
+      <p class="loader-message">Guardando información de la inspección...</p>
+    </div>
+    <div class="progress-bar-wrapper">
+      <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+    </div>
+  </div>
+
+  <!-- Barra de carga durante la carga de datos en modo edición -->
+  <div class="dialog-loader-container" *ngIf="isEditMode && isLoading">
+    <div class="spinner-wrapper">
+      <mat-progress-spinner
+        mode="indeterminate"
+        [diameter]="52"
+        [strokeWidth]="4"
+        color="primary"
+        class="custom-spinner"
+      ></mat-progress-spinner>
+      <div class="spinner-center-icon">
+        <mat-icon>hourglass_top</mat-icon>
+      </div>
+    </div>
+    <div class="loader-text">
+      <h3 class="loader-title">Cargando datos de la inspección</h3>
+      <p class="loader-message">Obteniendo información para editar...</p>
+    </div>
+    <div class="progress-bar-wrapper">
+      <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+    </div>
+  </div>
+
+  <!-- Formulario: se muestra en creación O en edición (pero no cuando se están subiendo fotos) -->
+  <form
+    [formGroup]="mainInspectionForm"
+    *ngIf="
+      (inspectionCreateID === '' || isEditMode) &&
+      !(isLoading && showCompactView && !isEditMode)
+    "
+  >
+    <div class="main-content-container">
+      <!-- Vista normal del formulario -->
+      <div
+        class="info-container"
+        formGroupName="inspectionInfo"
+        *ngIf="!showCompactView"
+      >
+        <h3 *ngIf="!isLoading">Información del vehículo</h3>
+
+        <div class="dialog-loader-container" *ngIf="isLoading && !isEditMode">
+          <div class="spinner-wrapper">
+            <mat-progress-spinner
+              mode="indeterminate"
+              [diameter]="52"
+              [strokeWidth]="4"
+              color="primary"
+              class="custom-spinner"
+            ></mat-progress-spinner>
+            <div class="spinner-center-icon">
+              <mat-icon>hourglass_top</mat-icon>
+            </div>
+          </div>
+          <div class="loader-text">
+            <h3 class="loader-title">Cargando formulario</h3>
+            <p class="loader-message">
+              Preparando lista de vehículos y tipos de inspección...
+            </p>
+          </div>
+          <div class="progress-bar-wrapper">
+            <mat-progress-bar
+              mode="indeterminate"
+              color="primary"
+            ></mat-progress-bar>
+          </div>
+        </div>
+
+        <div class="inputs-container" *ngIf="!isLoading">
+          <mat-form-field class="field-input">
+            <mat-label>Vehículo</mat-label>
+            <input
+              type="text"
+              placeholder="Selecciona un vehículo"
+              matInput
+              formControlName="vehiculo"
+              [matAutocomplete]="auto3"
+              [readonly]="isEditMode || preselectedVehicleNumber !== ''"
+            />
+            <mat-autocomplete
+              #auto3="matAutocomplete"
+              [displayWith]="displayVehicleData"
+              (optionSelected)="selectedOptionVehicle($event)"
+            >
+              <mat-option [value]=""> - </mat-option>
+              <mat-option
+                *ngFor="let option of optionsVehicles | async"
+                [value]="option"
+              >
+                {{ option.numero_unidad }} - {{ option.placa_vehiculo }} -
+                {{ option.nro_cupo }} - {{ option.marca }} {{ option.linea }}
+                {{ option.modelo }} - {{ option.propietario }}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <mat-form-field class="field-input" *ngIf="selectedVehicle">
+            <mat-label>Tipo de Inspección</mat-label>
+            <mat-select
+              placeholder="Selecciona un tipo de inspección"
+              formControlName="tipo_inspeccion"
+              [disabled]="isEditMode"
+            >
+              <mat-option [value]="null"> - </mat-option>
+              <mat-option
+                *ngFor="let option of inspectionTypes"
+                [value]="option"
+              >
+                {{ option.nombre }}
+              </mat-option>
+            </mat-select>
+            <mat-error
+              *ngIf="
+                inspectionInfoForm.get('tipo_inspeccion')?.hasError('required')
+              "
+            >
+              El tipo de inspección es obligatorio.
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div
+          class="dialog-inline-loader"
+          *ngIf="loadingVehicleInfo && !selectedVehicle && !isEditMode"
         >
-          <mat-option [value]=""> - </mat-option>
-          <mat-option
-            *ngFor="let option of optionsVehicles | async"
-            [value]="option"
-          >
-            {{ option.numero_unidad }} - {{ option.placa_vehiculo }} -
-            {{ option.nro_cupo }} - {{ option.marca }} {{ option.linea }}
-            {{ option.modelo }} - {{ option.codigo_propietario }} -
-            {{ option.nombre_propietario }}
-          </mat-option>
-        </mat-autocomplete>
-      </mat-form-field>
-      <mat-form-field class="field-input" *ngIf="selectedVehicle">
-        <mat-label>Tipo de Inspección</mat-label>
-        <mat-select
-          placeholder="Selecciona un tipo de inspección"
-          formControlName="tipo_inspeccion"
-        >
-          <mat-option [value]=""> - </mat-option>
-          <mat-option
-            *ngFor="let option of inspectionTypes"
-            [value]="option.id"
-          >
-            {{ option.nombre }}
-          </mat-option>
-        </mat-select>
-        <mat-error *ngIf="vehiclesForm.get('tipo_inspeccion')?.hasError('required')">
-          El tipo de inspección es obligatorio.
-        </mat-error>
-      </mat-form-field>
+          <div class="spinner-wrapper-small">
+            <mat-progress-spinner
+              mode="indeterminate"
+              [diameter]="28"
+              [strokeWidth]="3"
+              color="primary"
+            ></mat-progress-spinner>
+            <div class="spinner-center-icon-small">
+              <mat-icon>sync</mat-icon>
+            </div>
+          </div>
+          <div class="inline-loader-text">
+            <span class="inline-loader-title"
+              >Cargando datos del vehículo...</span
+            >
+            <span class="inline-loader-subtitle"
+              >Obteniendo conductor, kilometraje y estado</span
+            >
+          </div>
+        </div>
+
+        <ng-container *ngIf="selectedVehicle && !isLoading">
+          <div class="inputs-container">
+            <mat-form-field class="field-input">
+              <mat-label>Propietario</mat-label>
+              <input matInput readonly [value]="vehicleInfo.propietario" />
+            </mat-form-field>
+            <mat-form-field class="field-input">
+              <mat-label>Estado</mat-label>
+              <input matInput readonly [value]="vehicleInfo.estado_vehiculo" />
+            </mat-form-field>
+          </div>
+          <div class="inputs-container">
+            <mat-form-field class="field-input">
+              <mat-label>Kilometraje</mat-label>
+              <input matInput readonly [value]="vehicleInfo.kilometraje" />
+            </mat-form-field>
+            <mat-form-field class="field-input">
+              <mat-label>Cupo</mat-label>
+              <input matInput readonly [value]="vehicleInfo.cupo" />
+            </mat-form-field>
+          </div>
+          <div class="inputs-container">
+            <mat-form-field class="field-input">
+              <mat-label>PanaPass</mat-label>
+              <input matInput readonly [value]="vehicleInfo.panapass" />
+            </mat-form-field>
+            <mat-form-field class="field-input">
+              <mat-label>Conductor</mat-label>
+              <input
+                matInput
+                readonly
+                [value]="
+                  vehicleInfo.conductor_codigo +
+                  ' - ' +
+                  vehicleInfo.conductor_nombre
+                "
+              />
+            </mat-form-field>
+          </div>
+          <div class="inputs-container">
+            <mat-form-field class="field-input">
+              <mat-label>Teléfono</mat-label>
+              <input
+                matInput
+                readonly
+                [value]="vehicleInfo.conductor_celular"
+              />
+            </mat-form-field>
+            <mat-form-field class="field-input">
+              <mat-label>Fecha y Hora</mat-label>
+              <input
+                matInput
+                readonly
+                [value]="
+                  vehicleInfo.fecha_inspeccion +
+                  ' - ' +
+                  vehicleInfo.hora_inspeccion
+                "
+              />
+            </mat-form-field>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- Vista compacta de la información -->
+      <div
+        class="compact-info-container"
+        *ngIf="showCompactView && selectedVehicle && !isLoading"
+      >
+        <div class="compact-header">
+          <h4>Información del vehículo</h4>
+        </div>
+
+        <div class="compact-info-list">
+          <div class="compact-info-item">
+            <span class="compact-label">Vehículo:</span>
+            <span class="compact-value"
+              >{{
+                displayVehicleData(inspectionInfoForm.get("vehiculo")?.value)
+              }}
+              - {{ vehicleInfo.cupo }}</span
+            >
+          </div>
+          <div class="compact-info-item">
+            <span class="compact-label">Tipo de Inspección:</span>
+            <span class="compact-value">{{
+              inspectionInfoForm.get("tipo_inspeccion")?.value?.nombre
+            }}</span>
+          </div>
+          <div class="compact-info-item">
+            <span class="compact-label">Estado:</span>
+            <span class="compact-value">{{ vehicleInfo.estado_vehiculo }}</span>
+          </div>
+          <div class="compact-info-item">
+            <span class="compact-label">Propietario:</span>
+            <span class="compact-value">{{ vehicleInfo.propietario }}</span>
+          </div>
+          <div class="compact-info-item">
+            <span class="compact-label">Kilometraje:</span>
+            <span class="compact-value">{{ vehicleInfo.kilometraje }} km</span>
+          </div>
+          <div class="compact-info-item">
+            <span class="compact-label">PanaPass:</span>
+            <span class="compact-value">{{ vehicleInfo.panapass }}</span>
+          </div>
+          <div class="compact-info-item">
+            <span class="compact-label">Conductor:</span>
+            <span class="compact-value"
+              >{{ vehicleInfo.conductor_nombre }} -
+              {{ vehicleInfo.conductor_celular }}</span
+            >
+          </div>
+          <div class="compact-info-item">
+            <span class="compact-label">Fecha y Hora:</span>
+            <span class="compact-value"
+              >{{ vehicleInfo.fecha_inspeccion }} -
+              {{ vehicleInfo.hora_inspeccion }}</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="info-container inspections-inputs-form"
+        *ngIf="inspectionType !== '' && !isLoading"
+      >
+        <app-vehicle-states-form
+          [vehicleNumber]="vehicleInfo.numero"
+        ></app-vehicle-states-form>
+      </div>
     </div>
   </form>
 
-  <div class="inputs-container" *ngIf="loadingVehicleInfo && !selectedVehicle">
-    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  <!-- Componente de fotos: solo se muestra cuando NO está en modo edición y hay un inspectionCreateID -->
+  <app-take-photos-vehicle
+    *ngIf="
+      inspectionCreateID !== '' &&
+      !isLoading &&
+      !isEditMode &&
+      !showSignaturePad
+    "
+    [inspectionId]="inspectionCreateID"
+  ></app-take-photos-vehicle>
+
+  <!-- Componente de firma: se muestra después de subir las fotos -->
+  <div class="signature-section" *ngIf="showSignaturePad && !isLoading">
+    <p class="signature-instructions">
+      Por favor, firme en el área a continuación para completar la inspección.
+    </p>
+    <div class="signature-container">
+      <app-signature-pad
+        (signatureSubmit)="onSignatureSaved($event)"
+      ></app-signature-pad>
+    </div>
   </div>
 
-  <ng-container *ngIf="selectedVehicle">
-    <div class="inputs-container">
-      <mat-form-field class="field-input">
-        <mat-label>Placa</mat-label>
-        <input matInput readonly [value]="vehicleInfo.placa" />
-      </mat-form-field>
-      <mat-form-field class="field-input">
-        <mat-label>Kilometraje</mat-label>
-        <input matInput readonly [value]="vehicleInfo.kilometraje" />
-      </mat-form-field>
+  <div
+    class="dialog-loader-container"
+    *ngIf="inspectionCreateID !== '' && isLoading && !isEditMode"
+  >
+    <div class="spinner-wrapper">
+      <mat-progress-spinner
+        mode="indeterminate"
+        [diameter]="52"
+        [strokeWidth]="4"
+        color="primary"
+        class="custom-spinner"
+      ></mat-progress-spinner>
+      <div class="spinner-center-icon">
+        <mat-icon>hourglass_top</mat-icon>
+      </div>
     </div>
-    <div class="inputs-container">
-      <mat-form-field class="field-input">
-        <mat-label>PanaPass</mat-label>
-        <input matInput readonly [value]="vehicleInfo.panapass" />
-      </mat-form-field>
-      <mat-form-field class="field-input">
-        <mat-label>Conductor</mat-label>
-        <input
-          matInput
-          readonly
-          [value]="
-            vehicleInfo.conductor_codigo + ' - ' + vehicleInfo.conductor_nombre
-          "
-        />
-      </mat-form-field>
+    <div class="loader-text">
+      <h3 class="loader-title">Procesando inspección</h3>
+      <p class="loader-message">
+        Guardando los cambios y preparando la captura...
+      </p>
     </div>
-    <div class="inputs-container">
-      <mat-form-field class="field-input">
-        <mat-label>Teléfono</mat-label>
-        <input matInput readonly [value]="vehicleInfo.conductor_celular" />
-      </mat-form-field>
-      <mat-form-field class="field-input">
-        <mat-label>Fecha y Hora</mat-label>
-        <input
-          matInput
-          readonly
-          [value]="
-            vehicleInfo.fecha_inspeccion + ' - ' + vehicleInfo.hora_inspeccion
-          "
-        />
-      </mat-form-field>
+    <div class="progress-bar-wrapper">
+      <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
     </div>
-  </ng-container>
-
-  <div class="inputs-container" *ngIf="!loadingVehicleInfo && selectedVehicle">
-    <button
-      mat-raised-button
-      class="field-input button-start"
-      [disabled]="loadingVehicleInfo"
-      (click)="startInspection()"
-    >
-      Realizar inspección
-    </button>
   </div>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button mat-dialog-close cdkFocusInitial>Cancelar</button>
+  <button mat-button mat-dialog-close cdkFocusInitial (click)="closeDialog()">
+    Cancelar
+  </button>
+  <button
+    mat-button
+    [disabled]="mainInspectionForm.invalid || loadingVehicleInfo"
+    (click)="startInspection()"
+    *ngIf="!inspectionType && !isEditMode"
+  >
+    Empezar
+  </button>
+  <button
+    mat-button
+    [disabled]="loadingVehicleInfo"
+    (click)="onSaveOrNext()"
+    *ngIf="inspectionType && inspectionCreateID === '' && !isEditMode"
+  >
+    Siguiente
+  </button>
+  <button
+    mat-button
+    [disabled]="loadingVehicleInfo"
+    (click)="onSaveOrNext()"
+    *ngIf="inspectionType && isEditMode"
+  >
+    Guardar
+  </button>
+  <button
+    mat-button
+    [disabled]="loadingVehicleInfo"
+    (click)="uploadImages()"
+    *ngIf="
+      inspectionType &&
+      inspectionCreateID !== '' &&
+      !isEditMode &&
+      !showSignaturePad
+    "
+  >
+    Subir Fotos
+  </button>
+  <button
+    mat-button
+    [disabled]="loadingVehicleInfo"
+    (click)="saveInspectionSignature()"
+    *ngIf="showSignaturePad && !isEditMode"
+  >
+    Guardar Firma
+  </button>
 </mat-dialog-actions>

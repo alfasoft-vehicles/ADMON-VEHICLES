@@ -1,28 +1,28 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, UploadFile, File
 from schemas.operations import *
 from controller.operations import *
 
 operations_router = APIRouter()
 
-@operations_router.get("/operations/deliveryvehicledriver/vehicle/{vehicle_number}/", tags=["Operations"])
-async def get_vehicle_operations(vehicle_number: str):
-  return await get_vehicle_operation(vehicle_number)
+@operations_router.get("/operations/deliveryvehicledriver/vehicle/{company_code}/{vehicle_number}/", tags=["Operations"])
+async def get_vehicle_operations(company_code: str, vehicle_number: str):
+  return await get_vehicle_operation(company_code, vehicle_number)
 
-@operations_router.get("/operations/deliveryvehicledriver/driver/{driver_number}/", tags=["Operations"])
-async def get_driver_operations(driver_number: str):
-  return await get_driver_operation(driver_number)
+@operations_router.get("/operations/deliveryvehicledriver/driver/{company_code}/{driver_number}/", tags=["Operations"])
+async def get_driver_operations(company_code: str, driver_number: str):
+  return await get_driver_operation(company_code, driver_number)
 
-@operations_router.post("/operations/deliveryvehicledriver/", tags=["Operations"])
-async def post_delivery_vehicle_driver(data: DeliveryVehicleDriver):
-  return await delivery_vehicle_driver(data)
+@operations_router.post("/operations/deliveryvehicledriver/{company_code}/", tags=["Operations"])
+async def post_delivery_vehicle_driver(company_code: str, data: DeliveryVehicleDriver):
+  return await delivery_vehicle_driver(company_code, data)
 
 @operations_router.get("/operations/generate-contract/info/{vehicle_number}/", tags=["Operations"])
 async def get_vehicle_delivery_info(vehicle_number: str):
   return await vehicle_delivery_info(vehicle_number)
 
-@operations_router.get("/operations/generate-contract/pdf/{vehicle_number}/", tags=["Operations"])
-async def get_generate_contract(vehicle_number: str):
-  return await generate_contract(vehicle_number)
+@operations_router.post("/operations/generate-contract/pdf/{vehicle_number}/", tags=["Operations"])
+async def post_generate_contract(vehicle_number: str, data: GenerateContractData):
+  return await generate_contract(vehicle_number, data)
 
 @operations_router.post("/operations/validation/", tags=["Operations"])
 async def post_validation(data: BillValidation):
@@ -63,3 +63,27 @@ async def get_return_vehicle_validation(company_code: str, vehicle_number: str):
 @operations_router.post("/operations/return-vehicle/", tags=["Operations"])
 async def post_return_vehicle(data: ReturnVehicle):
   return await return_vehicle(data)
+
+@operations_router.get("/operations/remove-driver/{company_code}/{vehicle_number}/{driver_number}/", tags=["Operations"])
+async def get_remove_driver(company_code: str, vehicle_number: str, driver_number: str):
+  return await remove_driver(company_code, vehicle_number, driver_number)
+
+@operations_router.get("/operations/items-cxp/{company_code}/", tags=["Operations"])
+async def get_items_cxp(company_code: str):
+  return await items_cxp(company_code)
+
+@operations_router.post("/operations/driver-settlement/", tags=["Operations"])
+async def post_driver_settlement(data: DriverSettlement):
+  return await driver_settlement(data)
+
+@operations_router.post("/operations/save-remove-driver/", tags=["Operations"])
+async def post_save_remove_driver(data: RemoveDriver):
+  return await save_remove_driver(data)
+
+@operations_router.get("/operations/info-account-opening/{company_code}/{vehicle_number}/{driver_number}/", tags=["Operations"])
+async def get_info_account_opening(company_code: str, vehicle_number: str, driver_number: str):
+  return await info_account_opening(company_code, vehicle_number, driver_number)
+
+@operations_router.post("/operations/account-opening/", tags=["Operations"])
+async def post_save_account_opening(data: AccountOpening):
+  return await account_opening(data)

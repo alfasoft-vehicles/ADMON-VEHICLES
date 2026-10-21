@@ -1,14 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { map, Observable, startWith } from 'rxjs';
+import { SignaturePadComponent } from 'src/app/modules/shared/components/signature-pad/signature-pad.component';
 import { ApiService } from 'src/app/services/api.service';
 import { JwtService } from 'src/app/services/jwt.service';
 
 interface vehicle {
   unidad: string;
   placa: string;
+  propietario: string;
+  nro_cupo: string;
 }
 
 interface contractInfo {
@@ -31,23 +34,36 @@ interface contractInfo {
   fecha_contrato: string;
   permitido: number | null | undefined;
   mensaje: string;
+  advertencia: [];
+  firma_conductor: number;
+  foto_conductor: number;
 }
 
 @Component({
   selector: 'app-operaciones-contrato-declaracion-jurada',
   templateUrl: './operaciones-contrato-declaracion-jurada.component.html',
-  styleUrls: ['./operaciones-contrato-declaracion-jurada.component.css']
+  styleUrls: ['./operaciones-contrato-declaracion-jurada.component.css'],
 })
 export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
+  @ViewChild(SignaturePadComponent)
+  signaturePadComponent!: SignaturePadComponent;
+
   vehicles = new FormControl('');
-  drivers = new FormControl({value: '', disabled: true});
-  selectedDate = new FormControl<Date | null>({value: null, disabled: true}, {validators: [Validators.required]});
+  drivers = new FormControl({ value: '', disabled: true });
+  selectedDate = new FormControl<Date | null>(
+    { value: null, disabled: true },
+    { validators: [Validators.required] },
+  );
   options: vehicle[] = [];
   filteredOptions!: Observable<vehicle[]>;
-  maxDate = new Date(); 
+  maxDate = new Date();
 
   isLoadingVehicles = true;
   isLoadingContractInfo = false;
+  signatureDriver = false;
+  photoDriver = false;
+  photoBase64 = '';
+  signatureBase64 = '';
 
   contractInfo: contractInfo = {
     numero: '',
@@ -68,7 +84,10 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
     conductor_direccion: '',
     fecha_contrato: '',
     permitido: null,
-    mensaje: ''
+    mensaje: '',
+    advertencia: [],
+    firma_conductor: 0,
+    foto_conductor: 0,
   };
 
   constructor(
@@ -88,14 +107,14 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
       (response: any) => {
         const dateParts = response.time.split('-');
         this.maxDate = new Date(
-          parseInt(dateParts[0]), 
-          parseInt(dateParts[1]) - 1, 
-          parseInt(dateParts[2])
+          parseInt(dateParts[0]),
+          parseInt(dateParts[1]) - 1,
+          parseInt(dateParts[2]),
         );
       },
       (error) => {
         this.maxDate = new Date();
-      }
+      },
     );
   }
 
@@ -104,22 +123,21 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
     return userData ? userData.empresa : '';
   }
 
-  getVehicles(){
+  getVehicles() {
     const company = this.getCompany();
-    this.apiService.getData('vehicles/'+company).subscribe(
+    this.apiService.getData('vehicles/' + company).subscribe(
       (response: vehicle[]) => {
         this.options = response;
         this.filteredOptions = this.vehicles.valueChanges.pipe(
           startWith(''),
-          map(value => this._filter(value || '')),
+          map((value) => this._filter(value || '')),
         );
         this.isLoadingVehicles = false;
       },
       (error) => {
         console.error('Error fetching vehicles:', error);
-        this.openSnackbar('Error al obtener las unidades. Inténtalo de nuevo más tarde.');
         this.closeDialog();
-      }
+      },
     );
   }
 
@@ -128,10 +146,10 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
       duration: 3500,
       horizontalPosition: 'center',
       verticalPosition: 'top',
-    })
+    });
   }
 
-  resetInfo(){
+  resetInfo() {
     this.contractInfo = {
       numero: '',
       marca: '',
@@ -151,83 +169,131 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
       conductor_direccion: '',
       fecha_contrato: '',
       permitido: null,
-      mensaje: ''
+      mensaje: '',
+      advertencia: [],
+      firma_conductor: 0,
+      foto_conductor: 0,
     };
     this.drivers.setValue('');
     this.selectedDate.setValue(this.maxDate);
-    this.selectedDate.markAsUntouched(); 
-    this.selectedDate.markAsPristine(); 
+    this.selectedDate.markAsUntouched();
+    this.selectedDate.markAsPristine();
+    this.photoDriver = false;
+    this.signatureDriver = false;
+    this.photoBase64 = '';
+    this.signatureBase64 = '';
   }
 
-  resetVehicleAutocomplete(){
+  resetVehicleAutocomplete() {
     // Resetear el autocomplete completamente
     this.vehicles.setValue('');
     this.vehicles.updateValueAndValidity();
-    
+
     // Opcional: Forzar la actualización del filtro
     this.filteredOptions = this.vehicles.valueChanges.pipe(
       startWith(''),
-      map(value => this._filter(value || '')),
+      map((value) => this._filter(value || '')),
     );
   }
 
-  getContractInfo(event: any){
-    if(event.option.value === undefined){
+  getContractInfo(event: any) {
+    if (event.option.value === undefined) {
       this.resetInfo();
       this.resetVehicleAutocomplete();
       return;
     }
 
-    if(event && event.option.value !== undefined){
+    if (event && event.option.value !== undefined) {
       const selectedVehicle = event.option.value;
-      console.log('Selected Vehicle:', selectedVehicle);
       this.isLoadingContractInfo = true;
       this.resetInfo();
 
-      this.apiService.getData('operations/generate-contract/info/'+selectedVehicle).subscribe(
-        (response: contractInfo) => {
-          console.log('Contract Info:', response);
+      this.apiService
+        .getData('operations/generate-contract/info/' + selectedVehicle)
+        .subscribe(
+          (response: contractInfo) => {
+            this.isLoadingContractInfo = false;
+            this.contractInfo = response;
+            this.drivers.setValue(response.conductor_codigo);
 
-          this.isLoadingContractInfo = false;
-          this.contractInfo = response;
-          this.drivers.setValue(response.conductor_codigo);
-
-          const dateParts = response.fecha_contrato.split('/');
-          const day = parseInt(dateParts[0]);
-          const month = parseInt(dateParts[1]) - 1; 
-          const year = parseInt(dateParts[2]);
-          this.selectedDate.setValue(new Date(year, month, day));
-        },
-        (error) => {
-          console.error('Error fetching contract info:', error);
-          this.openSnackbar('Error al obtener la información. Inténtalo de nuevo con otra unidad.');
-          this.isLoadingContractInfo = false;
-          this.resetInfo();
-          this.resetVehicleAutocomplete();
-        }
-      );
+            const dateParts = response.fecha_contrato.split('/');
+            const day = parseInt(dateParts[0]);
+            const month = parseInt(dateParts[1]) - 1;
+            const year = parseInt(dateParts[2]);
+            this.selectedDate.setValue(new Date(year, month, day));
+          },
+          (error) => {
+            console.error('Error fetching contract info:', error);
+            this.isLoadingContractInfo = false;
+            this.resetInfo();
+            this.resetVehicleAutocomplete();
+          },
+        );
     }
   }
 
   private _filter(value: string): vehicle[] {
     const filterValue = value.toLowerCase();
 
-    return this.options.filter(option => 
-      option.placa.toLowerCase().includes(filterValue) || 
-      option.unidad.toLowerCase().includes(filterValue)
+    return this.options.filter(
+      (option) =>
+        option.placa.toLowerCase().includes(filterValue) ||
+        option.unidad.toLowerCase().includes(filterValue) ||
+        option.propietario.toLowerCase().includes(filterValue) ||
+        option.nro_cupo.toLowerCase().includes(filterValue),
     );
   }
 
-  openExternalLink() {
+  onPhotosChange(photos: string[]) {
+    if (photos && photos.length > 0) {
+      this.photoBase64 = photos[0];
+    } else {
+      this.photoBase64 = '';
+    }
+  }
+
+  savePhoto() {
+    if (!this.photoBase64) {
+      this.openSnackbar('Debes tomar una foto.');
+      return;
+    }
+
+    this.photoDriver = false;
+    if (this.contractInfo.firma_conductor === 0) {
+      this.signatureDriver = true;
+    } else {
+      this.openExternalLink('');
+    }
+  }
+
+  saveSignature() {
+    if (this.signaturePadComponent) {
+      this.signaturePadComponent.saveSignature();
+    }
+  }
+
+  handleSignatureSubmit(signatureBase64: string) {
+    this.signatureBase64 = signatureBase64;
+    this.openExternalLink(this.signatureBase64);
+  }
+
+  openExternalLink(signatureBase64: string) {
     const endpoint = 'operations/generate-contract/pdf/' + this.vehicles.value;
 
+    const data = {
+      company_code: this.getCompany(),
+      signature_base64: signatureBase64,
+      photo_base64: this.photoBase64,
+    };
+
     localStorage.setItem('pdfEndpoint', endpoint);
+    localStorage.setItem('pdfData', JSON.stringify(data));
     window.open(`/pdf`, '_blank');
     this.closeDialog();
   }
 
   generateContract() {
-    if(this.vehicles.value === '') {
+    if (this.vehicles.value === '') {
       this.openSnackbar('Debes seleccionar una unidad.');
       return;
     }
@@ -239,10 +305,18 @@ export class OperacionesContratoDeclaracionJuradaComponent implements OnInit {
       return;
     }
 
-    this.openExternalLink();
+    if (this.contractInfo.foto_conductor === 0) {
+      this.photoDriver = true;
+      this.signatureDriver = false;
+    } else if (this.contractInfo.firma_conductor === 0) {
+      this.signatureDriver = true;
+      this.photoDriver = false;
+    } else {
+      this.openExternalLink('');
+    }
   }
 
-  closeDialog(){
+  closeDialog() {
     this.dialogRef.close();
   }
 }

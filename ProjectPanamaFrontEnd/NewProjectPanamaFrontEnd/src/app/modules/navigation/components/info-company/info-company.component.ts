@@ -36,7 +36,6 @@ export class InfoCompanyComponent implements OnInit {
     const idCompany = userData ? userData.empresa : null;
     this.apiService.getData('info-company/'+idCompany).subscribe(
       (response) => {
-        console.log('getInfoCompany: ', response);
         this.infoCompany = response;
       }
     );

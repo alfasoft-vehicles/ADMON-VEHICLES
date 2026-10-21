@@ -1,10 +1,11 @@
 <!-- <app-dev-preview></app-dev-preview> -->
 <mat-drawer-container class="layout-container" autosize>
   <mat-drawer #drawer class="layout-sidenav" mode="over">
-    <app-sidenav 
+    <app-sidenav
       [isOpen]="drawer.opened"
       (backdropClick)="drawer.close()"
-      (itemClick)="drawer.close()">
+      (itemClick)="drawer.close()"
+    >
     </app-sidenav>
   </mat-drawer>
 

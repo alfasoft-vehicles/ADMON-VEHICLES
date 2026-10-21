@@ -1,0 +1,26 @@
+::ng-deep .mat-mdc-dialog-container .mdc-dialog__surface {
+  overflow-y: auto;
+}
+
+::ng-deep .mat-mdc-dialog-container .mat-mdc-dialog-content {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.buttons-container {
+  display: flex;
+  justify-content: space-evenly;
+  gap: 10px;
+}
+
+.buttons-container button {
+  /* background-color: #e7eeff; */
+  height: 46px;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .buttons-container {
+    flex-direction: column;
+  }
+}

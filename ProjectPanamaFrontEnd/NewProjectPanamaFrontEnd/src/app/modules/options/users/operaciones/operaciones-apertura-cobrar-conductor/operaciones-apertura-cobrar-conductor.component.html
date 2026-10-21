@@ -1,0 +1,135 @@
+<h2 mat-dialog-title>Apertura de Cobro a Conductor</h2>
+<mat-divider></mat-divider>
+<mat-dialog-content *ngIf="isLoadingVehicles">
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+</mat-dialog-content>
+<mat-dialog-content class="scrollable-content" *ngIf="!isLoadingVehicles">
+  <div class="vehicle-info">
+    <mat-form-field class="form-field">
+      <mat-label>Vehículo</mat-label>
+      <input
+        type="text"
+        placeholder="Selecciona uno"
+        matInput
+        [formControl]="vehicles"
+        [matAutocomplete]="auto"
+      />
+      <mat-autocomplete
+        #auto="matAutocomplete"
+        (opened)="resetAutocomplete()"
+        (optionSelected)="vehicleSearch($event.option.value)"
+      >
+        <mat-option
+          *ngFor="let option of filteredOptions | async"
+          [value]="option.vehicle_number"
+        >
+          {{ option.vehicle_number }} - {{ option.vehicle_plate }} -
+          {{ option.quota_number }} - {{ option.owner }}
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+
+    <mat-progress-bar
+      class="loading-bar"
+      mode="indeterminate"
+      *ngIf="isLoadingVehicleInfo"
+    ></mat-progress-bar>
+
+    <table class="info-table" *ngIf="!isLoadingVehicleInfo && selectedVehicle">
+      <tbody>
+        <tr>
+          <td class="info-header">Unidad</td>
+          <td class="info-data">{{ vehicleData.numero }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Marca</td>
+          <td class="info-data">{{ vehicleData.marca }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Placa</td>
+          <td class="info-data">{{ vehicleData.placa }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Cupo N°</td>
+          <td class="info-data">
+            {{ vehicleData.cupo }} {{ vehicleData.con_cupo }}
+          </td>
+        </tr>
+        <tr>
+          <td class="info-header">N° de Cuotas</td>
+          <td class="info-data">{{ vehicleData.nro_entrega }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Valor Cuota</td>
+          <td class="info-data">{{ vehicleData.cuota_diaria }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Estado</td>
+          <td class="info-data">{{ vehicleData.estado }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Propietario</td>
+          <td class="info-data">{{ vehicleData.propietario }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <mat-divider class="mobile"></mat-divider>
+
+  <div class="driver-info" *ngIf="!isLoadingVehicleInfo && selectedVehicle">
+    <mat-form-field class="form-field">
+      <mat-label>Conductor</mat-label>
+      <input type="text" matInput [formControl]="drivers" />
+    </mat-form-field>
+
+    <table class="info-table">
+      <tbody>
+        <tr>
+          <td class="info-header">Nombre</td>
+          <td class="info-data">{{ driverData.nombre }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">N° CC</td>
+          <td class="info-data">{{ driverData.cedula }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Celular</td>
+          <td class="info-data">{{ driverData.telefono }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Dirección</td>
+          <td class="info-data">{{ driverData.direccion }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Licencia</td>
+          <td class="info-data">{{ driverData.licencia_numero }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Vencimiento Licencia</td>
+          <td class="info-data">{{ driverData.licencia_vencimiento }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <mat-divider></mat-divider>
+
+    <div class="date-message">
+      <div class="liquidation-container">
+        <button
+          mat-button
+          class="liquidation-button full-width"
+          aria-label="Apertura de Cuenta"
+          matTooltip="Abrir Apertura de Cuenta"
+          (click)="openAperturaDeCuentaDialog()"
+        >
+          <mat-icon>payments</mat-icon>
+          Apertura de Cuenta
+        </button>
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancelar</button>
+</mat-dialog-actions>

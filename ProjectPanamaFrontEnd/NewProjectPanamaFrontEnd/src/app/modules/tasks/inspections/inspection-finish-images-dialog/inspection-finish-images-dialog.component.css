@@ -1,0 +1,290 @@
+mat-dialog-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px !important;
+  min-height: 400px;
+  max-height: 80vh; /* Aumentamos un poco la altura disponible */
+}
+
+.image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.image-wrapper {
+  overflow: hidden;
+  max-width: 100%;
+  max-height: 70vh; /* Aumentamos la altura máxima de la imagen */
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  margin-bottom: 15px;
+  cursor: default;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  touch-action: none; /* Previene el scroll nativo en móviles */
+  user-select: none; /* Previene la selección de la imagen */
+}
+
+.image-wrapper.can-pan {
+  cursor: grab;
+}
+
+.image-wrapper.can-pan:active {
+  cursor: grabbing;
+}
+
+.inspection-image {
+  border-radius: 8px;
+  transition: transform 0.1s ease-out;
+  transform-origin: center;
+  pointer-events: none; /* Previene el drag nativo de la imagen */
+  
+  /* Mantener proporción original y ajustar al contenedor */
+  object-fit: contain;
+  object-position: center;
+  
+  /* Permitir que la imagen use el espacio necesario manteniendo proporción */
+  width: auto;
+  height: auto;
+  
+  /* Límites flexibles para que la imagen se ajuste al contenedor */
+  max-width: 100%;
+  max-height: 100%;
+  
+  /* Asegurar que imágenes muy pequeñas no se vean pixeladas */
+  image-rendering: high-quality;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.inspection-image.panning {
+  transition: none; /* Desactiva la transición durante el panning */
+}
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px; /* Reducimos el margen inferior */
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 25px;
+  padding: 8px 16px;
+}
+
+.zoom-button {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.zoom-button mat-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-button:disabled {
+  color: rgba(0, 0, 0, 0.26);
+}
+
+.zoom-separator {
+  width: 1px;
+  height: 24px;
+  background-color: rgba(0, 0, 0, 0.2);
+  margin: 0 8px;
+}
+
+.download-button {
+  width: 40px;
+  height: 40px;
+  color: #1976d2; /* Color azul para destacar la acción de descarga */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.download-button mat-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.download-button:hover {
+  background-color: rgba(25, 118, 210, 0.1);
+}
+
+.zoom-percentage {
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  min-width: 50px;
+  text-align: center;
+}
+
+/* Estilos para los dialog actions */
+mat-dialog-actions {
+  padding: 16px 24px !important;
+  margin: 0 !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.dialog-actions-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.navigation-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.nav-button {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.nav-button mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.nav-button:disabled {
+  color: rgba(0, 0, 0, 0.26);
+}
+
+.image-counter {
+  font-size: 16px;
+  font-weight: 500;
+  color: #666;
+  min-width: 80px;
+  text-align: center;
+}
+
+.close-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.no-images {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  text-align: center;
+}
+
+.no-images-icon {
+  font-size: 64px;
+  height: 64px;
+  width: 64px;
+  margin-bottom: 16px;
+  color: #ccc;
+}
+
+.no-images p {
+  margin: 0;
+  font-size: 18px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .image-wrapper {
+    max-height: 60vh; /* Altura más conservadora en móviles */
+  }
+  
+  .zoom-controls {
+    gap: 5px;
+    padding: 6px 12px;
+    margin-bottom: 8px;
+  }
+  
+  .zoom-button {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+  }
+  
+  .zoom-button mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+  
+  .download-button {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+  }
+  
+  .download-button mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+  
+  .zoom-separator {
+    height: 20px;
+    margin: 0 6px;
+  }
+  
+  .zoom-percentage {
+    font-size: 12px;
+    min-width: 45px;
+  }
+  
+  .dialog-actions-container {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .navigation-controls {
+    gap: 15px;
+  }
+  
+  .nav-button {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+  
+  .nav-button mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+  
+  .image-counter {
+    font-size: 14px;
+    min-width: 70px;
+  }
+  
+  .close-button {
+    font-size: 14px;
+  }
+}

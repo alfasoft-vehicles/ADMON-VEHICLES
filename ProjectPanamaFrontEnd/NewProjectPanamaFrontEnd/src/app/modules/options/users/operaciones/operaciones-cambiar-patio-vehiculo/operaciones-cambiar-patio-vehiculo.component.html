@@ -26,7 +26,8 @@
           *ngFor="let option of filteredOptions | async"
           [value]="option.unidad"
         >
-          {{ option.unidad }} - {{ option.placa }}
+          {{ option.unidad }} - {{ option.placa }} - {{ option.nro_cupo }} -
+          {{ option.propietario }}
         </mat-option>
       </mat-autocomplete>
     </mat-form-field>

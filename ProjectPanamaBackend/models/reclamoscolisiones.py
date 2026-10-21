@@ -3,7 +3,7 @@ from config.dbconnection import Base
 
 class ReclamosColisiones(Base):
   __tablename__ = 'RECLAMOSCOLISIONES'
-
+  EMPRESA = Column(CHAR(2), nullable=False)
   NUMERO = Column(CHAR(8), primary_key=True)
   PLACA = Column(CHAR(8))
   CONDUCTOR = Column(CHAR(12))

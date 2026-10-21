@@ -6,4 +6,5 @@ class TiposInspeccion(Base):
   EMPRESA = Column(String(2), nullable=False)
   CODIGO = Column(String(2), primary_key=True, nullable=False)
   NOMBRE = Column(String(40))
+  TIPO = Column(String(2), nullable=False) 
   FEC_CREADO = Column(DateTime)

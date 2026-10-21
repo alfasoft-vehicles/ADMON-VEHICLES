@@ -1,0 +1,28 @@
+h2 {
+  margin-bottom: 0;
+}
+
+.dialog-header {
+  padding: 0 24px;
+  background-color: white;
+}
+
+.scrollable-content {
+  overflow-y: auto;
+  padding: 0px 14px;
+}
+
+mat-list-option {
+  height: auto !important;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+::ng-deep .mat-mdc-list-item-unscoped-content {
+  white-space: normal !important;
+}
+
+/* TODO: APLICARLE ESTO A LOS CHECKBOX */
+ /* {
+  margin-right: 10px;
+} */

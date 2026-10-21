@@ -73,22 +73,18 @@ export class CobrosComponent implements OnInit {
 
   listOwners(): void {
     const userData = this.jwtService.getUserData();
-    console.log(userData);
     const owner = {
       propietario: userData ? userData.id : null,
     };
-
-    console.log(owner);
 
     this.apiService.postData('companies_per_owners', owner).subscribe(
       (response) => {
         this.owners = response.filter((owner: any) => owner.id);
         this.owners.sort((a, b) => a.name.localeCompare(b.name));
-        console.log(this.owners);
         this.isLoading = false;
       },
       (error) => {
-        console.log(error);
+        console.error(error);
       }
     );
   }

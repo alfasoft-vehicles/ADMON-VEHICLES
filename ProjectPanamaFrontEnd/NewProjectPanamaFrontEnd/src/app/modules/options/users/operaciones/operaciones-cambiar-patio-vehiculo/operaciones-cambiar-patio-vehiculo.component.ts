@@ -17,6 +17,8 @@ import { JwtService } from 'src/app/services/jwt.service';
 interface vehicle {
   unidad: string;
   placa: string;
+  propietario: string;
+  nro_cupo: string;
 }
 
 interface vehicleInfo {
@@ -104,7 +106,7 @@ export class OperacionesCambiarPatioVehiculoComponent {
     private snackBar: MatSnackBar,
     private dialogRef: MatDialogRef<OperacionesCambiarPatioVehiculoComponent>,
     private dialog: MatDialog,
-    private breakpointObserver: BreakpointObserver
+    private breakpointObserver: BreakpointObserver,
   ) {}
 
   ngOnInit() {
@@ -116,37 +118,40 @@ export class OperacionesCambiarPatioVehiculoComponent {
   private yardValidator(group: FormGroup): null {
     const oldYardControl = group.controls['oldYard'];
     const newYardControl = group.controls['yard'];
-  
+
     // Si los controles no existen, no hagas nada.
     if (!oldYardControl || !newYardControl) {
       return null;
     }
-  
+
     const oldYard = oldYardControl.value;
     const newYard = newYardControl.value;
-  
+
     if (oldYard?.id && newYard?.id && oldYard.id === newYard.id) {
       newYardControl.setErrors({ sameAsCurrent: true });
       return null;
     }
-  
+
     if (!oldYard?.id && !newYard?.id) {
       newYardControl.setErrors({ required: true });
       return null;
     }
-    
+
     newYardControl.setErrors(null);
     return null;
   }
 
   formBuild() {
-    this.infoChangeYard = this.formBuilder.group({
-      oldYard: [''],
-      yard: [''],
-      description: ['', Validators.required],
-    }, { 
-      validators: this.yardValidator 
-    });
+    this.infoChangeYard = this.formBuilder.group(
+      {
+        oldYard: [''],
+        yard: [''],
+        description: ['', Validators.required],
+      },
+      {
+        validators: this.yardValidator,
+      },
+    );
   }
 
   getCompany() {
@@ -161,16 +166,13 @@ export class OperacionesCambiarPatioVehiculoComponent {
         this.options = response;
         this.filteredOptions = this.vehicles.valueChanges.pipe(
           startWith(''),
-          map((value) => this._filter(value || ''))
+          map((value) => this._filter(value || '')),
         );
         this.isLoadingVehicles = false;
       },
       (error) => {
-        this.openSnackbar(
-          'Error al obtener las unidades. Inténtalo de nuevo más tarde.'
-        );
         this.closeDialog();
-      }
+      },
     );
   }
 
@@ -180,7 +182,9 @@ export class OperacionesCambiarPatioVehiculoComponent {
     return this.options.filter(
       (option) =>
         option.placa.toLowerCase().includes(filterValue) ||
-        option.unidad.toLowerCase().includes(filterValue)
+        option.unidad.toLowerCase().includes(filterValue) ||
+        option.propietario.toLowerCase().includes(filterValue) ||
+        option.nro_cupo.toLowerCase().includes(filterValue),
     );
   }
 
@@ -190,7 +194,9 @@ export class OperacionesCambiarPatioVehiculoComponent {
     if (vehicleValue !== '') {
       this.isLoadingVehicleInfo = true;
       this.apiService
-        .getData(`operations/deliveryvehicledriver/vehicle/${vehicleValue}`)
+        .getData(
+          `operations/deliveryvehicledriver/vehicle/${this.getCompany()}/${vehicleValue}`,
+        )
         .subscribe({
           next: (data: vehicleInfo) => {
             this.vehicleData = data;
@@ -201,13 +207,6 @@ export class OperacionesCambiarPatioVehiculoComponent {
           error: (error: HttpErrorResponse) => {
             this.isLoadingVehicleInfo = false;
             this.selectedVehicle = false;
-            if (error.status === 404) {
-              this.openSnackbar('Vehículo no encontrado. Intenta con otro.');
-            } else {
-              this.openSnackbar(
-                'Error al obtener la información del vehículo. Inténtalo de nuevo más tarde.'
-              );
-            }
           },
         });
     }
@@ -216,7 +215,9 @@ export class OperacionesCambiarPatioVehiculoComponent {
   driverSearch(driverValue: string) {
     if (driverValue !== '') {
       this.apiService
-        .getData(`operations/deliveryvehicledriver/driver/${driverValue}`)
+        .getData(
+          `operations/deliveryvehicledriver/driver/${this.getCompany()}/${driverValue}`,
+        )
         .subscribe({
           next: (data: driverInfo) => {
             this.driverData = data;
@@ -226,15 +227,6 @@ export class OperacionesCambiarPatioVehiculoComponent {
           error: (error: HttpErrorResponse) => {
             this.isLoadingVehicleInfo = false;
             this.selectedVehicle = true;
-            if (error.status === 404) {
-              this.openSnackbar(
-                'No se encontró el conductor para esta unidad.'
-              );
-            } else {
-              this.openSnackbar(
-                'Error al obtener la información del conductor. Inténtalo de nuevo más tarde.'
-              );
-            }
           },
         });
       return;
@@ -252,7 +244,7 @@ export class OperacionesCambiarPatioVehiculoComponent {
     const company = this.getCompany();
 
     this.apiService
-      .getData(`yards/${company}/vehicle/${this.vehicleData.numero}`)
+      .getData(`yards/vehicle/${company}/${this.vehicleData.numero}`)
       .subscribe(
         (response: any) => {
           if (response && response.id && response.name) {
@@ -262,15 +254,11 @@ export class OperacionesCambiarPatioVehiculoComponent {
             });
           } else {
             this.openSnackbar(
-              'No se encontró información de un patio para este vehículo.'
+              'No se encontró información de un patio para este vehículo.',
             );
           }
         },
-        (error) => {
-          this.openSnackbar(
-            'Error al obtener la información del patio de este vehículo. Inténtalo de nuevo más tarde.'
-          );
-        }
+        (error) => {},
       );
   }
 
@@ -329,14 +317,10 @@ export class OperacionesCambiarPatioVehiculoComponent {
             map((value) => {
               const name = typeof value === 'string' ? value : value?.name;
               return name ? this._filterYards(name) : this.yards.slice();
-            })
+            }),
           );
       },
-      (error) => {
-        this.openSnackbar(
-          'Error al obtener los patios. Inténtalo de nuevo más tarde.'
-        );
-      }
+      (error) => {},
     );
   }
 
@@ -346,7 +330,7 @@ export class OperacionesCambiarPatioVehiculoComponent {
     return this.yards.filter(
       (option) =>
         option.id.toLowerCase().includes(filterValue) ||
-        option.name.toLowerCase().includes(filterValue)
+        option.name.toLowerCase().includes(filterValue),
     );
   }
 
@@ -366,25 +350,25 @@ export class OperacionesCambiarPatioVehiculoComponent {
       return;
     }
 
-    if(oldYard){
+    if (oldYard) {
       var message = `¿Estás seguro de que deseas cambiar el patio del vehículo ${
-          this.vehicleData.numero
-        } - ${this.vehicleData.placa} de ${
-          this.infoChangeYard.get('oldYard')?.value.id
-        } - ${this.infoChangeYard.get('oldYard')?.value.name} a ${
-          this.infoChangeYard.get('yard')?.value.id
-        } - ${this.infoChangeYard.get('yard')?.value.name}?`
+        this.vehicleData.numero
+      } - ${this.vehicleData.placa} de ${
+        this.infoChangeYard.get('oldYard')?.value.id
+      } - ${this.infoChangeYard.get('oldYard')?.value.name} a ${
+        this.infoChangeYard.get('yard')?.value.id
+      } - ${this.infoChangeYard.get('yard')?.value.name}?`;
     } else {
       var message = `¿Estás seguro de que deseas cambiar el patio del vehículo ${
-          this.vehicleData.numero
-        } - ${this.vehicleData.placa} a ${
-          this.infoChangeYard.get('yard')?.value.id
-        } - ${this.infoChangeYard.get('yard')?.value.name}?`
+        this.vehicleData.numero
+      } - ${this.vehicleData.placa} a ${
+        this.infoChangeYard.get('yard')?.value.id
+      } - ${this.infoChangeYard.get('yard')?.value.name}?`;
     }
 
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.Small);
     const isXsmallScreen = this.breakpointObserver.isMatched(
-      Breakpoints.XSmall
+      Breakpoints.XSmall,
     );
     const dialogWidth = isSmallScreen || isXsmallScreen ? '90vw' : '60%';
 
@@ -414,24 +398,19 @@ export class OperacionesCambiarPatioVehiculoComponent {
       vehicle_number: this.vehicleData.numero,
       yard_code: this.infoChangeYard.get('yard')?.value.id,
       description: this.infoChangeYard.get('description')?.value,
-    }
+    };
 
-    this.apiService
-      .postData('operations/change-yard', valuesSave)
-      .subscribe({
-        next: (response) => {
-          this.openSnackbar(
-            'El patio del vehículo ha sido cambiado exitosamente.'
-          );
-          this.closeDialog();
-        },
-        error: (error: HttpErrorResponse) => {
-          this.isLoadingChange = false;
-          this.openSnackbar(
-            'Error al cambiar el patio del vehículo. Inténtalo de nuevo más tarde.'
-          );
-        },
-      });
+    this.apiService.postData('operations/change-yard', valuesSave).subscribe({
+      next: (response) => {
+        this.openSnackbar(
+          'El patio del vehículo ha sido cambiado exitosamente.',
+        );
+        this.closeDialog();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.isLoadingChange = false;
+      },
+    });
   }
 
   openSnackbar(message: string) {

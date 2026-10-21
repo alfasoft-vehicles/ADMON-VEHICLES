@@ -12,7 +12,6 @@ export class OptionsDocumentsDialogComponent {
   constructor() {}
 
   openDocuments(option: string) {
-    console.log('Selected option:', option);
     if (option === 'vehicles') {
       this.vehiclesDocuments = true;
       this.driversDocuments = false;

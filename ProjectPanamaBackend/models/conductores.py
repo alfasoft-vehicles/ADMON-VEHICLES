@@ -34,6 +34,8 @@ class Conductores(Base):
   FOTO = Column(CHAR(50), default="")
   FOTO1 = Column(String(50), default="")
   FIRMA = Column(CHAR(50), default="")
+  # TODO: Descomentar cuando se cree el campo en la tabla CONDUCTORES de la BD
+  # HUELLA = Column(CHAR(200), default="")
   NROENTREGA = Column(DECIMAL(8,0), default=0)
   NROENTPAGO = Column(DECIMAL(8,0), default=0)
   NROENTSDO = Column(DECIMAL(8,0), default=0)

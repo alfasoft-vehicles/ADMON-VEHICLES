@@ -1,0 +1,73 @@
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.info-table td {
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12); /* Divisor estándar de Material */
+}
+
+/* Elimina el borde de la última fila */
+.info-table tr:last-child td {
+  border-bottom: none;
+}
+
+.info-header {
+  font-weight: 500; /* Peso de fuente medio, común para etiquetas */
+  color: rgba(0, 0, 0); /* Color de texto secundario de Material */
+  padding-right: 32px; /* Espacio entre la etiqueta y el dato */
+  white-space: nowrap;
+}
+
+.info-data {
+  color: rgba(0, 0, 0, 0.87); /* Color de texto primario de Material */
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(0, 0, 0, 0.4);
+}
+
+.info-data:hover {
+  background-color: rgba(0, 0, 0, 0.04); /* Color de fondo al pasar el mouse */
+}
+
+/* Responsive styles for screens smaller than 600px */
+@media (max-width: 599px) {
+  /* Make table elements behave like blocks to stack them */
+  .info-table, .info-table tbody, .info-table tr, .info-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .info-table tr {
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    margin-bottom: 16px;
+  }
+
+  .info-table tr:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  /* Remove padding and borders from individual cells */
+  .info-table td {
+    padding: 0;
+    border: none;
+  }
+
+  .info-header {
+    padding-bottom: 4px; /* Space between label and data */
+  }
+
+  .info-data {
+    padding-left: 2px; /* Slight indent for the data */
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+}

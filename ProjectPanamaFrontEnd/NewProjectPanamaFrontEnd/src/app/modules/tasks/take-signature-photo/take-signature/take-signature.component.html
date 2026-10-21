@@ -1,0 +1,152 @@
+<mat-dialog-content *ngIf="isLoadingVehicles">
+  <mat-progress-bar
+    mode="indeterminate"
+    *ngIf="isLoadingVehicles"
+  ></mat-progress-bar>
+</mat-dialog-content>
+<mat-dialog-content
+  class="scrollable-content"
+  *ngIf="!isLoadingVehicles && !signatureDriver"
+>
+  <div class="vehicle-info">
+    <mat-form-field class="form-field">
+      <mat-label>Vehículo</mat-label>
+      <input
+        type="text"
+        placeholder="Selecciona uno"
+        matInput
+        [formControl]="vehicles"
+        [matAutocomplete]="auto"
+      />
+      <mat-autocomplete
+        #auto="matAutocomplete"
+        (optionSelected)="getVehicleSignatureInfo($event)"
+      >
+        <mat-option [value]="">-</mat-option>
+        <mat-option
+          *ngFor="let option of filteredOptions | async"
+          [value]="option.unidad"
+        >
+          {{ option.unidad }} - {{ option.placa }} - {{ option.nro_cupo }} -
+          {{ option.propietario }}
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+
+    <mat-progress-bar
+      class="loading-bar"
+      mode="indeterminate"
+      *ngIf="isLoadingvehicleSignatureInfo"
+    ></mat-progress-bar>
+
+    <table
+      class="info-table"
+      *ngIf="!isLoadingvehicleSignatureInfo && selectedVehicle"
+    >
+      <tbody>
+        <tr>
+          <td class="info-header">Marca</td>
+          <td class="info-data">{{ vehicleSignatureInfo.model }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Placa</td>
+          <td class="info-data">{{ vehicleSignatureInfo.plate }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Cupo N°</td>
+          <td class="info-data">
+            {{ vehicleSignatureInfo.quota }}
+            {{ vehicleSignatureInfo.has_quota }}
+          </td>
+        </tr>
+        <tr>
+          <td class="info-header">Central</td>
+          <td class="info-data">{{ vehicleSignatureInfo.central }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Propietario</td>
+          <td class="info-data">{{ vehicleSignatureInfo.owner_name }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">N° de Cuotas</td>
+          <td class="info-data">{{ vehicleSignatureInfo.nro_delivery }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Valor Cuota</td>
+          <td class="info-data">{{ vehicleSignatureInfo.daily_quota }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Valor Depositado</td>
+          <td class="info-data">{{ vehicleSignatureInfo.deposit_value }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Estado</td>
+          <td class="info-data">{{ vehicleSignatureInfo.state_name }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <mat-divider class="mobile"></mat-divider>
+
+  <div
+    class="driver-info"
+    *ngIf="!isLoadingvehicleSignatureInfo && selectedVehicle"
+  >
+    <mat-form-field class="form-field">
+      <mat-label>Conductor</mat-label>
+      <input type="text" matInput [formControl]="drivers" />
+    </mat-form-field>
+
+    <table class="info-table">
+      <tbody>
+        <tr>
+          <td class="info-header">Nombre</td>
+          <td class="info-data">{{ vehicleSignatureInfo.driver_name }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">N° CC</td>
+          <td class="info-data">{{ vehicleSignatureInfo.driver_id }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Celular</td>
+          <td class="info-data">{{ vehicleSignatureInfo.driver_phone }}</td>
+        </tr>
+        <tr>
+          <td class="info-header">Dirección</td>
+          <td class="info-data">{{ vehicleSignatureInfo.driver_address }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <mat-divider></mat-divider>
+
+    <div class="date-message">
+      <p class="message" *ngIf="vehicleSignatureInfo.has_signature === 1">
+        <strong class="message-strong-alert">ALERTA:</strong>
+        El conductor ya tiene su firma registrada en el sistema.
+      </p>
+      <p class="message" *ngIf="vehicleSignatureInfo.driver_code === ''">
+        <strong class="message-strong">NO PERMITIDO:</strong>
+        El vehículo no tiene un conductor asignado. Por favor, asigne un
+        conductor para registrar la firma.
+      </p>
+      <p
+        class="message"
+        *ngIf="
+          vehicleSignatureInfo.has_signature === 0 &&
+          vehicleSignatureInfo.driver_code !== ''
+        "
+      >
+        <strong class="message-strong-green">PERMITIDO:</strong>
+        El conductor no tiene su firma registrada en el sistema. Puede dar click
+        en siguiente para registrar la firma.
+      </p>
+    </div>
+  </div>
+</mat-dialog-content>
+<mat-dialog-content *ngIf="signatureDriver && !isLoadingVehicles">
+  <app-signature-pad
+    (signatureSubmit)="saveSignature($event)"
+  ></app-signature-pad>
+</mat-dialog-content>

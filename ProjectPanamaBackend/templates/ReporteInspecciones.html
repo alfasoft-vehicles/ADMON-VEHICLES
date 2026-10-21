@@ -139,19 +139,20 @@
         <th>Unidad</th>
         <th>Fecha</th>
         <th>Tipo</th>
+        <th>Estado</th>
         <th>Usuario</th>
       </tr>
     </thead>
     <tbody>
       <tr class="empty-row-with-line">
-        <td colspan="8"></td>
+        <td colspan="9"></td>
       </tr>
 
       <!-- INICIO SECCIÓN ITERATIVA POR EMPRESA -->
       {% for propietario in data_view['inspections'] %}
       <!-- Fila para mostrar la sección "EMPRESA..." -->
       <tr class="empresa-row">
-        <td colspan="8" class="empresa-cell">
+        <td colspan="9" class="empresa-cell">
           EMPRESA: {{ propietario['codigo_propietario'] }} - &nbsp; {{ propietario['nombre_propietario'] }}
         </td>
       </tr>
@@ -166,26 +167,27 @@
         <td>{{ inspeccion['unidad'] }}</td>
         <td>{{ inspeccion['fecha_hora'] }}</td>
         <td>{{ inspeccion['tipo_inspeccion'] }}</td>
+        <td>{{ inspeccion['estado_inspeccion'] }}</td>
         <td>{{ inspeccion['nombre_usuario'] }}</td>
       </tr>
       {% endfor %}
 
       <!-- Fila con el total de la empresa -->
       <tr class="total-row">
-        <td colspan="8" class="empresa-total">Total Empresa: {{ propietario['cantidad_inspecciones'] }}</td>
+        <td colspan="9" class="empresa-total">Total Empresa: {{ propietario['cantidad_inspecciones'] }}</td>
       </tr>
 
       <tr class="empty-row-with-line">
-        <td colspan="8"></td>
+        <td colspan="9"></td>
       </tr>
       {% endfor %}
       <!-- FIN DE SECCIÓN ITERATIVA POR EMPRESA -->
 
       <tr class="empty-row-with-line">
-        <td colspan="8" style="border-top: 2px dashed #999;"></td>
+        <td colspan="9" style="border-top: 2px dashed #999;"></td>
       </tr>
       <tr class="total-general-row">
-        <td colspan="8" class="total-general-cell"> TOTAL GENERAL DE INSPECCIONES: {{ data_view['total_inspecciones'] }}</td>
+        <td colspan="9" class="total-general-cell"> TOTAL GENERAL DE INSPECCIONES: {{ data_view['total_inspecciones'] }}</td>
       </tr>
     </tbody>
   </table>

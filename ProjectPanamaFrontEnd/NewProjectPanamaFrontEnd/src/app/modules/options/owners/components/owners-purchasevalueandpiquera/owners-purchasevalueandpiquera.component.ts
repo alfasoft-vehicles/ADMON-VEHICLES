@@ -45,22 +45,18 @@ export class OwnersPurchasevalueandpiqueraComponent implements OnInit {
 
   listOwners(): void {
     const userData = this.jwtService.getUserData();
-    console.log(userData);
     const owner = {
       propietario: userData ? userData.id : null,
     };
-
-    console.log(owner);
 
     this.apiService.postData('companies_owners', owner).subscribe(
       (response) => {
         this.owners = response.filter((owner: any) => owner.id);
         this.owners.sort((a, b) => a.name.localeCompare(b.name));
-        console.log(this.owners);
         this.isLoading = false;
       },
       (error) => {
-        console.log(error);
+        console.error(error);
       }
     );
   }
@@ -72,7 +68,6 @@ export class OwnersPurchasevalueandpiqueraComponent implements OnInit {
 
   onSubmit(): void {
     if (this.infoForm.valid) {
-      console.log(this.infoForm.value);
       this.openExternalLink();
     }
   }
@@ -86,7 +81,6 @@ export class OwnersPurchasevalueandpiqueraComponent implements OnInit {
         empresas: [this.infoForm.value.companie],
         estados: [],
       };
-      console.log(data);
       localStorage.setItem('pdfEndpoint', endpoint);
       localStorage.setItem('pdfData', JSON.stringify(data));
       window.open(`/pdf`, '_blank');

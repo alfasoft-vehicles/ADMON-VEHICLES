@@ -1,0 +1,155 @@
+<div class="main-container">
+  <div class="title-container">
+    <h1 class="title">Propietarios</h1>
+    <p class="subtitle" *ngIf="!isLoading">
+      Total de Propietarios: {{ totalOwners }}
+    </p>
+  </div>
+
+  <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
+
+  <div [hidden]="isLoading">
+    <div class="inputs-container">
+      <mat-form-field class="field-input search-field">
+        <mat-label>Buscar</mat-label>
+        <input
+          matInput
+          [formControl]="searchControl"
+          placeholder="Buscar..."
+          #input
+        />
+        <button
+          mat-icon-button
+          matSuffix
+          aria-label="Clear"
+          (click)="searchControl.setValue('')"
+          *ngIf="input.value"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+
+      <div class="field-input filter-field">
+        <button
+          mat-raised-button
+          class="directory-button"
+          disabled
+        >
+          <mat-icon>description</mat-icon>
+          Informes
+        </button>
+      </div>
+
+      <div class="field-input filter-field">
+        <button
+          mat-raised-button
+          class="directory-button"
+          (click)="openExternalLink()"
+        >
+          <mat-icon>print</mat-icon>
+          Ver Directorio
+        </button>
+      </div>
+    </div>
+
+    <div class="mat-elevation-z8">
+      <div class="table-scroll-container">
+        <table mat-table [dataSource]="dataSource" matSort>
+          <!-- Codigo Column -->
+          <ng-container matColumnDef="Codigo">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>CÓDIGO</th>
+            <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
+          </ng-container>
+
+          <!-- NombrePropietario Column -->
+          <ng-container matColumnDef="NombrePropietario">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>NOMBRE</th>
+            <td mat-cell *matCellDef="let row">{{ row.nombre_propietario }}</td>
+          </ng-container>
+
+          <!-- RUC Column -->
+          <ng-container matColumnDef="RUC">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>RUC</th>
+            <td mat-cell *matCellDef="let row">{{ row.ruc }}</td>
+          </ng-container>
+
+          <!-- Telefono Column -->
+          <ng-container matColumnDef="Telefono">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>TELEFONO</th>
+            <td mat-cell *matCellDef="let row">{{ row.telefono }}</td>
+          </ng-container>
+
+          <!-- Representante Column -->
+          <ng-container matColumnDef="Representante">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              REPRESENTANTE
+            </th>
+            <td mat-cell *matCellDef="let row">{{ row.representante }}</td>
+          </ng-container>
+
+          <!-- Central Column -->
+          <ng-container matColumnDef="Central">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              CENTRAL
+            </th>
+            <td mat-cell *matCellDef="let row">
+              {{ row.central }}
+            </td>
+          </ng-container>
+
+          <!-- Auditor Column -->
+          <ng-container matColumnDef="Auditor">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>AUDITOR</th>
+            <td mat-cell *matCellDef="let row">{{ row.auditor }}</td>
+          </ng-container>
+
+          <!-- CNT Column -->
+          <ng-container matColumnDef="CNT">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>CNT</th>
+            <td mat-cell *matCellDef="let row">{{ row.cnt }}</td>
+          </ng-container>
+
+          <!-- DCTO Column -->
+          <ng-container matColumnDef="DCTO">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              DCTO %
+            </th>
+            <td mat-cell *matCellDef="let row">{{ row.dcto }}</td>
+          </ng-container>
+
+          <!-- Estado Column -->
+          <ng-container matColumnDef="Estado">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              ESTADO
+            </th>
+            <td mat-cell *matCellDef="let row">{{ row.estado }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            (dblclick)="goToOwnerResume(row.codigo)"
+          ></tr>
+
+          <!-- Row shown when there is no matching data. -->
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell" colspan="15">
+              <span *ngIf="input.value"
+                >No se encontraron resultados para "{{ input.value }}"</span
+              >
+              <span *ngIf="!input.value">No hay datos disponibles</span>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [pageSizeOptions]="[10, 20, 30, 40, 50, 100]"
+        [pageSize]="10"
+        [showFirstLastButtons]="true"
+        aria-label="Selecciona la cantidad de registros por página"
+      ></mat-paginator>
+    </div>
+  </div>
+</div>

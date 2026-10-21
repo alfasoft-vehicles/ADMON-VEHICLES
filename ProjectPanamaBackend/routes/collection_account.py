@@ -8,10 +8,10 @@ collectionAccount_router = APIRouter()
 async def post_collection_accounts_route(owners_list: OwnersList):
     return await get_collection_accounts(owners_list.owners)
 
-@collectionAccount_router.post("/collection-accounts/download", tags=["Collection Account"])
+@collectionAccount_router.post("/collection-accounts/download/", tags=["Collection Account"])
 async def post_download_collection_accounts(owners_list: OwnersList):
     return await download_collection_accounts(owners_list.owners)
 
-@collectionAccount_router.post("/collection-accounts/download-pdf", tags=["Collection Account"])
+@collectionAccount_router.post("/collection-accounts/download-pdf/", tags=["Collection Account"])
 async def post_download_collection_accounts_pdf(owners_list: OwnersList):
     return await collection_accounts_pdf(owners_list)

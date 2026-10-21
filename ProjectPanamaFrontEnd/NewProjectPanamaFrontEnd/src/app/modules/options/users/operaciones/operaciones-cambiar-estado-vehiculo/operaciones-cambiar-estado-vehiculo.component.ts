@@ -17,6 +17,8 @@ import { JwtService } from 'src/app/services/jwt.service';
 interface vehicle {
   unidad: string;
   placa: string;
+  propietario: string;
+  nro_cupo: string;
 }
 
 interface vehicleInfo {
@@ -109,7 +111,7 @@ export class OperacionesCambiarEstadoVehiculoComponent {
     private snackBar: MatSnackBar,
     private dialogRef: MatDialogRef<OperacionesCambiarEstadoVehiculoComponent>,
     private dialog: MatDialog,
-    private breakpointObserver: BreakpointObserver
+    private breakpointObserver: BreakpointObserver,
   ) {}
 
   ngOnInit() {
@@ -139,16 +141,13 @@ export class OperacionesCambiarEstadoVehiculoComponent {
         this.options = response;
         this.filteredOptions = this.vehicles.valueChanges.pipe(
           startWith(''),
-          map((value) => this._filter(value || ''))
+          map((value) => this._filter(value || '')),
         );
         this.isLoadingVehicles = false;
       },
       (error) => {
-        this.openSnackbar(
-          'Error al obtener las unidades. Inténtalo de nuevo más tarde.'
-        );
         this.closeDialog();
-      }
+      },
     );
   }
 
@@ -158,7 +157,9 @@ export class OperacionesCambiarEstadoVehiculoComponent {
     return this.options.filter(
       (option) =>
         option.placa.toLowerCase().includes(filterValue) ||
-        option.unidad.toLowerCase().includes(filterValue)
+        option.unidad.toLowerCase().includes(filterValue) ||
+        option.propietario.toLowerCase().includes(filterValue) ||
+        option.nro_cupo.toLowerCase().includes(filterValue),
     );
   }
 
@@ -168,7 +169,9 @@ export class OperacionesCambiarEstadoVehiculoComponent {
     if (vehicleValue !== '') {
       this.isLoadingVehicleInfo = true;
       this.apiService
-        .getData(`operations/deliveryvehicledriver/vehicle/${vehicleValue}`)
+        .getData(
+          `operations/deliveryvehicledriver/vehicle/${this.getCompany()}/${vehicleValue}`,
+        )
         .subscribe({
           next: (data: vehicleInfo) => {
             this.vehicleData = data;
@@ -180,13 +183,6 @@ export class OperacionesCambiarEstadoVehiculoComponent {
           error: (error: HttpErrorResponse) => {
             this.isLoadingVehicleInfo = false;
             this.selectedVehicle = false;
-            if (error.status === 404) {
-              this.openSnackbar('Vehículo no encontrado. Intenta con otro.');
-            } else {
-              this.openSnackbar(
-                'Error al obtener la información del vehículo. Inténtalo de nuevo más tarde.'
-              );
-            }
           },
         });
     }
@@ -196,15 +192,17 @@ export class OperacionesCambiarEstadoVehiculoComponent {
     if (!this.vehicleData.estado || this.states.length === 0) {
       return;
     }
-  
+
     const stateId = this.vehicleData.estado.split(' - ')[0].trim();
-    this.currentState = stateId; 
-  
-    const selectedStateObject = this.states.find(state => state.id === stateId);
+    this.currentState = stateId;
+
+    const selectedStateObject = this.states.find(
+      (state) => state.id === stateId,
+    );
 
     if (selectedStateObject) {
       this.infoChangeState.patchValue({
-        state: selectedStateObject
+        state: selectedStateObject,
       });
     }
   }
@@ -212,7 +210,9 @@ export class OperacionesCambiarEstadoVehiculoComponent {
   driverSearch(driverValue: string) {
     if (driverValue !== '') {
       this.apiService
-        .getData(`operations/deliveryvehicledriver/driver/${driverValue}`)
+        .getData(
+          `operations/deliveryvehicledriver/driver/${this.getCompany()}/${driverValue}`,
+        )
         .subscribe({
           next: (data: driverInfo) => {
             this.driverData = data;
@@ -222,15 +222,6 @@ export class OperacionesCambiarEstadoVehiculoComponent {
           error: (error: HttpErrorResponse) => {
             this.isLoadingVehicleInfo = false;
             this.selectedVehicle = true;
-            if (error.status === 404) {
-              this.openSnackbar(
-                'No se encontró el conductor para esta unidad.'
-              );
-            } else {
-              this.openSnackbar(
-                'Error al obtener la información del conductor. Inténtalo de nuevo más tarde.'
-              );
-            }
           },
         });
       return;
@@ -253,14 +244,10 @@ export class OperacionesCambiarEstadoVehiculoComponent {
             map((value) => {
               const name = typeof value === 'string' ? value : value?.name;
               return name ? this._filterYards(name) : this.yards.slice();
-            })
+            }),
           );
       },
-      (error) => {
-        this.openSnackbar(
-          'Error al obtener los patios. Inténtalo de nuevo más tarde.'
-        );
-      }
+      (error) => {},
     );
   }
 
@@ -270,7 +257,7 @@ export class OperacionesCambiarEstadoVehiculoComponent {
     return this.yards.filter(
       (option) =>
         option.id.toLowerCase().includes(filterValue) ||
-        option.name.toLowerCase().includes(filterValue)
+        option.name.toLowerCase().includes(filterValue),
     );
   }
 
@@ -283,7 +270,7 @@ export class OperacionesCambiarEstadoVehiculoComponent {
     const company = this.getCompany();
 
     this.apiService
-      .getData(`yards/${company}/vehicle/${this.vehicleData.numero}`)
+      .getData(`yards/vehicle/${company}/${this.vehicleData.numero}`)
       .subscribe(
         (response: any) => {
           if (response && response.id && response.name) {
@@ -293,11 +280,7 @@ export class OperacionesCambiarEstadoVehiculoComponent {
             });
           }
         },
-        (error) => {
-          this.openSnackbar(
-            'Error al obtener la información del patio de este vehículo. Inténtalo de nuevo más tarde.'
-          );
-        }
+        (error) => {},
       );
   }
 
@@ -306,7 +289,7 @@ export class OperacionesCambiarEstadoVehiculoComponent {
     this.apiService.getData(`states/${company}`).subscribe(
       (response: objSelect[]) => {
         this.states = response.filter(
-          (state) => state.id && state.id.trim() !== ''
+          (state) => state.id && state.id.trim() !== '',
         );
         this.filteredStatesOptions = this.infoChangeState
           .get('state')!
@@ -315,14 +298,10 @@ export class OperacionesCambiarEstadoVehiculoComponent {
             map((value) => {
               const name = typeof value === 'string' ? value : value?.name;
               return name ? this._filterStates(name) : this.states.slice();
-            })
+            }),
           );
       },
-      (error) => {
-        this.openSnackbar(
-          'Error al obtener los estados de vehículos. Inténtalo de nuevo más tarde.'
-        );
-      }
+      (error) => {},
     );
   }
 
@@ -332,7 +311,7 @@ export class OperacionesCambiarEstadoVehiculoComponent {
     return this.states.filter(
       (option) =>
         option.id.toLowerCase().includes(filterValue) ||
-        option.name.toLowerCase().includes(filterValue)
+        option.name.toLowerCase().includes(filterValue),
     );
   }
 
@@ -401,30 +380,32 @@ export class OperacionesCambiarEstadoVehiculoComponent {
       this.infoChangeState.markAllAsTouched();
       return;
     }
-  
+
     const newStateId = this.infoChangeState.get('state')?.value.id;
-  
+
     if (newStateId === this.currentState) {
       this.infoChangeState.get('state')?.setErrors({ sameAsCurrent: true });
-      
-      this.openSnackbar('El estado seleccionado es el mismo que el estado actual.');
-      
+
+      this.openSnackbar(
+        'El estado seleccionado es el mismo que el estado actual.',
+      );
+
       return;
     }
 
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.Small);
-    const isXsmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
+    const isXsmallScreen = this.breakpointObserver.isMatched(
+      Breakpoints.XSmall,
+    );
     const dialogWidth = isSmallScreen || isXsmallScreen ? '90vw' : '60%';
 
-    const dialogRef = this.dialog.open(ConfirmActionDialogComponent,
-      {
-        data: {
-          documentName: 'Cambiar de Estado a un Vehículo',
-          message: `¿Estás seguro de que deseas cambiar el estado del vehículo ${this.vehicleData.numero} - ${this.vehicleData.placa} de ${this.vehicleData.estado} a ${this.infoChangeState.get('state')?.value.id} - ${this.infoChangeState.get('state')?.value.name}?`,
-        },
-        width: dialogWidth,
-      }
-    );
+    const dialogRef = this.dialog.open(ConfirmActionDialogComponent, {
+      data: {
+        documentName: 'Cambiar de Estado a un Vehículo',
+        message: `¿Estás seguro de que deseas cambiar el estado del vehículo ${this.vehicleData.numero} - ${this.vehicleData.placa} de ${this.vehicleData.estado} a ${this.infoChangeState.get('state')?.value.id} - ${this.infoChangeState.get('state')?.value.name}?`,
+      },
+      width: dialogWidth,
+    });
 
     dialogRef.afterClosed().subscribe((confirmation: boolean) => {
       if (confirmation) {
@@ -439,7 +420,7 @@ export class OperacionesCambiarEstadoVehiculoComponent {
   changeStateVehicle() {
     const company = this.getCompany();
     const vehicle = this.vehicles.value;
-  
+
     const valuesSave = {
       company_code: company,
       vehicle_number: vehicle,
@@ -457,9 +438,6 @@ export class OperacionesCambiarEstadoVehiculoComponent {
         },
         error: (error: HttpErrorResponse) => {
           this.isLoadingChange = false;
-          this.openSnackbar(
-            'Error al cambiar el estado del vehículo. Inténtalo de nuevo más tarde.'
-          );
         },
       });
   }

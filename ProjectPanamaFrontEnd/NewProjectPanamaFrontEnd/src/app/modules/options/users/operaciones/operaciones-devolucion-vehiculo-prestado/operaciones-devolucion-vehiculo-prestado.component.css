@@ -1,0 +1,164 @@
+h2 {
+  margin-bottom: 0;
+}
+
+.dialog-header {
+  padding: 0 24px;
+  background-color: white;
+}
+
+.scrollable-content {
+  display: flex; 
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 0px;
+}
+
+.info-container {
+  display: flex;
+  height: 100%;
+  padding: 0px 14px;
+  margin-top: 10px;
+  gap: 20px
+}
+
+.vehicle-info, .driver-info {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.vehicle-info .form-field,
+.driver-info .form-field {
+  height: 48px;
+  width: 100%;
+}
+
+::ng-deep .form-field .mat-mdc-form-field-flex {
+  height: 100%;
+  align-items: center;
+}
+
+::ng-deep .form-field .mat-mdc-icon-button {
+  transform: scale(1);
+} 
+
+.vehicle-info mat-form-field,
+.driver-info mat-form-field {
+  margin-bottom: 10px;
+}
+
+.driver-info .date-form {
+  margin-bottom: 0px;
+}
+
+.driver-info mat-error {
+  font-size: 14px;
+}
+
+.vehicle-info ::ng-deep .mat-mdc-form-field-subscript-wrapper.mat-mdc-form-field-bottom-align,
+.driver-info ::ng-deep .mat-mdc-form-field-subscript-wrapper.mat-mdc-form-field-bottom-align {
+  display: none !important;
+}
+
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.info-table td {
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12); 
+}
+
+.info-table tr:last-child td {
+  border-bottom: none;
+}
+
+.info-header {
+  font-weight: 500;
+  color: rgba(0, 0, 0); 
+  padding-right: 32px; 
+  white-space: nowrap;
+}
+
+.mobile {
+  display: none;
+}
+
+.info-data {
+  color: rgba(0, 0, 0, 0.87);
+  text-align: left;
+}
+
+.date-message {
+  display: flex;
+  flex-direction: column;
+  padding-top: 14px;
+  gap: 10px;
+}
+
+.message {
+  color: black;
+}
+
+.message-strong {
+  color: red;
+}
+
+@media (max-width: 599px) {
+  .info-container {
+    flex-direction: column;
+  }
+
+  .mobile {
+    display: block;
+  }
+
+  .loading-bar {
+    padding: 16px 0;
+  }
+
+  .info-table, .info-table tbody, .info-table tr, .info-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .info-table tr {
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    margin-bottom: 16px;
+  }
+
+  .info-table tr:first-child {
+    padding-top: 16px;
+  }
+
+  .info-table tr:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .driver-info .info-table tr:last-child {
+    padding-bottom: 16px;
+  }
+
+  .vehicle-info mat-form-field,
+  .driver-info mat-form-field {
+    margin-bottom: 0px;
+  }
+
+  .info-table td {
+    padding: 0;
+    border: none;
+  }
+
+  .info-header {
+    padding-bottom: 4px;
+  }
+
+  .info-data {
+    padding-left: 2px;
+  }
+}

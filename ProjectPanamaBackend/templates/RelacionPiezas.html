@@ -168,6 +168,7 @@
         <th style="text-align: left;">Nombre</th>
         <th style="text-align: left;">Presentación</th>
         <th style="text-align: left;">Cantidad</th>
+        <th style="text-align: left;">Vlr.Und</th>
         <th style="text-align: left;">Vlr.Parcial</th>
         <th style="text-align: left;">(%)Descuento</th>
         <th style="text-align: left;">Impuesto</th>
@@ -206,6 +207,7 @@
         <td style="text-align: left;">{{ movimiento['NOMBRE'] }}</td>
         <td style="text-align: left;">{{ movimiento['PRESENTA'] }}</td>
         <td style="text-align: center;">{{ movimiento['PEDIDA'] }}</td>
+        <td style="text-align: center;">{{ movimiento['VALOR_UNIDAD'] }}</td>
         <td style="text-align: center;">{{ movimiento['VALOR'] }}</td>
         <td style="text-align: center;">{{ movimiento['DCTO_VALOR'] }}</td>
         <td style="text-align: center;">{{ movimiento['IVA_VALOR'] }}</td>
@@ -217,6 +219,7 @@
         <td style="color: #8f8f8f; font-weight: bold;">Abonos: </td>
         <td style="color: #8f8f8f; font-weight: bold;">Saldo: </td>
         <td style="border-top: 1px solid #000; text-align: center;">{{ info['TOTAL_CANTIDAD_UNIDAD'] }}</td>
+        <td style="border-top: 1px solid #000; text-align: center;"> </td>
         <td style="border-top: 1px solid #000; position: relative; text-align: center;">
           {{ info['TOTAL_VLRPARCIAL_UNIDAD'] }}
           <div style="

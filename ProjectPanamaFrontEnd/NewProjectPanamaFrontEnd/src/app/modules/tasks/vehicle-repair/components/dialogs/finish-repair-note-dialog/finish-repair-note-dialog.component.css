@@ -1,0 +1,14 @@
+.full-width {
+  width: 100%;
+}
+
+h2 {
+  margin: 0;
+}
+
+mat-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem !important;
+  padding-bottom: 0 !important;
+}
