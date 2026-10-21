@@ -128,11 +128,21 @@ Utiliza siempre pares armónicos de fondo suave + icono vibrante:
 
 ## 🧱 2. Patrón de Encabezado Superior (`.top-header`)
 
-Todas las vistas principales o menús de departamento deben abrir con un bloque de encabezado blanco que contextualice la vista, muestre contadores o metadatos y, cuando aplique, el botón de regreso o la insignia de la empresa.
+Todas las vistas principales o menús de departamento deben abrir con un bloque de encabezado blanco que contextualice la vista, muestre contadores o metadatos y, cuando aplique, el botón de regreso, la píldora de fecha y la insignia de la empresa.
+
+### Reglas de Contenido en el Header (`.page-subtitle` y Chips de Conteo)
+- **Mostrar subtítulo (`.page-subtitle`)**: Únicamente en **componentes de selección de módulos u opciones** (ej. `home-users`, `opciones-operaciones`, `opciones-gerencia`, `opciones-taller`, etc.), donde guía al usuario a elegir una opción o muestra un saludo contextual.
+- **NO mostrar subtítulo**: En **componentes de funcionalidad operativa directa** (ej. `cash-register-view`, `bulk-upload-view`, vistas de tablas de procesamiento o formularios de trabajo). En estas pantallas el header debe mantenerse compacto mostrando solo el título principal.
+- **NO mostrar chips de conteo de módulos u opciones**: En los componentes de selección de módulos u opciones (como `home-users`, `opciones-operaciones`, etc.), **no se debe incluir** un chip/pill que indique cuántos módulos u opciones hay habilitados para escoger (ej. evitar `X habilitados` o `X opciones` al lado del título). Solo se permiten badges contextuales propios de una operación o pasarela (como el badge del banco en `bulk-upload` o la unidad activa en `cash-register`).
+
+### Estándar Visual de Fecha (`.date-pill`) y Chip de Empresa (`.company-badge`)
+A la derecha del encabezado (`.header-right`) se deben presentar la fecha y el nombre de la empresa (obtenido desde la caché centralizada de `InfoCompanyStateService.loadInfoCompany()`) con el estilo pastel suave y limpio de `bulk-upload-view`:
+- **`.date-pill`**: Fondo `#f8fafc`, borde `1px solid #e2e8f0`, `border-radius: 8px`, texto `#475569` (`font-weight: 600`) e ícono `calendar_today` en azul cielo `#0284c7` (`16px`).
+- **`.company-badge`**: Fondo pastel degradado suave `linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)`, borde `1px solid #bae6fd`, `border-radius: 10px`, texto `#0369a1` (`font-weight: 700`, `text-transform: uppercase`) e ícono `apartment` en `#0284c7` (`20px`).
 
 ### Plantilla HTML
 ```html
-<header class="top-header mat-elevation-z2">
+<header class="top-header">
   <div class="header-left">
     <!-- Opcional: Botón de regreso si es una subvista -->
     <!--
@@ -151,12 +161,9 @@ Todas las vistas principales o menús de departamento deben abrir con un bloque 
     <div class="title-text">
       <div class="title-row">
         <h1 class="page-title">Título de la Sección</h1>
-        <span class="meta-pill pill-info">
-          <mat-icon class="meta-icon">verified_user</mat-icon>
-          <span class="meta-value">{{ totalItems }}</span>
-          <span class="meta-label">habilitados</span>
-        </span>
       </div>
+      <!-- SOLO incluir .page-subtitle en menús de selección de opciones (ej. home-users, operaciones).
+           OMITIR en vistas de funcionalidad directa (ej. cash-register, bulk-upload). -->
       <p class="page-subtitle">
         Subtítulo descriptivo o saludo contextual para el usuario
       </p>
@@ -164,70 +171,77 @@ Todas las vistas principales o menús de departamento deben abrir con un bloque 
   </div>
 
   <div class="header-right">
-    <!-- Pill de Fecha o Metadato Secundario -->
-    <div class="meta-pill date-pill">
-      <mat-icon class="meta-icon">calendar_today</mat-icon>
-      <span class="meta-value">{{ currentDateFormatted }}</span>
+    <!-- Pill de Fecha -->
+    <div class="date-pill">
+      <mat-icon>calendar_today</mat-icon>
+      <span>{{ currentDateFormatted }}</span>
     </div>
 
-    <!-- Chip de Empresa o Controles de Acción -->
+    <!-- Chip de Empresa (estilo pastel azul cielo) -->
     <div class="company-badge" *ngIf="infoCompanyName">
-      <mat-icon class="company-icon">apartment</mat-icon>
-      <span class="company-name">{{ infoCompanyName }}</span>
+      <mat-icon>apartment</mat-icon>
+      <span>{{ infoCompanyName }}</span>
     </div>
   </div>
 </header>
 ```
 
-### Estilos CSS Base del Header
+### Estilos CSS Base del Contenedor Padre (`.main-container`) y Header (`.top-header`)
+> **Importante**: El contenedor padre de cada vista (`.main-container`) debe mantener un espaciado compacto y uniforme igual al de `bulk-upload-view`: `padding: 16px 22px 24px` y `gap: 14px` (y en móvil `<= 640px`: `padding: 8px 10px` y `gap: 8px`). El `.top-header` utiliza `padding: 14px 20px`.
+
 ```css
 .main-container {
-  min-height: calc(100vh - 64px);
-  padding: 20px 24px 36px;
+  min-height: 92vh;
+  padding: 16px 22px 24px;
   background-color: #f8fafc;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
   box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   user-select: none;
 }
 
 .top-header {
   background: #ffffff;
   border-radius: 12px;
-  padding: 16px 22px;
+  padding: 14px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
   border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
 .header-left {
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
 }
 
 .brand-badge {
   width: 46px;
   height: 46px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #1e40af 0%, #0284c7 100%);
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 10px rgba(2, 132, 199, 0.22);
+  box-shadow: 0 4px 10px -2px rgba(2, 132, 199, 0.35);
   flex-shrink: 0;
 }
 
 .title-text {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
+  min-width: 0;
 }
 
 .title-row {
@@ -238,17 +252,19 @@ Todas las vistas principales o menús de departamento deben abrir con un bloque 
 }
 
 .page-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #1e293b;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
   margin: 0;
   line-height: 1.2;
+  letter-spacing: -0.3px;
 }
 
 .page-subtitle {
   font-size: 0.84rem;
   color: #64748b;
-  margin: 0;
+  margin: 2px 0 0 0;
+  font-weight: 500;
   line-height: 1.4;
 }
 
@@ -280,31 +296,52 @@ Todas las vistas principales o menús de departamento deben abrir con un bloque 
 }
 
 .date-pill {
-  height: 40px;
-  padding: 0 14px;
-  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 5px 11px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.date-pill mat-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+  color: #0284c7;
 }
 
 .company-badge {
-  height: 40px;
-  background: linear-gradient(135deg, #0077c8 0%, #00a4e4 100%);
-  color: #ffffff;
-  padding: 0 16px;
-  border-radius: 10px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 2px 6px rgba(0, 119, 200, 0.24);
-  box-sizing: border-box;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 6px 13px;
+  color: #0369a1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08);
 }
 
-.company-name {
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0.6px;
+.company-badge mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #0284c7;
+  flex-shrink: 0;
+}
+
+.company-badge span {
   text-transform: uppercase;
-  white-space: nowrap;
+  line-height: 1.2;
 }
 ```
 
@@ -782,21 +819,177 @@ Nunca dejes una tabla o grilla en blanco cuando no existan datos. Utiliza el blo
 
 ## 📱 8. Reglas de Responsividad
 
-- **Breakpoints estándar**:
-  - `@media (max-width: 960px)`: El `.top-header` pasa a `flex-direction: column; align-items: stretch;`.
-  - `@media (max-width: 768px)`: Las grillas multi-columna de formularios pasan a `grid-template-columns: 1fr;`.
-  - `@media (max-width: 640px)`:
-    - Reducir el padding del contenedor principal a `14px`.
-    - Ocultar metadatos secundarios no esenciales (como `.date-pill`) para priorizar el título y el badge de empresa.
-    - En diálogos (`.dialog-content-custom`), eliminar cualquier `min-width` fijo (`min-width: unset; width: 100%;`) para evitar desbordamiento horizontal en móviles.
+- **Breakpoints y Escalado Compacto del Header**:
+  - **Botón Regresar (`.header-exit-btn` / `.btn-back`)**:
+    - Desktop: `height: 38px; padding: 0 14px;`
+    - Móvil (`<= 640px` / `768px`): Se reduce a `height: 34px !important; padding: 0 10px !important; font-size: 0.8rem !important;` con `mat-icon` de `18px`, y en `<= 420px` a `padding: 0 8px !important; font-size: 0.75rem !important;` para permitir que quepa más texto al lado en el header.
+  - **Ícono del Componente (`.brand-badge`)**:
+    - Desktop: `46px × 46px` (`border-radius: 12px`, `mat-icon` de `24px`).
+    - Tablet (`<= 960px` / `992px`): `38px × 38px` (`border-radius: 10px`, `mat-icon` de `20px`).
+    - Móvil (`<= 640px` / `768px`): `34px × 34px` (`border-radius: 8px`, `mat-icon` de `18px`).
+  - **Fecha (`.date-pill`) y Chip de Empresa (`.company-badge`)**:
+    - Tablet (`<= 960px` / `992px`): `.date-pill` pasa a `padding: 5px 10px; font-size: 0.74rem; gap: 6px;` (`mat-icon: 14px`), y `.company-badge` a `padding: 6px 12px; font-size: 0.78rem; gap: 8px; border-radius: 8px;` (`mat-icon: 17px`).
+    - Móvil (`<= 640px` / `768px`): `.date-pill` pasa a `padding: 4px 8px; font-size: 0.7rem; gap: 5px; border-radius: 6px;` (`mat-icon: 13px`), y `.company-badge` a `padding: 5px 10px; font-size: 0.74rem; gap: 6px; border-radius: 8px;` (`mat-icon: 15px`).
+  - **Contenedores y Grillas**:
+    - `@media (max-width: 960px)`: El `.top-header` pasa a `flex-direction: column; align-items: stretch; padding: 12px 14px; gap: 10px;`.
+    - `@media (max-width: 768px)`: Las grillas multi-columna de formularios pasan a `grid-template-columns: 1fr;`.
+    - `@media (max-width: 640px)`:
+      - Reducir el padding del contenedor principal (`.main-container`) a `8px 10px` y el `gap` a `8px` (y el `.top-header` a `padding: 8px 10px; gap: 8px;`).
+      - En diálogos (`.dialog-content-custom`), eliminar cualquier `min-width` fijo (`min-width: unset; width: 100%;`) para evitar desbordamiento horizontal en móviles.
+
+```css
+@media (max-width: 960px) {
+  .top-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .header-left {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    column-gap: 10px;
+  }
+
+  .title-text {
+    display: contents;
+  }
+
+  .page-subtitle {
+    flex-basis: 100%;
+    width: 100%;
+  }
+
+  .brand-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  .brand-badge mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .page-title {
+    font-size: 1.18rem;
+  }
+
+  .header-right {
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .date-pill {
+    padding: 5px 10px;
+    font-size: 0.74rem;
+    gap: 6px;
+  }
+
+  .date-pill mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+
+  .company-badge {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    gap: 8px;
+    border-radius: 8px;
+  }
+
+  .company-badge mat-icon {
+    font-size: 17px;
+    width: 17px;
+    height: 17px;
+  }
+}
+
+@media (max-width: 640px) {
+  .main-container {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .top-header {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .header-exit-btn {
+    height: 34px !important;
+    padding: 0 10px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .header-exit-btn mat-icon {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .header-divider {
+    height: 18px;
+  }
+
+  .brand-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+  }
+
+  .brand-badge mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .page-title {
+    font-size: 1.05rem;
+  }
+
+  .date-pill {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    gap: 5px;
+    border-radius: 6px;
+  }
+
+  .date-pill mat-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+  }
+
+  .company-badge {
+    padding: 5px 10px;
+    font-size: 0.74rem;
+    gap: 6px;
+    border-radius: 8px;
+  }
+
+  .company-badge mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+  }
+}
+```
 
 ---
 
 ## ✅ Lista de Verificación (Checklist) para Nuevas Vistas o Rediseños
 
-- [ ] **¿El contenedor raíz usa `#f8fafc` y las tarjetas usan `#ffffff` con borde `#e2e8f0`?**
+- [ ] **¿El contenedor raíz (`.main-container`) usa `#f8fafc`, `padding: 16px 22px 24px`, `gap: 14px`, y las tarjetas usan `#ffffff` con borde `#e2e8f0`?**
 - [ ] **¿Se reemplazaron los iconos `.svg` antiguos por `<mat-icon>` dentro de cajas pastel (`.icon-box`)?**
-- [ ] **¿El encabezado superior (`.top-header`) sigue la estructura con insignia, título `#1e293b`, subtítulo `#64748b` y metadatos/empresa a la derecha?**
+- [ ] **¿El encabezado superior (`.top-header`) sigue la estructura con insignia, título `#0f172a`, fecha `.date-pill` y chip de empresa pastel `.company-badge` a la derecha?**
+- [ ] **¿Se muestra el subtítulo (`.page-subtitle`) SOLO en vistas de selección de opciones (como `home-users` u `operaciones`) y se omite en vistas de funcionalidad directa (como `cash-register` o `bulk-upload`)?**
+- [ ] **¿Se omitió el chip de conteo de módulos/opciones (`X habilitados` / `X opciones`) en el header de las vistas de selección?**
 - [ ] **¿Las tarjetas de módulos/opciones son limpias (sin descripciones extensas ni chips de categoría redundantes) e incluyen `matRipple` y pie de acción?**
 - [ ] **¿Las tablas usan cabeceras `#f1f5f9` en mayúsculas, `tabular-nums` en importes y buscadores redondeados de `42px-48px`?**
 - [ ] **¿Los estados de carga cumplen con la skill `loader-patterns`?**
