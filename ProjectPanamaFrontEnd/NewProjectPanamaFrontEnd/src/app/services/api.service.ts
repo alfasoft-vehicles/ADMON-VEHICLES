@@ -17,6 +17,21 @@ export class ApiService {
   ) {}
 
   /**
+   * Construye la URL normalizada asegurando el slash antes de los query parameters si existen.
+   */
+  private buildUrl(endpoint: string): string {
+    const clean = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    if (clean.includes('?')) {
+      const [path, query] = clean.split('?');
+      const normalizedPath = path.endsWith('/') ? path : `${path}/`;
+      return `${this.baseURL}/${normalizedPath}?${query}`;
+    }
+    return clean.endsWith('/')
+      ? `${this.baseURL}/${clean}`
+      : `${this.baseURL}/${clean}/`;
+  }
+
+  /**
    * Fetch data from a specified endpoint.
    * @param {string} endpoint - The endpoint to fetch data from.
    * @param {RequestOptions} [options] - Optional request settings (e.g. { silent: true }).
@@ -24,7 +39,7 @@ export class ApiService {
    */
   getData(endpoint: string, options?: RequestOptions): Observable<any> {
     return this.http
-      .get<any>(`${this.baseURL}/${endpoint}/`, { withCredentials: true })
+      .get<any>(this.buildUrl(endpoint), { withCredentials: true })
       .pipe(
         catchError((error) =>
           this.errorHandlerService.handleError(error, options),
