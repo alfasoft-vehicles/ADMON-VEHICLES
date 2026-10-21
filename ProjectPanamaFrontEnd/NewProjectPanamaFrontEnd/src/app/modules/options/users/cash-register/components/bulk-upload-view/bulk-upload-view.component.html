@@ -94,18 +94,68 @@
     <div class="bu-table-toolbar">
       <div class="bu-toolbar-left">
         <span class="bu-table-legend-title">Detalle de Transacciones</span>
-      </div>
-      <div class="bu-toolbar-right">
-        <span class="bu-legend-item bu-legend-warn">
+        <span class="bu-legend-item bu-legend-warn bu-chip-desktop-hidden">
           <span class="bu-dot bu-dot-warn"></span>
           {{ metrics.registrosPendientes }} Requieren Revisión
         </span>
+      </div>
+      <div class="bu-toolbar-right">
+        <span class="bu-legend-item bu-legend-warn bu-chip-mobile-hidden">
+          <span class="bu-dot bu-dot-warn"></span>
+          {{ metrics.registrosPendientes }} Requieren Revisión
+        </span>
+
+        <div
+          class="bu-search-box-wrapper"
+          [class.bu-search-expanded]="isSearchExpanded || !!searchTerm"
+        >
+          <button
+            type="button"
+            class="bu-search-box-btn"
+            (click)="toggleSearch()"
+            matTooltip="Buscar registros"
+            aria-label="Buscar registros"
+          >
+            <mat-icon class="bu-search-box-icon">search</mat-icon>
+          </button>
+          <input
+            id="bu-search-input"
+            type="text"
+            class="bu-search-box-input"
+            [(ngModel)]="searchTerm"
+            placeholder="Buscar por nombre, celular, código, unidad..."
+            aria-label="Buscar registros por nombre, celular, código o unidad"
+          />
+          <button
+            *ngIf="searchTerm"
+            type="button"
+            class="bu-search-box-clear"
+            (click)="clearSearch()"
+            matTooltip="Limpiar búsqueda"
+            aria-label="Limpiar búsqueda"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+          <button
+            *ngIf="isSearchExpanded && !searchTerm"
+            type="button"
+            class="bu-search-box-close"
+            (click)="collapseSearch()"
+            matTooltip="Cerrar buscador"
+            aria-label="Cerrar buscador"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Contenedor Scroll de la Tabla -->
     <div class="bu-table-scroll-container">
-      <table class="bu-data-table">
+      <table
+        class="bu-data-table"
+        [class.bu-table-empty]="filteredRecords.length === 0"
+      >
         <thead>
           <tr>
             <th class="th-w-date">Fecha</th>
@@ -130,7 +180,7 @@
         </thead>
         <tbody>
           <tr
-            *ngFor="let row of records"
+            *ngFor="let row of filteredRecords"
             (click)="selectRow(row.id)"
             [class.bu-row-selected]="row.id === selectedRowId"
             [class.bu-row-alert]="isRecordInReview(row)"
@@ -230,6 +280,38 @@
               <span *ngIf="row.pendiente === '0.00'" class="bu-pending-zero">
                 0.00
               </span>
+            </td>
+          </tr>
+
+          <!-- Estado cuando no hay registros que coincidan con la búsqueda -->
+          <tr *ngIf="filteredRecords.length === 0" class="bu-empty-row">
+            <td colspan="18" class="bu-empty-cell">
+              <div class="bu-empty-state">
+                <mat-icon class="bu-empty-icon">search_off</mat-icon>
+                <div class="bu-empty-text-wrap">
+                  <span class="bu-empty-title" *ngIf="searchTerm">
+                    No se encontraron registros que coincidan con "{{
+                      searchTerm
+                    }}"
+                  </span>
+                  <span class="bu-empty-title" *ngIf="!searchTerm">
+                    No hay registros disponibles en la tabla
+                  </span>
+                  <span class="bu-empty-subtitle" *ngIf="searchTerm">
+                    Intente buscar con otro nombre, celular, código o unidad
+                  </span>
+                </div>
+                <button
+                  *ngIf="searchTerm"
+                  type="button"
+                  mat-stroked-button
+                  class="bu-empty-clear-btn"
+                  (click)="clearSearch()"
+                >
+                  <mat-icon>clear</mat-icon>
+                  Limpiar búsqueda
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>

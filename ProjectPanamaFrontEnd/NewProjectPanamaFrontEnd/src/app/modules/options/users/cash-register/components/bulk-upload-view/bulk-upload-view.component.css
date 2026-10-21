@@ -425,9 +425,235 @@
   background-color: #ef4444;
 }
 
+/* Visibilidad del chip de revisión según breakpoint */
+.bu-chip-desktop-hidden {
+  display: none;
+}
+
+.bu-chip-mobile-hidden {
+  display: inline-flex;
+}
+
 .bu-toolbar-right {
   display: flex;
   align-items: center;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* ==========================================================================
+   Buscador Expandible en Toolbar de la Tabla
+   ========================================================================== */
+.bu-search-box-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0;
+  height: 38px;
+  min-height: 38px;
+  width: 38px;
+  max-width: 38px;
+  box-sizing: border-box;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bu-search-box-wrapper:hover {
+  border-color: #94a3b8;
+  background-color: #f8fafc;
+}
+
+.bu-search-box-wrapper:focus-within {
+  border-color: #0284c7;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+.bu-search-box-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  flex-shrink: 0;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.bu-search-box-btn:hover {
+  color: #0284c7;
+}
+
+.bu-search-box-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bu-search-box-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  flex: 1;
+  font-size: 0.84rem;
+  color: #1e293b;
+  padding: 0;
+  margin: 0;
+  line-height: 1.4;
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.bu-search-box-input::placeholder {
+  color: #94a3b8;
+  font-size: 0.82rem;
+}
+
+.bu-search-box-clear,
+.bu-search-box-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0 6px 0 2px;
+  border-radius: 50%;
+  color: #94a3b8;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.bu-search-box-clear:hover,
+.bu-search-box-close:hover {
+  background-color: #f1f5f9;
+  color: #334155;
+}
+
+.bu-search-box-clear mat-icon,
+.bu-search-box-close mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+/* Estado Expandido en Desktop */
+.bu-search-box-wrapper.bu-search-expanded {
+  width: 340px;
+  max-width: 340px;
+  padding: 0 4px 0 0;
+  background-color: #ffffff;
+  border-color: #0284c7;
+  cursor: default;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+.bu-search-box-wrapper.bu-search-expanded .bu-search-box-icon {
+  color: #0284c7;
+}
+
+.bu-search-box-wrapper.bu-search-expanded .bu-search-box-input {
+  width: 100%;
+  opacity: 1;
+  padding: 0 4px;
+  pointer-events: auto;
+}
+
+.bu-search-box-wrapper.bu-search-expanded .bu-search-box-clear,
+.bu-search-box-wrapper.bu-search-expanded .bu-search-box-close {
+  display: flex;
+}
+
+/* ==========================================================================
+   Estado Vacío (Sin Resultados de Búsqueda)
+   ========================================================================== */
+.bu-empty-row {
+  background-color: #ffffff;
+  height: 100%;
+}
+
+.bu-empty-cell {
+  padding: 60px 16px !important;
+  text-align: center;
+  border-bottom: none !important;
+  vertical-align: middle;
+  height: 100%;
+}
+
+.bu-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.bu-empty-icon {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  color: #94a3b8;
+}
+
+.bu-empty-text-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bu-empty-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.bu-empty-subtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.bu-empty-clear-btn {
+  margin-top: 6px !important;
+  color: #0284c7 !important;
+  border-color: #bae6fd !important;
+  font-size: 0.8rem !important;
+  border-radius: 6px !important;
+}
+
+.bu-empty-clear-btn:hover {
+  background-color: #f0f9ff !important;
+  border-color: #7dd3fc !important;
+}
+
+.bu-empty-clear-btn mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
 }
 
 .bu-toolbar-stat {
@@ -449,8 +675,13 @@
 .bu-table-scroll-container {
   overflow-x: auto;
   overflow-y: auto;
-  max-height: calc(100vh - 410px);
+  flex: 1 1 auto;
+  height: 100%;
   min-height: 320px;
+  max-height: calc(100vh - 410px);
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
 }
 
 .bu-table-scroll-container::-webkit-scrollbar {
@@ -474,9 +705,15 @@
 /* Tabla Estilo Clean / Enterprise */
 .bu-data-table {
   width: 100%;
+  min-width: 1380px;
   border-collapse: collapse;
   font-size: 0.78rem;
   text-align: left;
+}
+
+.bu-data-table.bu-table-empty {
+  flex: 1;
+  height: 100%;
 }
 
 .bu-data-table thead {
@@ -1328,26 +1565,17 @@
   flex: 1;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: repeat(2, 1fr);
+  grid-template-rows: auto;
   gap: 10px;
   width: 100%;
   box-sizing: border-box;
-}
-
-@media (max-width: 1350px) {
-  .bu-action-buttons-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    grid-template-rows: 1fr !important;
-  }
-  .bu-btn-full {
-    grid-column: span 1 !important;
-  }
 }
 
 @media (max-width: 640px) {
   .bu-action-buttons-grid {
     grid-template-columns: 1fr !important;
     grid-template-rows: auto !important;
+    gap: 10px !important;
   }
 }
 
@@ -1466,6 +1694,67 @@
 /* ==========================================================================
    Media Queries Generales y Responsive
    ========================================================================== */
+@media (max-width: 1024px) {
+  .bu-chip-desktop-hidden {
+    display: inline-flex !important;
+  }
+
+  .bu-chip-mobile-hidden {
+    display: none !important;
+  }
+
+  .bu-table-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .bu-toolbar-left {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+  }
+
+  .bu-toolbar-right {
+    width: 100% !important;
+    max-width: 100% !important;
+    justify-content: stretch !important;
+    gap: 0 !important;
+  }
+
+  /* En responsive el buscador se muestra expandido por defecto a 100% */
+  .bu-search-box-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 6px 0 0 !important;
+    background-color: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    cursor: default !important;
+    overflow: visible !important;
+  }
+
+  .bu-search-box-wrapper .bu-search-box-btn {
+    cursor: default !important;
+  }
+
+  .bu-search-box-wrapper .bu-search-box-input {
+    width: 100% !important;
+    opacity: 1 !important;
+    padding: 0 4px !important;
+    pointer-events: auto !important;
+  }
+
+  .bu-search-box-close {
+    display: none !important;
+  }
+
+  .bu-search-box-wrapper .bu-search-box-clear {
+    display: flex !important;
+  }
+}
+
 @media (max-width: 992px) {
   .bu-top-header {
     flex-direction: column;
@@ -1625,15 +1914,20 @@
   }
 
   .bu-table-toolbar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
   }
 
   .bu-toolbar-left,
   .bu-toolbar-right {
-    width: 100%;
-    justify-content: space-between;
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  .bu-search-box-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
 
