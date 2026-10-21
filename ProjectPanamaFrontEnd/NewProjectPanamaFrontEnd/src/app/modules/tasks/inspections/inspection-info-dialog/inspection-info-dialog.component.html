@@ -2,8 +2,29 @@
 
 <mat-dialog-content class="mat-typography">
   <ng-template #loadingTemplate>
-    <div class="inspection-content">
-      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <div class="dialog-loader-container">
+      <div class="spinner-wrapper">
+        <mat-progress-spinner
+          mode="indeterminate"
+          [diameter]="52"
+          [strokeWidth]="4"
+          color="primary"
+          class="custom-spinner"
+        ></mat-progress-spinner>
+        <div class="spinner-center-icon">
+          <mat-icon>hourglass_top</mat-icon>
+        </div>
+      </div>
+      <div class="loader-text">
+        <h3 class="loader-title">Cargando detalles</h3>
+        <p class="loader-message">Obteniendo información de la inspección...</p>
+      </div>
+      <div class="progress-bar-wrapper">
+        <mat-progress-bar
+          mode="indeterminate"
+          color="primary"
+        ></mat-progress-bar>
+      </div>
     </div>
   </ng-template>
   <div class="inspection-content" *ngIf="!isLoading; else loadingTemplate">
@@ -27,7 +48,9 @@
           </div>
           <div class="info-item">
             <span class="label">Fecha y hora:</span>
-            <span class="value">{{ inspectionData.fecha }} {{ inspectionData.hora }}</span>
+            <span class="value"
+              >{{ inspectionData.fecha }} {{ inspectionData.hora }}</span
+            >
           </div>
           <div class="info-item">
             <span class="label">Usuario:</span>
@@ -66,7 +89,9 @@
         <div class="info-grid">
           <div class="info-item">
             <span class="label">Código:</span>
-            <span class="value">{{ getOwnerCode(inspectionData.propietario) }}</span>
+            <span class="value">{{
+              getOwnerCode(inspectionData.propietario)
+            }}</span>
           </div>
           <div class="info-item">
             <span class="label">Nombre:</span>
@@ -335,10 +360,7 @@
       </mat-card-content>
     </mat-card>
 
-    <mat-card
-      class="info-section"
-       *ngIf="inspectionData.firma"
-    >
+    <mat-card class="info-section" *ngIf="inspectionData.firma">
       <mat-card-header>
         <mat-card-title class="section-title">
           <mat-icon>draw</mat-icon>

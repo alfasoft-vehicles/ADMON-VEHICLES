@@ -15,6 +15,7 @@ import { InspectionInfoDialogComponent } from '../inspection-info-dialog/inspect
 import { ActivatedRoute, Router } from '@angular/router';
 import { InspectionsGenerateQrDialogComponent } from '../inspections-generate-qr-dialog/inspections-generate-qr-dialog.component';
 import { InspectionsVehicleInfoComponent } from '../inspections-vehicle-info/inspections-vehicle-info.component';
+import { LoadingService } from 'src/app/services/loading.service';
 
 export interface owners {
   id: string;
@@ -123,6 +124,7 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
     private breakpointObserver: BreakpointObserver,
     private route: ActivatedRoute,
     private router: Router,
+    private loadingService: LoadingService,
   ) {
     this.dataSource = new MatTableDataSource<InspectionsInfoData>([]);
   }
@@ -152,6 +154,12 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
         this.inspectionForm.get('fechaInicial')?.updateValueAndValidity();
         this.inspectionForm.get('fechaFinal')?.clearValidators();
         this.inspectionForm.get('fechaFinal')?.updateValueAndValidity();
+
+        this.loadingService.show({
+          title: 'Cargando Inspecciones',
+          message: `Obteniendo inspecciones del vehículo ${id}...`,
+          submessage: 'Por favor espere un momento',
+        });
 
         this.getMaxDate();
         this.setupOwnerListener();
@@ -191,6 +199,11 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
 
   getTableInitialData() {
     this.isLoadingData = true;
+    this.loadingService.show({
+      title: 'Cargando Inspecciones',
+      message: 'Obteniendo inspecciones del sistema...',
+      submessage: 'Por favor espere un momento',
+    });
 
     const company = this.getCompany();
     const formattedValues = {
@@ -227,11 +240,13 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
             this.openSnackbar('Inspecciones cargadas correctamente.');
           }
           this.isLoadingData = false;
+          this.loadingService.hide();
         },
         error: (error) => {
           console.error('Error fetching inspections:', error);
 
           this.isLoadingData = false;
+          this.loadingService.hide();
         },
       });
   }
@@ -463,6 +478,8 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
             this.inspectionForm.patchValue({ vehiculo: foundVehicle });
             this.getTableData();
           } else {
+            this.loadingService.hide();
+            this.isLoadingData = false;
             this.openSnackbar(
               'El vehículo seleccionado no existe o no está asignado a su empresa.',
             );
@@ -472,6 +489,10 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
       },
       error: (error) => {
         console.error('Error fetching vehicles:', error);
+        if (this.idVehicleNumber) {
+          this.loadingService.hide();
+          this.isLoadingData = false;
+        }
       },
     });
   }
@@ -553,6 +574,11 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
     this.clearTableData();
 
     this.isLoadingData = true;
+    this.loadingService.show({
+      title: 'Buscando Inspecciones',
+      message: 'Consultando inspecciones con los criterios seleccionados...',
+      submessage: 'Por favor espere un momento',
+    });
 
     const formValues = this.inspectionForm.value;
     const user = this.getUserId();
@@ -615,11 +641,13 @@ export class InspectionsTableComponent implements OnInit, AfterViewInit {
           }
 
           this.isLoadingData = false;
+          this.loadingService.hide();
         },
         error: (error) => {
           console.error('Error fetching inspections:', error);
 
           this.isLoadingData = false;
+          this.loadingService.hide();
         },
       });
   }

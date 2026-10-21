@@ -1,9 +1,22 @@
-<h2 mat-dialog-title *ngIf="!isEditMode && inspectionCreateID === ''">Nueva Inspección</h2>
+<h2 mat-dialog-title *ngIf="!isEditMode && inspectionCreateID === ''">
+  Nueva Inspección
+</h2>
 <h2 mat-dialog-title *ngIf="isEditMode && inspectionType">Editar Inspección</h2>
-<h2 mat-dialog-title *ngIf="inspectionCreateID !== '' && inspectionType && !isEditMode && !showSignaturePad">
+<h2
+  mat-dialog-title
+  *ngIf="
+    inspectionCreateID !== '' &&
+    inspectionType &&
+    !isEditMode &&
+    !showSignaturePad
+  "
+>
   Subir Fotos de la Inspección
 </h2>
-<h2 mat-dialog-title *ngIf="inspectionCreateID !== '' && !inspectionType && !isEditMode">
+<h2
+  mat-dialog-title
+  *ngIf="inspectionCreateID !== '' && !inspectionType && !isEditMode"
+>
   Inspección
 </h2>
 <h2 mat-dialog-title *ngIf="showSignaturePad && !isEditMode">
@@ -12,19 +25,64 @@
 
 <mat-dialog-content>
   <!-- Barra de carga durante la creación de la inspección -->
-  <div class="inputs-container creating-inspection-loader" *ngIf="!isEditMode && inspectionCreateID === '' && isLoading && showCompactView">
-    <p class="loading-message">Creando inspección...</p>
-    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  <div
+    class="dialog-loader-container"
+    *ngIf="
+      !isEditMode && inspectionCreateID === '' && isLoading && showCompactView
+    "
+  >
+    <div class="spinner-wrapper">
+      <mat-progress-spinner
+        mode="indeterminate"
+        [diameter]="52"
+        [strokeWidth]="4"
+        color="primary"
+        class="custom-spinner"
+      ></mat-progress-spinner>
+      <div class="spinner-center-icon">
+        <mat-icon>hourglass_top</mat-icon>
+      </div>
+    </div>
+    <div class="loader-text">
+      <h3 class="loader-title">Creando inspección</h3>
+      <p class="loader-message">Guardando información de la inspección...</p>
+    </div>
+    <div class="progress-bar-wrapper">
+      <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+    </div>
   </div>
 
   <!-- Barra de carga durante la carga de datos en modo edición -->
-  <div class="inputs-container creating-inspection-loader" *ngIf="isEditMode && isLoading">
-    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-    <p class="loading-message">Cargando datos de la inspección...</p>
+  <div class="dialog-loader-container" *ngIf="isEditMode && isLoading">
+    <div class="spinner-wrapper">
+      <mat-progress-spinner
+        mode="indeterminate"
+        [diameter]="52"
+        [strokeWidth]="4"
+        color="primary"
+        class="custom-spinner"
+      ></mat-progress-spinner>
+      <div class="spinner-center-icon">
+        <mat-icon>hourglass_top</mat-icon>
+      </div>
+    </div>
+    <div class="loader-text">
+      <h3 class="loader-title">Cargando datos de la inspección</h3>
+      <p class="loader-message">Obteniendo información para editar...</p>
+    </div>
+    <div class="progress-bar-wrapper">
+      <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+    </div>
   </div>
 
   <!-- Formulario: se muestra en creación O en edición (pero no cuando se están subiendo fotos) -->
-  <form [formGroup]="mainInspectionForm" *ngIf="(inspectionCreateID === '' || isEditMode) && !(isLoading && showCompactView && !isEditMode)">
+  <form
+    [formGroup]="mainInspectionForm"
+    *ngIf="
+      (inspectionCreateID === '' || isEditMode) &&
+      !(isLoading && showCompactView && !isEditMode)
+    "
+  >
     <div class="main-content-container">
       <!-- Vista normal del formulario -->
       <div
@@ -34,11 +92,31 @@
       >
         <h3 *ngIf="!isLoading">Información del vehículo</h3>
 
-        <div class="inputs-container">
-          <mat-progress-bar
-            mode="indeterminate"
-            *ngIf="isLoading && !isEditMode"
-          ></mat-progress-bar>
+        <div class="dialog-loader-container" *ngIf="isLoading && !isEditMode">
+          <div class="spinner-wrapper">
+            <mat-progress-spinner
+              mode="indeterminate"
+              [diameter]="52"
+              [strokeWidth]="4"
+              color="primary"
+              class="custom-spinner"
+            ></mat-progress-spinner>
+            <div class="spinner-center-icon">
+              <mat-icon>hourglass_top</mat-icon>
+            </div>
+          </div>
+          <div class="loader-text">
+            <h3 class="loader-title">Cargando formulario</h3>
+            <p class="loader-message">
+              Preparando lista de vehículos y tipos de inspección...
+            </p>
+          </div>
+          <div class="progress-bar-wrapper">
+            <mat-progress-bar
+              mode="indeterminate"
+              color="primary"
+            ></mat-progress-bar>
+          </div>
         </div>
 
         <div class="inputs-container" *ngIf="!isLoading">
@@ -64,7 +142,7 @@
               >
                 {{ option.numero_unidad }} - {{ option.placa_vehiculo }} -
                 {{ option.nro_cupo }} - {{ option.marca }} {{ option.linea }}
-                {{ option.modelo }} - {{ option.propietario }} 
+                {{ option.modelo }} - {{ option.propietario }}
               </mat-option>
             </mat-autocomplete>
           </mat-form-field>
@@ -95,10 +173,28 @@
         </div>
 
         <div
-          class="inputs-container"
+          class="dialog-inline-loader"
           *ngIf="loadingVehicleInfo && !selectedVehicle && !isEditMode"
         >
-          <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+          <div class="spinner-wrapper-small">
+            <mat-progress-spinner
+              mode="indeterminate"
+              [diameter]="28"
+              [strokeWidth]="3"
+              color="primary"
+            ></mat-progress-spinner>
+            <div class="spinner-center-icon-small">
+              <mat-icon>sync</mat-icon>
+            </div>
+          </div>
+          <div class="inline-loader-text">
+            <span class="inline-loader-title"
+              >Cargando datos del vehículo...</span
+            >
+            <span class="inline-loader-subtitle"
+              >Obteniendo conductor, kilometraje y estado</span
+            >
+          </div>
         </div>
 
         <ng-container *ngIf="selectedVehicle && !isLoading">
@@ -181,7 +277,7 @@
               >{{
                 displayVehicleData(inspectionInfoForm.get("vehiculo")?.value)
               }}
-                - {{ vehicleInfo.cupo }}</span
+              - {{ vehicleInfo.cupo }}</span
             >
           </div>
           <div class="compact-info-item">
@@ -208,11 +304,10 @@
           </div>
           <div class="compact-info-item">
             <span class="compact-label">Conductor:</span>
-            <span class="compact-value">{{
-              vehicleInfo.conductor_nombre
-            }} - {{
-              vehicleInfo.conductor_celular
-            }}</span>
+            <span class="compact-value"
+              >{{ vehicleInfo.conductor_nombre }} -
+              {{ vehicleInfo.conductor_celular }}</span
+            >
           </div>
           <div class="compact-info-item">
             <span class="compact-label">Fecha y Hora:</span>
@@ -234,26 +329,55 @@
       </div>
     </div>
   </form>
-  
+
   <!-- Componente de fotos: solo se muestra cuando NO está en modo edición y hay un inspectionCreateID -->
   <app-take-photos-vehicle
-    *ngIf="inspectionCreateID !== '' && !isLoading && !isEditMode && !showSignaturePad"
+    *ngIf="
+      inspectionCreateID !== '' &&
+      !isLoading &&
+      !isEditMode &&
+      !showSignaturePad
+    "
     [inspectionId]="inspectionCreateID"
   ></app-take-photos-vehicle>
 
   <!-- Componente de firma: se muestra después de subir las fotos -->
   <div class="signature-section" *ngIf="showSignaturePad && !isLoading">
-    <p class="signature-instructions">Por favor, firme en el área a continuación para completar la inspección.</p>
+    <p class="signature-instructions">
+      Por favor, firme en el área a continuación para completar la inspección.
+    </p>
     <div class="signature-container">
-      <app-signature-pad (signatureSubmit)="onSignatureSaved($event)"></app-signature-pad>
+      <app-signature-pad
+        (signatureSubmit)="onSignatureSaved($event)"
+      ></app-signature-pad>
     </div>
   </div>
 
-  <div class="inputs-container">
-    <mat-progress-bar
-      mode="indeterminate"
-      *ngIf="inspectionCreateID !== '' && isLoading && !isEditMode"
-    ></mat-progress-bar>
+  <div
+    class="dialog-loader-container"
+    *ngIf="inspectionCreateID !== '' && isLoading && !isEditMode"
+  >
+    <div class="spinner-wrapper">
+      <mat-progress-spinner
+        mode="indeterminate"
+        [diameter]="52"
+        [strokeWidth]="4"
+        color="primary"
+        class="custom-spinner"
+      ></mat-progress-spinner>
+      <div class="spinner-center-icon">
+        <mat-icon>hourglass_top</mat-icon>
+      </div>
+    </div>
+    <div class="loader-text">
+      <h3 class="loader-title">Procesando inspección</h3>
+      <p class="loader-message">
+        Guardando los cambios y preparando la captura...
+      </p>
+    </div>
+    <div class="progress-bar-wrapper">
+      <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+    </div>
   </div>
 </mat-dialog-content>
 
@@ -289,7 +413,12 @@
     mat-button
     [disabled]="loadingVehicleInfo"
     (click)="uploadImages()"
-    *ngIf="inspectionType && inspectionCreateID !== '' && !isEditMode && !showSignaturePad"
+    *ngIf="
+      inspectionType &&
+      inspectionCreateID !== '' &&
+      !isEditMode &&
+      !showSignaturePad
+    "
   >
     Subir Fotos
   </button>
