@@ -128,9 +128,6 @@ export class OperacionesAperturaCobrarConductorComponent implements OnInit {
         this.isLoadingVehicles = false;
       },
       (error) => {
-        this.openSnackbar(
-          'Error al obtener las unidades. Inténtalo de nuevo más tarde.',
-        );
         this.closeDialog();
       },
     );
@@ -166,13 +163,6 @@ export class OperacionesAperturaCobrarConductorComponent implements OnInit {
           error: (error: HttpErrorResponse) => {
             this.isLoadingVehicleInfo = false;
             this.selectedVehicle = false;
-            if (error.status === 404) {
-              this.openSnackbar('Vehículo no encontrado. Intenta con otro.');
-            } else {
-              this.openSnackbar(
-                'Error al obtener la información del vehículo. Inténtalo de nuevo más tarde.',
-              );
-            }
           },
         });
     }
@@ -190,17 +180,7 @@ export class OperacionesAperturaCobrarConductorComponent implements OnInit {
             this.selectedVehicle = true;
             this.driverData = data;
           },
-          error: (error: HttpErrorResponse) => {
-            if (error.status === 404) {
-              this.openSnackbar(
-                'No se encontró el conductor para esta unidad.',
-              );
-            } else {
-              this.openSnackbar(
-                'Error al obtener la información del conductor. Inténtalo de nuevo más tarde.',
-              );
-            }
-          },
+          error: (error: HttpErrorResponse) => {},
         });
       return;
     }

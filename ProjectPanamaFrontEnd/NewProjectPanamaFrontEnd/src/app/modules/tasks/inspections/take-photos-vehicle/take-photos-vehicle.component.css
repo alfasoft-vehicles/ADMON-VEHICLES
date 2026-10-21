@@ -6,7 +6,8 @@
   overflow: hidden;
 }
 
-.camera-view, .limit-reached {
+.camera-view,
+.limit-reached {
   width: 100%;
   border-radius: 4px;
   overflow: hidden;
@@ -38,17 +39,81 @@
   color: #4caf50;
 }
 
-.upload-status {
+.upload-status-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 20px 16px;
+  padding: 20px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   text-align: center;
-  margin: 20px 0;
-  padding: 0 16px;
 }
 
-.upload-status span {
-  margin-bottom: 10px;
-  display: block;
-  font-weight: 500;
-  color: #555;
+.upload-spinner-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+}
+
+.upload-spinner-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0284c7;
+  animation: pulse-icon 1.8s ease-in-out infinite;
+}
+
+.upload-spinner-center mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+@keyframes pulse-icon {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+.upload-text-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.upload-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.upload-subtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.upload-bar-wrapper {
+  width: 100%;
+  max-width: 260px;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 /* -- NUEVA REGLA PARA LOS BOTONES PRINCIPALES -- */
@@ -94,6 +159,6 @@
 
 @media (max-width: 600px) {
   .camera-view video {
-    aspect-ratio: 3 / 4; 
+    aspect-ratio: 3 / 4;
   }
 }

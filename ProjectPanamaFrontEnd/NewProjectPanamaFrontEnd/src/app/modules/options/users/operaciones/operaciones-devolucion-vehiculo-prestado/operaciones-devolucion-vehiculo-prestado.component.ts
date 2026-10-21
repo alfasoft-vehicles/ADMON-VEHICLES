@@ -135,7 +135,7 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
     private snackBar: MatSnackBar,
     private dialogRef: MatDialogRef<OperacionesDevolucionVehiculoPrestadoComponent>,
     private dialog: MatDialog,
-    private breakpointObserver: BreakpointObserver
+    private breakpointObserver: BreakpointObserver,
   ) {}
 
   ngOnInit() {
@@ -166,16 +166,13 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
           this.options = response;
           this.filteredOptions = this.vehicles.valueChanges.pipe(
             startWith(''),
-            map((value) => this._filter(value || ''))
+            map((value) => this._filter(value || '')),
           );
           this.isLoadingVehicles = false;
         },
         (error) => {
-          this.openSnackbar(
-            'Error al obtener las unidades para préstamo. Inténtalo de nuevo más tarde.'
-          );
           this.closeDialog();
-        }
+        },
       );
   }
 
@@ -187,7 +184,7 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
         option.vehicle_plate.toLowerCase().includes(filterValue) ||
         option.vehicle_number.toLowerCase().includes(filterValue) ||
         option.owner.toLowerCase().includes(filterValue) ||
-        option.quota_number.toLowerCase().includes(filterValue)
+        option.quota_number.toLowerCase().includes(filterValue),
     );
   }
 
@@ -198,7 +195,9 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
     if (vehicleValue !== '') {
       this.isLoadingVehicleInfo = true;
       this.apiService
-        .getData(`operations/deliveryvehicledriver/vehicle/${this.getCompany()}/${vehicleValue}`)
+        .getData(
+          `operations/deliveryvehicledriver/vehicle/${this.getCompany()}/${vehicleValue}`,
+        )
         .subscribe({
           next: (data: vehicleInfo) => {
             this.vehicleData = data;
@@ -209,13 +208,6 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
             this.isLoadingVehicleInfo = false;
             this.selectedVehicle = false;
             this.validationVehicle = false;
-            if (error.status === 404) {
-              this.openSnackbar('Vehículo no encontrado. Intenta con otro.');
-            } else {
-              this.openSnackbar(
-                'Error al obtener la información del vehículo. Inténtalo de nuevo más tarde.'
-              );
-            }
           },
         });
     }
@@ -226,7 +218,7 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
       const company = this.getCompany();
       this.apiService
         .getData(
-          `operations/return-vehicle/validation/${company}/${vehicleValue}`
+          `operations/return-vehicle/validation/${company}/${vehicleValue}`,
         )
         .subscribe({
           next: (data: validationsVehicleResponse) => {
@@ -236,27 +228,19 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
 
             if (this.validationsVehicle.state) {
               this.openSnackbar(
-                'El vehículo no tiene un estado válido para la devolución.'
+                'El vehículo no tiene un estado válido para la devolución.',
               );
               this.unauthorizedVehicle = true;
             }
 
             if (this.validationsVehicle.original_vehicle) {
               this.openSnackbar(
-                'El vehículo no tiene un vehículo original asignado.'
+                'El vehículo no tiene un vehículo original asignado.',
               );
               this.unauthorizedVehicle = true;
             }
           },
-          error: (error: HttpErrorResponse) => {
-            if (error.status === 404) {
-              this.openSnackbar('Validación de vehículo no encontrada.');
-            } else {
-              this.openSnackbar(
-                'Error al obtener la validación del vehículo. Inténtalo de nuevo más tarde.'
-              );
-            }
-          },
+          error: (error: HttpErrorResponse) => {},
         });
     }
   }
@@ -264,7 +248,9 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
   driverSearch(driverValue: string, vehicleValue: string) {
     if (driverValue !== '') {
       this.apiService
-        .getData(`operations/deliveryvehicledriver/driver/${this.getCompany()}/${driverValue}`)
+        .getData(
+          `operations/deliveryvehicledriver/driver/${this.getCompany()}/${driverValue}`,
+        )
         .subscribe({
           next: (data: driverInfo) => {
             this.driverData = data;
@@ -272,7 +258,7 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
               this.isLoadingVehicleInfo = false;
               this.selectedVehicle = true;
               this.openSnackbar(
-                'El conductor no tiene un vehículo original asignado.'
+                'El conductor no tiene un vehículo original asignado.',
               );
               this.unauthorizedVehicle = true;
               return;
@@ -289,15 +275,6 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
           error: (error: HttpErrorResponse) => {
             this.isLoadingVehicleInfo = false;
             this.selectedVehicle = true;
-            if (error.status === 404) {
-              this.openSnackbar(
-                'No se encontró el conductor para esta unidad.'
-              );
-            } else {
-              this.openSnackbar(
-                'Error al obtener la información del conductor. Inténtalo de nuevo más tarde.'
-              );
-            }
           },
         });
       return;
@@ -308,7 +285,9 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
 
   originalVehicleSearch(vehicle_number: string) {
     this.apiService
-      .getData(`operations/deliveryvehicledriver/vehicle/${this.getCompany()}/${vehicle_number}`)
+      .getData(
+        `operations/deliveryvehicledriver/vehicle/${this.getCompany()}/${vehicle_number}`,
+      )
       .subscribe({
         next: (data: vehicleInfo) => {
           this.originalVehicleData = data;
@@ -320,13 +299,6 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
           this.isLoadingVehicleInfo = false;
           this.selectedVehicle = false;
           this.validationVehicle = false;
-          if (error.status === 404) {
-            this.openSnackbar('Vehículo no encontrado. Intenta con otro.');
-          } else {
-            this.openSnackbar(
-              'Error al obtener la información del vehículo. Inténtalo de nuevo más tarde.'
-            );
-          }
         },
       });
   }
@@ -388,7 +360,7 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
 
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.Small);
     const isXsmallScreen = this.breakpointObserver.isMatched(
-      Breakpoints.XSmall
+      Breakpoints.XSmall,
     );
     const dialogWidth = isSmallScreen || isXsmallScreen ? '90vw' : '60%';
 
@@ -432,9 +404,6 @@ export class OperacionesDevolucionVehiculoPrestadoComponent {
         },
         error: (error: HttpErrorResponse) => {
           this.isLoadingChange = false;
-          this.openSnackbar(
-            'Error al devolver el vehículo. Inténtalo de nuevo más tarde.'
-          );
         },
       });
   }

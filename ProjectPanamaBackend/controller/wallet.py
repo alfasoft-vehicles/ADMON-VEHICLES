@@ -1,7 +1,7 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.encoders import jsonable_encoder
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, UploadFile, File
 from concurrent.futures import ThreadPoolExecutor
 from config.dbconnection import session
 from models.cartera import Cartera
@@ -18,15 +18,19 @@ from models.cxctiposrecargos import CXCTiposRecargos
 from models.permisosusuario import PermisosUsuario
 from models.cajarecaudos import CajaRecaudos
 from models.infoempresas import InfoEmpresas
+from models.yappy import Yappy
 from schemas.wallet import newSurcharge, Revenue, newRentReceipt
 from sqlalchemy import func
 from utils.panapass import get_txt_file, search_value_in_txt
 from utils.verify_values import verify_value
 from utils.cash_records import create_cash_record
 from utils.pdf import html2pdf_receipt
+from utils.phone import normalize_phone
 from datetime import datetime, timedelta
 import pytz
 import os
+import csv
+import io
 import jinja2
 import asyncio
 import tempfile
@@ -98,7 +102,7 @@ async def vehicle_and_driver_info(company_code: str, vehicle_number: str):
     ).first()
 
     if not information:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     txt_file_path = get_txt_file(company_code)
     if txt_file_path:
@@ -207,7 +211,7 @@ async def closing_date(company_code: str):
     date = db.query(Parametros.FEC_CIERRE).filter(Parametros.EMPRESA == company_code).first()
 
     if not date or not date.FEC_CIERRE:
-      return JSONResponse(content={"message": "No closing date found"}, status_code=404)
+      return JSONResponse(content={"message": "No se encontró fecha de cierre"}, status_code=404)
 
     response = {
       "date": date.FEC_CIERRE,
@@ -303,7 +307,7 @@ async def create_surcharge(data: newSurcharge):
     ).first()
 
     if not driver:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
 
     vehicle = db.query(Vehiculos).filter(
       Vehiculos.EMPRESA == data.company_code,
@@ -311,7 +315,7 @@ async def create_surcharge(data: newSurcharge):
     ).first()
 
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
 
     user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
     user = user.CODIGO if user else ""
@@ -432,7 +436,7 @@ async def verify_revenue_data(data: Revenue):
     ).first()
 
     if not driver:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
 
     vehicle = db.query(Vehiculos).filter(
       Vehiculos.EMPRESA == data.company_code,
@@ -440,7 +444,7 @@ async def verify_revenue_data(data: Revenue):
     ).first()
 
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
 
     debts = (db.query(Cartera.TIPO, func.sum(Cartera.SALDO).label('total_saldo')).filter(
       Cartera.EMPRESA == data.company_code,
@@ -534,7 +538,7 @@ async def create_rent_receipt(data: newRentReceipt):
     ).first()
 
     if not driver:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
 
     vehicle = db.query(Vehiculos).filter(
       Vehiculos.EMPRESA == data.company_code,
@@ -542,7 +546,7 @@ async def create_rent_receipt(data: newRentReceipt):
     ).first()
 
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
 
     rent_due = db.query(func.coalesce(func.sum(Cartera.SALDO), 0)).filter(
       Cartera.EMPRESA == data.company_code,
@@ -556,14 +560,14 @@ async def create_rent_receipt(data: newRentReceipt):
     rent_due = rent_due if rent_due is not None else 0
 
     if data.amount <= rent_due:
-      return JSONResponse(content={"message": "The amount must be greater than the total rent due."}, status_code=400)
+      return JSONResponse(content={"message": "El monto debe ser mayor que el total de renta adeudada."}, status_code=400)
 
     excess_amount = Decimal(data.amount) - rent_due
 
     daily_rent = vehicle.CUO_DIARIA or 0
 
     if daily_rent <= 0:
-      return JSONResponse(content={"message": "Daily rent amount is not set for the vehicle."}, status_code=400)
+      return JSONResponse(content={"message": "El monto de renta diaria no está configurado para el vehículo."}, status_code=400)
 
     user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
     user = user.CODIGO if user else ""
@@ -634,7 +638,7 @@ async def create_rent_receipt(data: newRentReceipt):
     db.commit()
 
     response = {
-      "message": "Rent receipts created successfully",
+      "message": "Recibos de renta creados exitosamente",
       "rent_due": rent_due,
       "excess_amount": excess_amount,
       "receipts": receipts
@@ -658,7 +662,7 @@ async def collect_revenue(data: Revenue):
     ).first()
 
     if not driver:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
 
     vehicle = db.query(Vehiculos).filter(
       Vehiculos.EMPRESA == data.company_code,
@@ -666,7 +670,7 @@ async def collect_revenue(data: Revenue):
     ).first()
 
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
 
     user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
     user = user.CODIGO if user else ""
@@ -855,7 +859,7 @@ async def collect_revenue(data: Revenue):
         ).first()
 
         if not surcharge_entry:
-          return JSONResponse(content={"message": f"Surcharge with ID {surcharge.id} not found"}, status_code=404)
+          return JSONResponse(content={"message": f"Recargo con ID {surcharge.id} no encontrado"}, status_code=404)
 
         current_balance = Decimal(str(surcharge_entry.SALDO or 0))
         applied_payment = min(current_balance, surcharge_payment)
@@ -907,7 +911,7 @@ async def generate_revenue_pdf(company_code: str, receipt_number: str):
     ).order_by(CajaRecaudos.TIPO).all()
 
     if not receipt_entries:
-      return JSONResponse(content={"message": "No entries found for the given receipt number"}, status_code=404)
+      return JSONResponse(content={"message": "No se encontraron registros para el número de recibo proporcionado."}, status_code=404)
 
     wallet_entries = db.query(Cartera).filter(
       Cartera.EMPRESA == company_code,
@@ -920,7 +924,7 @@ async def generate_revenue_pdf(company_code: str, receipt_number: str):
     ).first()
 
     if not driver:
-      return JSONResponse(content={"message": "Driver not found for the given receipt entries"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado para el recibo."}, status_code=404)
 
     vehicle = db.query(Vehiculos).filter(
       Vehiculos.EMPRESA == company_code,
@@ -928,7 +932,7 @@ async def generate_revenue_pdf(company_code: str, receipt_number: str):
     ).first()
 
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found for the given receipt entries"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado para el recibo."}, status_code=404)
 
     company = db.query(
       InfoEmpresas.NOMBRE, InfoEmpresas.NIT, InfoEmpresas.DIRECCION, 
@@ -1055,6 +1059,191 @@ async def generate_revenue_pdf(company_code: str, receipt_number: str):
 
     return response
 
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+YAPPY_COLUMN_MAP = {
+  'FECHA': 'FECHA',
+  'HORA': 'HORA',
+  'REFERENCIA': 'REFERENCIA',
+  'NOMBRE DEL CLIENTE': 'NOMBRE',
+  'CELULAR': 'CELULAR',
+  'COMENTARIO': 'COMENTARIO',
+  'ESTADO': 'ESTADO',
+  'PUNTO DE COBRO': 'PTO_COBRO',
+  'IDENTIFICADOR': 'IDENTIFICA',
+  'MOTIVO DE PAGO': 'MOTIVOPAGO',
+  'SUB-TOTAL': 'SUBTOTAL',
+  'PROPINA': 'PROPINA',
+  'DESCUENTO': 'DESCUENTO',
+  'IMPUESTO': 'IMPUESTO',
+  'TOTAL': 'TOTAL',
+  'ID GRUPO': 'IDGRUPO',
+  'ID CAJA': 'IDCAJA'
+}
+
+YAPPY_DECIMAL_FIELDS = ['SUBTOTAL', 'PROPINA', 'DESCUENTO', 'IMPUESTO', 'TOTAL']
+
+async def upload_yappy_csv(company_code: str, file: UploadFile = File(...)):
+  db = session()
+  try:
+    company_code = company_code.strip()
+    if not company_code or len(company_code) > 2:
+      return JSONResponse(content={"message": "company_code inválido"}, status_code=400)
+
+    if not file.filename or not file.filename.lower().endswith('.csv'):
+      return JSONResponse(content={"message": "El archivo debe tener extensión .csv"}, status_code=400)
+
+    raw_content = await file.read()
+
+    try:
+      text_content = raw_content.decode('utf-8-sig')
+    except UnicodeDecodeError:
+      text_content = raw_content.decode('latin-1')
+
+    reader = csv.DictReader(io.StringIO(text_content), delimiter=';')
+
+    if not reader.fieldnames:
+      return JSONResponse(content={"message": "El CSV está vacío o no tiene encabezados"}, status_code=400)
+
+    header_to_column = {
+      header: YAPPY_COLUMN_MAP[header.strip().upper()]
+      for header in reader.fieldnames
+      if header and header.strip().upper() in YAPPY_COLUMN_MAP
+    }
+
+    if 'REFERENCIA' not in header_to_column.values():
+      return JSONResponse(content={"message": "El CSV no tiene el formato de Yappy esperado"}, status_code=400)
+
+    inserted = 0
+    updated = 0
+    errors = []
+    warnings = []
+
+    for row_number, raw_row in enumerate(reader, start=2):
+      values = {'EMPRESA': company_code}
+
+      for header, column in header_to_column.items():
+        raw_value = (raw_row.get(header) or '').strip()
+
+        if column in YAPPY_DECIMAL_FIELDS:
+          if not raw_value:
+            values[column] = None
+            continue
+          try:
+            values[column] = Decimal(raw_value)
+          except InvalidOperation:
+            values[column] = None
+            warnings.append(f"Fila {row_number}: valor inválido en {column} ('{raw_value}'), se guardó vacío")
+          continue
+
+        if column == 'FECHA' and raw_value:
+          raw_value = raw_value.split()[-1]
+
+        max_length = Yappy.__table__.c[column].type.length
+        if len(raw_value) > max_length:
+          warnings.append(f"Fila {row_number}: {column} truncado a {max_length} caracteres")
+          raw_value = raw_value[:max_length]
+
+        values[column] = raw_value or None
+
+      has_reference = bool(values.get('REFERENCIA'))
+      values['REFERENCIA'] = values.get('REFERENCIA') or ''
+
+      try:
+        with db.begin_nested():
+          existing = None
+          if has_reference:
+            existing = db.query(Yappy).filter(
+              Yappy.EMPRESA == company_code,
+              Yappy.REFERENCIA == values['REFERENCIA']
+            ).first()
+
+          if existing:
+            for column, value in values.items():
+              setattr(existing, column, value)
+            db.flush()
+            updated += 1
+          else:
+            db.execute(Yappy.__table__.insert().values(**values))
+            inserted += 1
+      except Exception as row_error:
+        errors.append(f"Fila {row_number}: {str(row_error)}")
+
+    db.commit()
+
+    response = {
+      "message": "Carga de CSV procesada",
+      "inserted": inserted,
+      "updated": updated,
+      "warnings": warnings,
+      "errors": errors
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=201)
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def yappy_has_records():
+  db = session()
+  try:
+    exists = db.query(Yappy.REFERENCIA).first() is not None
+
+    response = {
+      "has_records": 1 if exists else 0
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def yappy_records(company_code: str):
+  db = session()
+  try:
+    drivers = db.query(
+      Conductores.CODIGO, Conductores.NOMBRE, Conductores.TELEFONO,
+      Conductores.CELULAR, Conductores.UND_NRO
+    ).filter(Conductores.EMPRESA == company_code).all()
+
+    drivers_by_phone = {}
+    for driver in drivers:
+      for phone in (driver.TELEFONO, driver.CELULAR):
+        phone = normalize_phone(phone)
+        if phone:
+          drivers_by_phone.setdefault(phone, {})[driver.CODIGO] = driver
+
+    records = db.query(Yappy).filter(Yappy.EMPRESA == company_code).all()
+
+    results = []
+    for record in records:
+      item = {column.name: getattr(record, column.name) for column in Yappy.__table__.columns}
+
+      matches = drivers_by_phone.get(normalize_phone(record.CELULAR, remove_country_code=True), {})
+
+      if len(matches) == 1:
+        driver = next(iter(matches.values()))
+        item['IDENTIFICA'] = driver.UND_NRO or item['IDENTIFICA']
+        item['NOMBRE'] = driver.NOMBRE or item['NOMBRE']
+        item['review'] = 0
+      else:
+        item['review'] = 1
+
+      results.append(item)
+
+    return JSONResponse(content=jsonable_encoder(results), status_code=200)
   except Exception as e:
     return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:

@@ -4,11 +4,6 @@
   </div>
 
   <div class="cr-search-section-wrapper" [formGroup]="searchForm">
-    <mat-progress-bar
-      mode="indeterminate"
-      *ngIf="isLoadingAutocompletes"
-    ></mat-progress-bar>
-
     <div
       *ngIf="!isLoadingAutocompletes"
       class="cr-search-controls"
@@ -101,6 +96,26 @@
       </div>
     </div>
 
+    <button
+      *ngIf="!hasData && !isLoadingAutocompletes"
+      class="cr-bulk-upload-btn"
+      matRipple
+      (click)="openBulkUploadDialog()"
+      [disabled]="isCheckingRecords"
+    >
+      <div class="cr-consult-icon-box cr-bg-orange-soft">
+        <mat-icon *ngIf="!isCheckingRecords" class="cr-text-orange-600"
+          >cloud_upload</mat-icon
+        >
+        <mat-icon *ngIf="isCheckingRecords" class="cr-text-orange-600 spin-icon"
+          >sync</mat-icon
+        >
+      </div>
+      <span class="cr-consult-btn-label">{{
+        isCheckingRecords ? "Verificando..." : "Carga Masiva"
+      }}</span>
+    </button>
+
     <div
       *ngIf="hasData && notificationMessage"
       class="cr-alert-warning mat-elevation-z2"
@@ -123,10 +138,6 @@
         <p class="cr-receipt-value-sm">{{ closingDateInfo?.time }}</p>
       </div>
     </div>
-  </div>
-
-  <div class="cr-search-section-wrapper" *ngIf="isLoading">
-    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
   </div>
 
   <div
@@ -570,12 +581,22 @@
             <button
               class="cr-consult-btn-main"
               matRipple
-              routerLink="/cash-register/bulk-upload"
+              (click)="openBulkUploadDialog()"
+              [disabled]="isCheckingRecords"
             >
               <div class="cr-consult-icon-box cr-bg-orange-soft">
-                <mat-icon class="cr-text-orange-600">cloud_upload</mat-icon>
+                <mat-icon *ngIf="!isCheckingRecords" class="cr-text-orange-600"
+                  >cloud_upload</mat-icon
+                >
+                <mat-icon
+                  *ngIf="isCheckingRecords"
+                  class="cr-text-orange-600 spin-icon"
+                  >sync</mat-icon
+                >
               </div>
-              <span class="cr-consult-btn-label">Carga Masiva</span>
+              <span class="cr-consult-btn-label">{{
+                isCheckingRecords ? "Verificando..." : "Carga Masiva"
+              }}</span>
             </button>
             <button class="cr-consult-btn-main" matRipple>
               <div class="cr-consult-icon-box cr-bg-green-soft">

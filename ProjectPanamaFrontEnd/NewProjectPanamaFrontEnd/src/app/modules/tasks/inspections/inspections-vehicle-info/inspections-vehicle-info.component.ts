@@ -41,7 +41,7 @@ export class InspectionsVehicleInfoComponent implements OnInit {
     private apiService: ApiService,
     private snackBar: MatSnackBar,
     private clipboard: Clipboard,
-    private jwtService: JwtService
+    private jwtService: JwtService,
   ) {}
 
   ngOnInit(): void {
@@ -65,11 +65,10 @@ export class InspectionsVehicleInfoComponent implements OnInit {
         this.isLoading = false;
       },
       (error) => {
-        this.openSnackbar(
-          'Error al obtener la información, vuelve a intentarlo más tarde.'
-        );
+        console.error('Error fetching vehicle info:', error);
+        this.isLoading = false;
         this.closeModal();
-      }
+      },
     );
   }
 

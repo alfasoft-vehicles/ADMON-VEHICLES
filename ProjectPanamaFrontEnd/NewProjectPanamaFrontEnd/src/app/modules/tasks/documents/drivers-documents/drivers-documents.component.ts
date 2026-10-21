@@ -116,21 +116,9 @@ export class DriversDocumentsComponent implements OnInit {
           this.documentsInfo = data; // Asignamos los datos a la propiedad
         },
         error: (err: HttpErrorResponse) => {
-          let snackbarMessage = '';
-
-          if (err.status === 404) {
-            snackbarMessage =
-              'No se encontraron documentos para el conductor seleccionado. Intenta con otro.';
-          } else {
-            snackbarMessage =
-              'Ocurrió un error inesperado. Por favor, intenta más tarde.';
-          }
-
-          this.openSnackbar(snackbarMessage);
-
           this.loadingDocumentsInfoDrivers = false;
-          this.selectedDriver = false; // Corrected from selectedVehicle to selectedDriver
-          this.documentsInfo = []; // Limpiamos los datos en caso de error
+          this.selectedDriver = false;
+          this.documentsInfo = [];
         },
       });
   }

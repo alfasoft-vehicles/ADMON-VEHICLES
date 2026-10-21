@@ -42,12 +42,32 @@
       </div>
     </div>
 
-    <div *ngIf="isUploading" class="upload-status">
-      <span>{{ uploadStatus }}</span>
-      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <div *ngIf="isUploading" class="upload-status-container">
+      <div class="upload-spinner-box">
+        <mat-progress-spinner
+          mode="indeterminate"
+          [diameter]="36"
+          [strokeWidth]="3"
+          color="primary"
+        ></mat-progress-spinner>
+        <div class="upload-spinner-center">
+          <mat-icon>cloud_upload</mat-icon>
+        </div>
+      </div>
+      <div class="upload-text-box">
+        <span class="upload-title">{{ uploadStatus }}</span>
+        <span class="upload-subtitle"
+          >Guardando fotografías en el servidor...</span
+        >
+      </div>
+      <div class="upload-bar-wrapper">
+        <mat-progress-bar
+          mode="indeterminate"
+          color="primary"
+        ></mat-progress-bar>
+      </div>
     </div>
   </mat-card-content>
-
-  </mat-card>
+</mat-card>
 
 <canvas #canvasElement class="hidden"></canvas>

@@ -12,7 +12,7 @@ h2 {
 .info-container {
   width: 100%;
   flex: 1;
-  min-width: 0; 
+  min-width: 0;
 }
 
 .info-container h3 {
@@ -39,7 +39,7 @@ h2 {
   box-sizing: border-box;
   overflow-wrap: break-word;
   max-height: 60vh;
-  overflow-y: auto; 
+  overflow-y: auto;
 }
 
 .compact-header {
@@ -49,7 +49,7 @@ h2 {
   margin-bottom: 12px;
   border-bottom: 1px solid #dee2e6;
   padding-bottom: 8px;
-  position: sticky; 
+  position: sticky;
   top: 0;
   background-color: #f8f9fa;
   z-index: 1;
@@ -173,9 +173,9 @@ h2 {
   /* Añadimos esto para que en móvil el layout se apile correctamente */
   .main-content-container {
     flex-direction: column;
-    max-height: none; 
+    max-height: none;
   }
-  
+
   .inputs-container {
     flex-direction: column;
     gap: 0;
@@ -187,7 +187,7 @@ h2 {
   }
 
   .mat-mdc-option {
-    padding-top: 10px;  
+    padding-top: 10px;
     padding-bottom: 10px;
     height: auto;
   }
@@ -204,7 +204,7 @@ h2 {
     min-width: unset;
     margin-right: 0;
     margin-bottom: 16px;
-    max-height: none; 
+    max-height: none;
     overflow-y: visible;
   }
 
@@ -232,4 +232,146 @@ h2 {
     word-break: break-word;
     overflow-wrap: anywhere;
   }
+}
+
+/* Dialog Loader Styles */
+.dialog-loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 20px 28px 20px;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.spinner-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  width: 60px;
+  height: 60px;
+}
+
+.custom-spinner {
+  filter: drop-shadow(0 2px 8px rgba(2, 132, 199, 0.25));
+}
+
+.spinner-center-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0284c7;
+  animation: pulse-icon 1.8s ease-in-out infinite;
+}
+
+.spinner-center-icon mat-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+@keyframes pulse-icon {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+.loader-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.loader-title {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.loader-message {
+  margin: 0;
+  font-size: 0.86rem;
+  color: #64748b;
+  max-width: 320px;
+  line-height: 1.4;
+}
+
+.progress-bar-wrapper {
+  width: 100%;
+  max-width: 240px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Inline Loader Styles */
+.dialog-inline-loader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin: 8px 0 14px 0;
+}
+
+.spinner-wrapper-small {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.spinner-center-icon-small {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0284c7;
+}
+
+.spinner-center-icon-small mat-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+}
+
+.inline-loader-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.inline-loader-title {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.inline-loader-subtitle {
+  font-size: 0.74rem;
+  color: #64748b;
 }

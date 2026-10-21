@@ -77,7 +77,7 @@ export class InspectionsGenerateQrDialogComponent implements OnInit {
     private apiService: ApiService,
     private jwtService: JwtService,
     private snackBar: MatSnackBar,
-    private dialogRef: MatDialogRef<InspectionsGenerateQrDialogComponent>
+    private dialogRef: MatDialogRef<InspectionsGenerateQrDialogComponent>,
   ) {}
 
   ngOnInit() {
@@ -96,17 +96,15 @@ export class InspectionsGenerateQrDialogComponent implements OnInit {
         this.options = response;
         this.filteredOptions = this.vehicles.valueChanges.pipe(
           startWith(''),
-          map((value) => this._filter(value || ''))
+          map((value) => this._filter(value || '')),
         );
         this.isLoadingVehicles = false;
       },
       (error) => {
         console.error('Error fetching vehicles:', error);
-        this.openSnackbar(
-          'Error al obtener las unidades. Inténtalo de nuevo más tarde.'
-        );
+        this.isLoadingVehicles = false;
         this.closeDialog();
-      }
+      },
     );
   }
 
@@ -150,7 +148,7 @@ export class InspectionsGenerateQrDialogComponent implements OnInit {
     // Opcional: Forzar la actualización del filtro
     this.filteredOptions = this.vehicles.valueChanges.pipe(
       startWith(''),
-      map((value) => this._filter(value || ''))
+      map((value) => this._filter(value || '')),
     );
   }
 
@@ -178,13 +176,10 @@ export class InspectionsGenerateQrDialogComponent implements OnInit {
           },
           (error) => {
             console.error('Error fetching vehicle info:', error);
-            this.openSnackbar(
-              'Error al obtener la información. Inténtalo de nuevo con otra unidad.'
-            );
             this.isLoadingvehicleQRInfo = false;
             this.resetInfo();
             this.resetVehicleAutocomplete();
-          }
+          },
         );
     }
   }
@@ -197,16 +192,16 @@ export class InspectionsGenerateQrDialogComponent implements OnInit {
         option.placa.toLowerCase().includes(filterValue) ||
         option.unidad.toLowerCase().includes(filterValue) ||
         option.propietario.toLowerCase().includes(filterValue) ||
-        option.nro_cupo.toLowerCase().includes(filterValue)
+        option.nro_cupo.toLowerCase().includes(filterValue),
     );
   }
 
   generateQR() {
-    if(this.vehicleQRInfo.vehicle_number === ''){
+    if (this.vehicleQRInfo.vehicle_number === '') {
       this.openSnackbar('Por favor, seleccione una unidad para continuar.');
       return;
     }
-    
+
     const company = this.getCompany();
     const vehicleNumber = this.vehicleQRInfo.vehicle_number;
 

@@ -150,7 +150,6 @@ export class TakePhotosRepairComponent implements OnInit, OnDestroy {
             err.error?.detail ||
             'Error al enviar las fotos. Inténtalo de nuevo.';
           console.error('Error en la subida:', err);
-          this.openSnackbar('Error al subir las fotos. Inténtalo de nuevo.');
           return throwError(err);
         }),
         finalize(() => {

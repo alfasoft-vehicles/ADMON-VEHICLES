@@ -61,9 +61,6 @@ export class InfoVehicleRepairDialogComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error fetching vehicle repair details:', error);
-          this.openSnackbar(
-            'Error al obtener los detalles del vehículo a reparar.',
-          );
           this.closeDialog('');
         },
       });
@@ -82,7 +79,6 @@ export class InfoVehicleRepairDialogComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error fetching PDF URL:', error);
-          this.openSnackbar('Error al obtener el documento.');
         },
       });
   }

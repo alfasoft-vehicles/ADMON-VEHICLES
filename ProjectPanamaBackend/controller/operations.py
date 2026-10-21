@@ -74,7 +74,7 @@ async def get_vehicle_operation(company_code: str, vehicle_number: str):
     ).first()
 
     if not vehicle_operations:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
 
     outstanding_balance = db.query(
       func.sum(Cartera.SALDO).label('outstanding balance')
@@ -123,7 +123,7 @@ async def get_driver_operation(company_code: str, driver_number: str):
     ).first()
 
     if not driver_operations:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
     
     driver = {
       'codigo': driver_number,
@@ -153,18 +153,18 @@ async def delivery_vehicle_driver(company_code: str, data: DeliveryVehicleDriver
   try:
     vehicle = db.query(Vehiculos).filter(Vehiculos.EMPRESA == company_code, Vehiculos.NUMERO == data.vehicle_number).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     driver = db.query(Conductores).filter(Conductores.EMPRESA == company_code, Conductores.CODIGO == data.driver_number).first()
     if not driver:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
     
     if(driver.ESTADO != '1' and 
        driver.UND_NRO != '' and 
        vehicle.ESTADO != '06' and 
        vehicle.CON_CUPO != 1 and
        vehicle.CONDUCTOR != ''):
-      return JSONResponse(content={"message": "Driver already has a vehicle assigned"}, status_code=400)
+      return JSONResponse(content={"message": "El conductor ya tiene un vehículo asignado"}, status_code=400)
     
     vehicle.CONDUCTOR = driver.CODIGO
     vehicle.ESTADO = '01'
@@ -174,7 +174,7 @@ async def delivery_vehicle_driver(company_code: str, data: DeliveryVehicleDriver
 
     db.commit()
 
-    return JSONResponse(content={"message": "Vehicle delivered successfully"}, status_code=200)
+    return JSONResponse(content={"message": "Vehículo entregado con éxito"}, status_code=200)
   
   except Exception as e:
     db.rollback()
@@ -190,19 +190,19 @@ async def vehicle_delivery_info(vehicle_number: str):
   try:
     vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == vehicle_number).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     driver = db.query(Conductores).filter(Conductores.CODIGO == vehicle.CONDUCTOR).first()
     if not driver:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
     
     owner = db.query(Propietarios).filter(Propietarios.CODIGO == vehicle.PROPI_IDEN).first()
     if not owner:
-      return JSONResponse(content={"message": "Owner not found"}, status_code=404)
+      return JSONResponse(content={"message": "Propietario no encontrado"}, status_code=404)
     
     central = db.query(Centrales).filter(Centrales.CODIGO == vehicle.CENTRAL, Centrales.EMPRESA == vehicle.EMPRESA).first()
     if not central:
-      return JSONResponse(content={"message": "Central not found"}, status_code=404)
+      return JSONResponse(content={"message": "Central no encontrada"}, status_code=404)
     
     state = db.query(Estados).filter(Estados.CODIGO == vehicle.ESTADO, Estados.EMPRESA == vehicle.EMPRESA).first()
 
@@ -393,23 +393,23 @@ async def generate_contract(vehicle_number: str, data: GenerateContractData):
   try:
     vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == vehicle_number, Vehiculos.EMPRESA == data.company_code).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     driver = db.query(Conductores).filter(Conductores.CODIGO == vehicle.CONDUCTOR).first()
     if not driver:
-      return JSONResponse(content={"message": "Driver not found"}, status_code=404)
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
     
     owner = db.query(Propietarios).filter(Propietarios.CODIGO == vehicle.PROPI_IDEN).first()
     if not owner:
-      return JSONResponse(content={"message": "Owner not found"}, status_code=404)
+      return JSONResponse(content={"message": "Propietario no encontrado"}, status_code=404)
     
     central = db.query(Centrales).filter(Centrales.CODIGO == vehicle.CENTRAL, Centrales.EMPRESA == Vehiculos.EMPRESA).first()
     if not central:
-      return JSONResponse(content={"message": "Central not found"}, status_code=404)
+      return JSONResponse(content={"message": "Central no encontrada"}, status_code=404)
     
     civil_status = db.query(EstadoCivil).filter(EstadoCivil.CODIGO == driver.ESTA_CIVIL).first()
     if not civil_status:
-      return JSONResponse(content={"message": "Civil status not found"}, status_code=404)
+      return JSONResponse(content={"message": "Estado civil no encontrado"}, status_code=404)
     
     base_path = os.path.join(docs_path, 'conductores', vehicle.EMPRESA, driver.CODIGO)
     contract_path = os.path.join(base_path, "docu07.pdf")
@@ -797,11 +797,11 @@ async def change_yard(data: ChangeYard):
   try:
     vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == data.vehicle_number, Vehiculos.EMPRESA == data.company_code).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     yard = db.query(Patios).filter(Patios.CODIGO == data.yard_code, Patios.EMPRESA == data.company_code).first()
     if not yard:
-      return JSONResponse(content={"message": "Yard not found"}, status_code=404)
+      return JSONResponse(content={"message": "Patio no encontrado"}, status_code=404)
 
     vehicle.PATIO = data.yard_code
     vehicle.NOMPATIO = yard.NOMBRE
@@ -823,15 +823,15 @@ async def change_vehicle_state(data: ChangeVehicleState):
   try:
     vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == data.vehicle_number, Vehiculos.EMPRESA == data.company_code).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     state = db.query(Estados).filter(Estados.CODIGO == data.state_code, Estados.EMPRESA == data.company_code).first()
     if not state:
-      return JSONResponse(content={"message": "State not found"}, status_code=404)
+      return JSONResponse(content={"message": "Estado no encontrado"}, status_code=404)
     
     yard = db.query(Patios).filter(Patios.CODIGO == data.yard_code, Patios.EMPRESA == data.company_code).first()
     if not yard:
-      return JSONResponse(content={"message": "Yard not found"}, status_code=404)
+      return JSONResponse(content={"message": "Patio no encontrado"}, status_code=404)
 
     vehicle.ESTADO = data.state_code
     vehicle.ABREVIADO = state.ABREVIADO
@@ -856,7 +856,7 @@ async def vehicle_mileage(company_code: str, vehicle_number: str):
   try:
     vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == vehicle_number, Vehiculos.EMPRESA == company_code).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     mileage = {
       'mileage': vehicle.KILOMETRAJ
@@ -876,7 +876,7 @@ async def update_mileage(data: VehicleMileage):
   try:
     vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == data.vehicle_number, Vehiculos.EMPRESA == data.company_code).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     vehicle.KILO_ANTES = vehicle.KILOMETRAJ
     vehicle.KILOMETRAJ = data.mileage
@@ -1172,6 +1172,8 @@ async def driver_settlement(data: DriverSettlement):
   try:
 
     driver = db.query(Conductores).filter(Conductores.EMPRESA == data.company_code, Conductores.CODIGO == data.driver_number).first()
+    if not driver:
+      return JSONResponse(content={"message": "Conductor no encontrado"}, status_code=404)
 
     user = db.query(PermisosUsuario).filter(PermisosUsuario.CODIGO == data.user).first()
     user = user.NOMBRE if user else ""

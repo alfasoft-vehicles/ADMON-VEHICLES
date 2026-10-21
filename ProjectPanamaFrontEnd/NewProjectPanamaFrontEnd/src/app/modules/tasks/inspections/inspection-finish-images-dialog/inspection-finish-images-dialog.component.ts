@@ -1,7 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ApiService } from 'src/app/services/api.service';
 import { DocumentsService } from 'src/app/services/documents.service';
 
 // Interfaz para los datos que recibirá el diálogo
@@ -36,7 +35,7 @@ export class InspectionFinishImagesDialogComponent {
     private documentsService: DocumentsService,
     private snackBar: MatSnackBar,
     public dialogRef: MatDialogRef<InspectionFinishImagesDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: InspectionImagesDialogData
+    @Inject(MAT_DIALOG_DATA) public data: InspectionImagesDialogData,
   ) {}
 
   // Ir a la imagen anterior
@@ -126,7 +125,7 @@ export class InspectionFinishImagesDialogComponent {
   resetZoom(): void {
     // Resetear al zoom inicial (que puede ser diferente de 1 para imágenes verticales)
     const imgElement = document.querySelector(
-      '.inspection-image'
+      '.inspection-image',
     ) as HTMLImageElement;
     if (imgElement && imgElement.complete) {
       this.adjustInitialZoom(imgElement);
@@ -230,7 +229,7 @@ export class InspectionFinishImagesDialogComponent {
   // Obtener el zoom inicial ideal para la imagen actual
   private getInitialZoom(): number {
     const imgElement = document.querySelector(
-      '.inspection-image'
+      '.inspection-image',
     ) as HTMLImageElement;
     if (!imgElement || !imgElement.complete) return 1;
 

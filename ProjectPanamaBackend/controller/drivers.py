@@ -263,7 +263,7 @@ async def conductores_detalles(company_code: str, user_code: str):
     
     return response
   except Exception as e:
-    return JSONResponse(content={"message": str(e)})
+    return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
       db.close()
 

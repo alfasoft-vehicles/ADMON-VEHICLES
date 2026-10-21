@@ -15,8 +15,6 @@ export class HomeUsersComponent {
 
   options: any[] = [];
 
-  isAdmin: boolean = false;
-
   logoutIcon: string = '../../../../assets/icons/logout.svg';
   rightIcon: string = '../../../../assets/icons/rightArrow.svg';
 
@@ -45,7 +43,7 @@ export class HomeUsersComponent {
     // private apiService: ApiService,
     private router: Router,
     private globalStatesService: GlobalStatesService,
-    public dialog: MatDialog
+    public dialog: MatDialog,
   ) {
     effect(() => {
       this.infoCompanyVisible = this.globalStatesService.displayInfoCompany();
@@ -59,10 +57,7 @@ export class HomeUsersComponent {
   }
 
   obtenerUsuario() {
-    this.permisos = this.jwtService.getUserData();
-    this.isAdmin = this.jwtService.isAdmin();
-
-    this.convertirValoresBooleanos(this.permisos);
+    this.permisos = this.jwtService.getUserPermissions();
 
     this.options = [
       {
@@ -214,29 +209,15 @@ export class HomeUsersComponent {
     // this.videoPlayer.nativeElement.muted = true;
   }
 
-  convertirValoresBooleanos(obj: any) {
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        const value = obj[key];
-        if (value === 'T') {
-          obj[key] = true;
-        } else if (value === 'F' || value === null) {
-          obj[key] = false;
-        }
-      }
-    }
-  }
-
   openDialogCobros() {
     const dialogRef = this.dialog.open(CobrosComponent, {
       minWidth: 'min(600px, 90vw)',
-      maxHeight: '100vh'
-      }
-    );
+      maxHeight: '100vh',
+    });
 
     dialogRef.afterClosed().subscribe((result) => {
-      if(result){
-         this.router.navigate(['/cobros'])
+      if (result) {
+        this.router.navigate(['/cobros']);
       }
     });
   }

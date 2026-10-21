@@ -100,9 +100,6 @@ export class OperacionesLiquidacionCuentaComponent implements OnInit {
         },
         error: (error: HttpErrorResponse) => {
           this.isLoading = false;
-          this.openSnackbar(
-            'Error al obtener la información de la liquidación.',
-          );
           this.close();
         },
       });
@@ -138,9 +135,7 @@ export class OperacionesLiquidacionCuentaComponent implements OnInit {
         next: (data: OtherExpensesItem[]) => {
           this.otherExpensesItems = this.transformBackendExpenses(data);
         },
-        error: (error: HttpErrorResponse) => {
-          this.openSnackbar('Error al obtener los items de CXP.');
-        },
+        error: (error: HttpErrorResponse) => {},
       });
   }
 
@@ -214,7 +209,9 @@ export class OperacionesLiquidacionCuentaComponent implements OnInit {
 
   accept(): void {
     if (!this.hasPrinted) {
-      this.openSnackbar('Debes imprimir la liquidación de cuenta primero para continuar.');
+      this.openSnackbar(
+        'Debes imprimir la liquidación de cuenta primero para continuar.',
+      );
       return;
     }
     this.dialogRef.close({

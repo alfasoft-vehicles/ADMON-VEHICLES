@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   width: 100%;
@@ -24,7 +25,31 @@ html, body {
 }
 
 .error-message {
-  color: red;
+  color: #b3261e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 720px;
+  margin: auto;
+}
+
+.error-message .error-icon {
+  font-size: 48px;
+}
+
+.error-message .error-title {
+  margin: 0;
+  font-size: 1.2em;
+  font-weight: 600;
+}
+
+.error-message .error-detail {
+  margin: 0;
+  font-size: 0.9em;
+  color: #333;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .pdf-iframe {
@@ -66,7 +91,8 @@ html, body {
   line-height: 1; /* Ayuda a la alineación vertical del ícono */
 }
 
-.download-button .option-text { /* Más específico para el p dentro del botón */
+.download-button .option-text {
+  /* Más específico para el p dentro del botón */
   /* flex-grow: 1; /* No es necesario si el botón se ajusta al contenido */
   /* text-align: center; /* No es necesario si el botón usa justify-content: center */
   margin: 0; /* Elimina márgenes por defecto del párrafo */

@@ -41,7 +41,7 @@ interface vehiclePhotoInfo {
 @Component({
   selector: 'app-take-vehicle-photo',
   templateUrl: './take-vehicle-photo.component.html',
-  styleUrls: ['./take-vehicle-photo.component.css']
+  styleUrls: ['./take-vehicle-photo.component.css'],
 })
 export class TakeVehiclePhotoComponent implements OnInit {
   @ViewChild(CameraComponent)
@@ -83,7 +83,7 @@ export class TakeVehiclePhotoComponent implements OnInit {
     private apiService: ApiService,
     private jwtService: JwtService,
     private snackBar: MatSnackBar,
-    private dialogRef: MatDialogRef<TakeVehiclePhotoComponent>
+    private dialogRef: MatDialogRef<TakeVehiclePhotoComponent>,
   ) {}
 
   ngOnInit() {
@@ -102,17 +102,14 @@ export class TakeVehiclePhotoComponent implements OnInit {
         this.options = response;
         this.filteredOptions = this.vehicles.valueChanges.pipe(
           startWith(''),
-          map((value) => this._filter(value || ''))
+          map((value) => this._filter(value || '')),
         );
         this.isLoadingVehicles = false;
       },
       (error) => {
         console.error('Error fetching vehicles:', error);
-        this.openSnackbar(
-          'Error al obtener las unidades. Inténtalo de nuevo más tarde.'
-        );
         this.closeDialog();
-      }
+      },
     );
   }
 
@@ -145,7 +142,7 @@ export class TakeVehiclePhotoComponent implements OnInit {
       driver_address: '',
       has_signature: 0,
       has_picture: 0,
-      has_vehicle_photo: 0
+      has_vehicle_photo: 0,
     };
     this.drivers.setValue('');
   }
@@ -158,7 +155,7 @@ export class TakeVehiclePhotoComponent implements OnInit {
     // Opcional: Forzar la actualización del filtro
     this.filteredOptions = this.vehicles.valueChanges.pipe(
       startWith(''),
-      map((value) => this._filter(value || ''))
+      map((value) => this._filter(value || '')),
     );
   }
 
@@ -186,13 +183,10 @@ export class TakeVehiclePhotoComponent implements OnInit {
           },
           (error) => {
             console.error('Error fetching vehicle info:', error);
-            this.openSnackbar(
-              'Error al obtener la información. Inténtalo de nuevo con otra unidad.'
-            );
             this.isLoadingvehiclePhotoInfo = false;
             this.resetInfo();
             this.resetVehicleAutocomplete();
-          }
+          },
         );
     }
   }
@@ -205,7 +199,7 @@ export class TakeVehiclePhotoComponent implements OnInit {
         option.placa.toLowerCase().includes(filterValue) ||
         option.unidad.toLowerCase().includes(filterValue) ||
         option.propietario.toLowerCase().includes(filterValue) ||
-        option.nro_cupo.toLowerCase().includes(filterValue)
+        option.nro_cupo.toLowerCase().includes(filterValue),
     );
   }
 
@@ -230,9 +224,8 @@ export class TakeVehiclePhotoComponent implements OnInit {
         },
         (error) => {
           console.error('Error saving photo:', error);
-          this.openSnackbar('Error al guardar la foto. Inténtalo de nuevo.');
           this.closeDialog();
-        }
+        },
       );
     }
   }

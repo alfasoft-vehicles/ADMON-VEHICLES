@@ -10,7 +10,7 @@ import { OptionsDocumentsDialogComponent } from 'src/app/modules/tasks/documents
 @Component({
   selector: 'app-toolbar',
   templateUrl: './toolbar.component.html',
-  styleUrls: ['./toolbar.component.css']
+  styleUrls: ['./toolbar.component.css'],
 })
 export class ToolbarComponent implements OnInit {
   @Output() menuClick = new EventEmitter<void>();
@@ -19,40 +19,20 @@ export class ToolbarComponent implements OnInit {
   ownerView: boolean = false;
 
   constructor(
-    private jwtService: JwtService, 
-    private apiService: ApiService, 
+    private jwtService: JwtService,
+    private apiService: ApiService,
     private router: Router,
     private dialog: MatDialog,
-    private breakpointObserver: BreakpointObserver
-    ) {}
+    private breakpointObserver: BreakpointObserver,
+  ) {}
 
   ngOnInit() {
     this.getUser();
   }
 
   getUser() {
-    this.permissions = this.jwtService.getUserData(); // getUserData() ahora es la fuente de verdad.
-    // this.imgUser = this.permissions.foto; // Cuando se tengan las rutas de las imágenes
-    this.convertBooleanValues(this.permissions);
-    // this.subscribirEventosDeRuta();
-  }
-
-  convertBooleanValues(obj: any) {
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        const value = obj[key];
-        if (value === 'T') {
-          obj[key] = true;
-        } else if (value === 'F' || value === null) {
-          obj[key] = false;
-        }
-      }
-    }
-
-    if (
-      this.permissions.opcion16 === true &&
-      !this.jwtService.isAdmin()
-    ) {
+    this.permissions = this.jwtService.getUserPermissions();
+    if (this.permissions?.opcion16 === true) {
       this.ownerView = true;
     }
   }
@@ -61,22 +41,18 @@ export class ToolbarComponent implements OnInit {
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
     const dialogWidth = isSmallScreen ? '90vw' : '60%';
 
-    const dialogRef = this.dialog.open(InfoCompanyComponent,
-      {
-        width: dialogWidth,
-      }
-    );
+    const dialogRef = this.dialog.open(InfoCompanyComponent, {
+      width: dialogWidth,
+    });
   }
 
   openDialogDocuments(): void {
     const isSmallScreen = this.breakpointObserver.isMatched(Breakpoints.XSmall);
     const dialogWidth = isSmallScreen ? '90vw' : '60%';
 
-    const dialogRef = this.dialog.open(OptionsDocumentsDialogComponent,
-      {
-        width: dialogWidth,
-      }
-    );
+    const dialogRef = this.dialog.open(OptionsDocumentsDialogComponent, {
+      width: dialogWidth,
+    });
   }
 
   onMenuClick() {
@@ -84,14 +60,14 @@ export class ToolbarComponent implements OnInit {
   }
 
   logout(): void {
-    this.jwtService.logout(); 
+    this.jwtService.logout();
     this.apiService.postData('logout', {}).subscribe(
       (response) => {
         this.router.navigate(['/login']);
       },
       (error) => {
         console.error(error);
-      }
+      },
     );
   }
 }

@@ -81,7 +81,7 @@ async def get_collection_accounts(companies_list: list):
                         ).all()
     
     if not collectionAccounts:
-      return JSONResponse(content=jsonable_encoder({'message': 'No collection accounts found'}), status_code=404)
+      return JSONResponse(content=jsonable_encoder({'message': 'No se encontraron cuentas de cobro'}), status_code=404)
     
     conductor_placa_set = {(collectionAccount.conductores_codigo, collectionAccount.vehiculos_numero) for collectionAccount in collectionAccounts}
 
@@ -223,7 +223,7 @@ async def download_collection_accounts(companies_list: list):
                         ).all()
     
     if not collectionAccounts:
-      return JSONResponse(content=jsonable_encoder({'message': 'No collection accounts found'}), status_code=404)
+      return JSONResponse(content=jsonable_encoder({'message': 'No se encontraron cuentas de cobro'}), status_code=404)
     
     conductor_placa_set = {(collectionAccount.conductores_codigo, collectionAccount.vehiculos_numero) for collectionAccount in collectionAccounts}
 
@@ -374,7 +374,7 @@ async def collection_accounts_pdf(companies_list):
                         ).all()
     
     if not collectionAccounts:
-      return JSONResponse(content=jsonable_encoder({'message': 'No collection accounts found'}), status_code=404)
+      return JSONResponse(content=jsonable_encoder({'message': 'No se encontraron cuentas de cobro'}), status_code=404)
     
     conductor_placa_set = {(collectionAccount.conductores_codigo, collectionAccount.vehiculos_numero) for collectionAccount in collectionAccounts}
 
@@ -453,11 +453,7 @@ async def collection_accounts_pdf(companies_list):
     fecha = now_in_panama.strftime("%d/%m/%Y")
     hora_actual = now_in_panama.strftime("%I:%M:%S %p")
 
-    user_admin = os.getenv("USER_ADMIN")
-    if companies_list.usuario == user_admin:
-      usuario = "Administrador"
-    else:
-      usuario = companies_list.usuario
+    usuario = companies_list.usuario
 
     titulo = 'Cobros'
 

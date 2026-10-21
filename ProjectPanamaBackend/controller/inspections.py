@@ -57,7 +57,7 @@ async def inspections_info_all(data: InspectionInfo, company_code: str):
     inspections = db.query(Inspecciones).filter(Inspecciones.EMPRESA == company_code, Inspecciones.FECHA >= yesterday).order_by(Inspecciones.FECHA.desc(), Inspecciones.HORA.desc()).all()
 
     if not inspections:
-      return JSONResponse(content={"message": "No inspections found"}, status_code=404)
+      return JSONResponse(content={"message": "No se encontraron inspecciones"}, status_code=404)
 
     await update_expired_inspections(db, inspections_list=inspections)
 
@@ -106,7 +106,7 @@ async def inspections_info_all(data: InspectionInfo, company_code: str):
       })
 
     if not inspections_data:
-      return JSONResponse(content={"message": "No inspections found"}, status_code=404)
+      return JSONResponse(content={"message": "No se encontraron inspecciones"}, status_code=404)
     return JSONResponse(content=jsonable_encoder(inspections_data), status_code=200)
   except Exception as e:
     db.rollback()
@@ -139,7 +139,7 @@ async def inspections_info(data: InspectionInfo, company_code: str):
     inspections = db.query(Inspecciones).filter(*filters).order_by(Inspecciones.FECHA.desc(), Inspecciones.HORA.desc()).all()
 
     if not inspections:
-      return JSONResponse(content={"message": "No inspections found"}, status_code=404)
+      return JSONResponse(content={"message": "No se encontraron inspecciones"}, status_code=404)
 
     await update_expired_inspections(db, inspections_list=inspections)
 
@@ -188,7 +188,7 @@ async def inspections_info(data: InspectionInfo, company_code: str):
       })
 
     if not inspections_data:
-      return JSONResponse(content={"message": "No inspections found"}, status_code=404)
+      return JSONResponse(content={"message": "No se encontraron inspecciones"}, status_code=404)
     return JSONResponse(content=jsonable_encoder(inspections_data), status_code=200)
   except Exception as e:
     db.rollback()
@@ -319,7 +319,7 @@ async def report_inspections(data, company_code: str):
     inspections = db.query(Inspecciones).filter(*filters).order_by(Inspecciones.FECHA.desc(), Inspecciones.HORA.desc()).all()
 
     if not inspections:
-      return JSONResponse(content={"message": "No inspections found"}, status_code=404)
+      return JSONResponse(content={"message": "No se encontraron inspecciones"}, status_code=404)
 
     await update_expired_inspections(db, inspections_list=inspections)
 
@@ -466,7 +466,7 @@ async def inspection_types(company_code: str):
     inspection_types = db.query(TiposInspeccion).filter(TiposInspeccion.EMPRESA == company_code).all()
 
     if not inspection_types:
-      return JSONResponse(content={"message": "Inspection types not found"}, status_code=404)
+      return JSONResponse(content={"message": "No se encontraron tipos de inspección"}, status_code=404)
 
     result = [{"id": inspection_type.CODIGO, "nombre": inspection_type.NOMBRE, "tipo": inspection_type.TIPO} for inspection_type in inspection_types]
 
@@ -483,7 +483,7 @@ async def new_inspection_data(company_code: str, vehicle_number: str):
   try:
     vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == vehicle_number, Vehiculos.EMPRESA == company_code).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     driver = db.query(Conductores).filter(Conductores.CODIGO == vehicle.CONDUCTOR).first()
 
@@ -745,7 +745,7 @@ async def inspection_details(inspection_id: int):
   try:
     inspection = db.query(Inspecciones).filter(Inspecciones.ID == inspection_id).first()
     if not inspection:
-      return JSONResponse(content={"message": "Inspection not found"}, status_code=404)
+      return JSONResponse(content={"message": "Inspección no encontrada"}, status_code=404)
 
     await update_expired_inspections(db, inspections_list=[inspection])
 
@@ -833,7 +833,7 @@ async def generate_inspection_pdf(data: ReportInspection, company_code: str):
   try:
     inspection = db.query(Inspecciones).filter(Inspecciones.ID == data.inspection_id, Inspecciones.EMPRESA == company_code).first()
     if not inspection:
-      return JSONResponse(content={"message": "Inspection not found"}, status_code=404)
+      return JSONResponse(content={"message": "Inspección no encontrada"}, status_code=404)
     
     inspections_types = db.query(TiposInspeccion).filter(TiposInspeccion.EMPRESA == inspection.EMPRESA).all()
     inspections_dict = {insp.CODIGO: insp.NOMBRE for insp in inspections_types}
@@ -1008,7 +1008,7 @@ async def vehicle_info(company_code: str, vehicle_number: str):
     inspections = db.query(Inspecciones).filter(Inspecciones.UNIDAD == vehicle_number, Inspecciones.EMPRESA == company_code).all()
     
     if not vehicle:
-       return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+       return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
 
     info = {
       'vehicle_number': vehicle.NUMERO,
@@ -1043,7 +1043,7 @@ async def generate_qr(company_code: str, vehicle_number: str):
   try:
     vehicle = db.query(Vehiculos).filter(Vehiculos.NUMERO == vehicle_number, Vehiculos.EMPRESA == company_code).first()
     if not vehicle:
-      return JSONResponse(content={"message": "Vehicle not found"}, status_code=404)
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
     
     owner = db.query(Propietarios).filter(Propietarios.CODIGO == vehicle.PROPI_IDEN, Propietarios.EMPRESA == company_code).first()
     owner_name = owner.NOMBRE if owner else ''

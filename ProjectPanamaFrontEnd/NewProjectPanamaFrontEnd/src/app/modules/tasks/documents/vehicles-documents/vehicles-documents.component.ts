@@ -123,22 +123,9 @@ export class VehiclesDocumentsComponent implements OnInit {
           this.documentsInfo = data; // Asignamos los datos a la propiedad
         },
         error: (err: HttpErrorResponse) => {
-          let snackbarMessage = '';
-
-          if (err.status === 404) {
-            snackbarMessage =
-              'No se encontraron documentos para el vehículo seleccionado. Intenta con otro.';
-          } else {
-            snackbarMessage =
-              'Ocurrió un error inesperado. Por favor, intenta más tarde.';
-          }
-
-          this.openSnackbar(snackbarMessage);
-
           this.loadingDocumentsInfoVehicles = false;
-          // this.vehiclesForm.get('vehiculo')?.reset('');
           this.selectedVehicle = false;
-          this.documentsInfo = []; // Limpiamos los datos en caso de error
+          this.documentsInfo = [];
         },
       });
   }

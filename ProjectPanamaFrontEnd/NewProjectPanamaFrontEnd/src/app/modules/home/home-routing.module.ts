@@ -5,27 +5,28 @@ import { OwnersGuard } from 'src/app/guards/owners.guard';
 import { HomeUsersComponent } from './components/users/home-users/home-users.component';
 import { AuthGuard } from 'src/app/guards/auth.guard';
 import { HomeRedirectGuard } from 'src/app/guards/home-redirect.guard';
+import { UsersGuard } from 'src/app/guards/users.guard';
 
 const routes: Routes = [
   {
     path: '',
     canActivate: [HomeRedirectGuard],
-    children: []
+    children: [],
   },
   {
     path: 'owners',
     component: HomeOwnersComponent,
-    canActivate: [OwnersGuard]
+    canActivate: [OwnersGuard],
   },
   {
     path: 'users',
     component: HomeUsersComponent,
-    canActivate: [AuthGuard]
-  }
+    canActivate: [AuthGuard, UsersGuard],
+  },
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class HomeRoutingModule { }
+export class HomeRoutingModule {}

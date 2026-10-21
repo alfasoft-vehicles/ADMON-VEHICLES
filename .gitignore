@@ -253,3 +253,9 @@ copilot-instructions.md
 BiometriaDP
 deploy
 temp
+graphify-out/
+.graphify*/
+graphify-out
+.graphifyignore
+.DS_Store
+docs
