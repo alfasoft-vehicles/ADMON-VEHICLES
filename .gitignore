@@ -259,3 +259,5 @@ graphify-out
 .graphifyignore
 .DS_Store
 docs
+
+activate.ps1
