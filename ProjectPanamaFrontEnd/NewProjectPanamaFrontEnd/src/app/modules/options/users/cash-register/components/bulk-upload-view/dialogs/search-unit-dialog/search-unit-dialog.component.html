@@ -123,7 +123,7 @@
   </div>
 
   <!-- 2. Barra de Búsqueda Interactiva -->
-  <div class="search-section">
+  <div class="search-section" *ngIf="!selectedVehicle">
     <div class="search-input-wrapper">
       <mat-icon class="search-ico">search</mat-icon>
       <input
@@ -131,23 +131,96 @@
         type="text"
         class="search-input"
         [(ngModel)]="searchTerm"
-        (input)="onSearch()"
-        placeholder="Buscar unidad, placa, conductor, cédula o empresa..."
+        (input)="onSearchInput()"
+        (keydown.enter)="onSearchImmediate()"
+        placeholder="Buscar por unidad, placa, conductor, cédula o teléfono..."
       />
       <button
-        *ngIf="searchTerm"
+        *ngIf="searchTerm && !isLoading"
         mat-icon-button
+        type="button"
         class="btn-clear-search"
         (click)="clearSearch()"
         matTooltip="Limpiar búsqueda"
       >
         <mat-icon>close</mat-icon>
       </button>
+
+      <button
+        type="button"
+        mat-flat-button
+        class="btn-search-trigger"
+        (click)="onSearchImmediate()"
+        [disabled]="isLoading || !searchTerm.trim()"
+      >
+        <mat-icon *ngIf="!isLoading">search</mat-icon>
+        <mat-icon *ngIf="isLoading" class="btn-spin-icon">sync</mat-icon>
+        <span>Buscar</span>
+      </button>
     </div>
-    <span class="search-tip" *ngIf="!selectedVehicle">
-      Escribe al menos un carácter para ver sugerencias (ej: 0373, 0334, Rebeca,
-      Manuel, AS51).
+
+    <!-- Mensaje de error de validación o del backend -->
+    <div class="search-error-banner" *ngIf="errorMessage && !selectedVehicle">
+      <mat-icon>info</mat-icon>
+      <span>{{ errorMessage }}</span>
+    </div>
+
+    <!-- Sugerencia si no hay error ni vehículo seleccionado -->
+    <span
+      class="search-tip"
+      *ngIf="
+        !selectedVehicle &&
+        !errorMessage &&
+        (!searchTerm || searchTerm.trim().length < 3)
+      "
+    >
+      Escribe al menos 3 caracteres o haz clic en "Buscar" para consultar
+      unidades o conductores.
     </span>
+  </div>
+
+  <!-- Loader Inline durante la búsqueda (Siguiendo loader-patterns) -->
+  <div class="dialog-inline-loader" *ngIf="isLoading && !selectedVehicle">
+    <div class="spinner-wrapper-small">
+      <mat-progress-spinner
+        mode="indeterminate"
+        [diameter]="28"
+        [strokeWidth]="3"
+        color="primary"
+      ></mat-progress-spinner>
+      <div class="spinner-center-icon-small">
+        <mat-icon>sync</mat-icon>
+      </div>
+    </div>
+    <div class="inline-loader-text">
+      <span class="inline-loader-title">Buscando en el catálogo...</span>
+      <span class="inline-loader-subtitle"
+        >Consultando unidades y conductores en el servidor</span
+      >
+    </div>
+  </div>
+
+  <!-- Estado vacío cuando no hay resultados -->
+  <div
+    class="search-empty-container"
+    *ngIf="
+      hasSearched &&
+      !isLoading &&
+      filteredVehicles.length === 0 &&
+      !selectedVehicle &&
+      !errorMessage
+    "
+  >
+    <div class="search-empty-content">
+      <mat-icon class="search-empty-icon">search_off</mat-icon>
+      <div class="search-empty-text">
+        <span class="search-empty-title">No se encontraron coincidencias</span>
+        <span class="search-empty-subtitle">
+          No hay unidades ni conductores que coincidan con "{{ searchTerm }}".
+          Intente con otra placa, cédula, nombre o número de unidad.
+        </span>
+      </div>
+    </div>
   </div>
 
   <!-- 3. Lista de Resultados de Búsqueda (Info básica) -->
@@ -183,7 +256,15 @@
             <strong>{{ item.unidad }}</strong>
           </div>
           <span class="tile-placa">{{ item.placa }}</span>
-          <span class="tile-status">{{ item.estado }}</span>
+          <div
+            class="tile-status"
+            [class.tile-status-scroll]="(item.estado || '').trim().length > 8"
+            [title]="item.estado"
+          >
+            <span class="tile-status-track">
+              <span class="tile-status-text">{{ item.estado || "—" }}</span>
+            </span>
+          </div>
         </div>
 
         <div class="tile-body">
@@ -193,10 +274,32 @@
           </div>
           <div class="tile-subrow">
             <span class="tile-id"
-              >Cédula: <strong>{{ item.cedula }}</strong></span
+              >Cédula: <strong>{{ item.cedula || "—" }}</strong></span
             >
             <span class="tile-subrow-sep">•</span>
-            <span class="tile-company">{{ item.empresa }}</span>
+            <span class="tile-cellphone">
+              <mat-icon class="mini-phone-ico">smartphone</mat-icon>
+              <span
+                >Celular: <strong>{{ item.telefono || "—" }}</strong></span
+              >
+            </span>
+            <span class="tile-subrow-sep">•</span>
+            <span class="tile-company" [title]="item.empresa || ''">
+              <mat-icon class="mini-company-ico">business</mat-icon>
+              <span class="company-label">Empresa:</span>
+              <div
+                class="tile-company-wrapper"
+                [class.tile-company-scroll]="
+                  (item.empresa || '').trim().length > 8
+                "
+              >
+                <span class="tile-company-track">
+                  <strong class="tile-company-name">{{
+                    item.empresa || "—"
+                  }}</strong>
+                </span>
+              </div>
+            </span>
           </div>
         </div>
 
@@ -220,7 +323,7 @@
       <button
         mat-button
         class="btn-change-selection"
-        (click)="selectedVehicle = null"
+        (click)="changeSelection()"
       >
         <mat-icon>sync</mat-icon>
         <span>Cambiar</span>
@@ -270,7 +373,7 @@
       <div class="detail-field">
         <span class="field-label">Valor Cuota</span>
         <strong class="detail-value text-green"
-          >${{ selectedVehicle.valorCuota.toFixed(2) }}</strong
+          >${{ (selectedVehicle.valorCuota || 0).toFixed(2) }}</strong
         >
       </div>
 
@@ -309,7 +412,7 @@
               data.record.unidad || "(Sin unidad)"
             }}</strong>
           </div>
-          <div class="comp-item">
+          <div class="comp-item comp-item-conductor">
             <span class="k">Conductor:</span>
             <strong class="v">{{ data.record.nombre || "—" }}</strong>
           </div>
@@ -333,11 +436,9 @@
             <span class="k">Unidad:</span>
             <strong class="v text-primary">{{ selectedVehicle.unidad }}</strong>
           </div>
-          <div class="comp-item">
+          <div class="comp-item comp-item-conductor">
             <span class="k">Conductor:</span>
-            <strong class="v text-green">{{
-              selectedVehicle.conductor
-            }}</strong>
+            <strong class="v">{{ selectedVehicle.conductor }}</strong>
           </div>
           <div class="comp-item">
             <span class="k">Cédula:</span>

@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from 'src/app/services/api.service';
 import { JwtService } from 'src/app/services/jwt.service';
+import { InfoCompanyStateService } from 'src/app/modules/shared/services/info-company-state.service';
 import { OwnersGuard } from 'src/app/guards/owners.guard';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoCompanyComponent } from '../info-company/info-company.component';
@@ -28,6 +29,7 @@ export class SidenavComponent implements OnInit {
   constructor(
     private apiService: ApiService,
     private jwtService: JwtService,
+    private infoCompanyStateService: InfoCompanyStateService,
     private router: Router,
     private ownersGuard: OwnersGuard,
     private dialog: MatDialog,
@@ -119,13 +121,9 @@ export class SidenavComponent implements OnInit {
   }
 
   getInfoCompany(): void {
-    const userData = this.jwtService.getUserData();
-    const idCompany = userData ? userData.empresa : null;
-    this.apiService
-      .getData('info-company/' + idCompany)
-      .subscribe((response) => {
-        this.infoCompanyName = response.name;
-      });
+    this.infoCompanyStateService.loadInfoCompany().subscribe((infoCompany) => {
+      this.infoCompanyName = infoCompany?.name || '';
+    });
   }
 
   onBackdropClick(): void {

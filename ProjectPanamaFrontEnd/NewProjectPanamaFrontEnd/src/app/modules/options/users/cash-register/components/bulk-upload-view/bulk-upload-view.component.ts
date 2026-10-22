@@ -337,8 +337,8 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
 
   openSearchUnitDialog(record: BulkUploadRecord): void {
     const dialogRef = this.dialog.open(SearchUnitDialogComponent, {
-      width: '740px',
-      maxWidth: '94vw',
+      width: '920px',
+      maxWidth: '96vw',
       panelClass: 'custom-dialog-container',
       disableClose: true,
       data: { record },

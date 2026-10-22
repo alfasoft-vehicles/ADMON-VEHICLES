@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   Inject,
+  OnDestroy,
   OnInit,
   ViewChild,
 } from '@angular/core';
@@ -12,8 +13,20 @@ import {
   MatDialogRef,
 } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { of, Subject, Subscription } from 'rxjs';
+import {
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  map,
+  switchMap,
+  tap,
+} from 'rxjs/operators';
 import { BulkUploadRecord } from '../../models/bulk-upload-record.interface';
 import { ConfirmActionDialogComponent } from 'src/app/modules/shared/components/confirm-action-dialog/confirm-action-dialog.component';
+import { ApiService } from 'src/app/services/api.service';
+import { JwtService } from 'src/app/services/jwt.service';
+import { ErrorHandlerService } from 'src/app/services/error-handler.service';
 
 export interface VehicleSearchItem {
   unidad: string;
@@ -32,153 +45,89 @@ export interface VehicleSearchItem {
   cuotasPendientes: number;
 }
 
+export interface SearchUnitDialogData {
+  record: BulkUploadRecord;
+  companyCode?: string;
+}
+
 @Component({
   selector: 'app-search-unit-dialog',
   templateUrl: './search-unit-dialog.component.html',
   styleUrls: ['./search-unit-dialog.component.css'],
 })
-export class SearchUnitDialogComponent implements OnInit, AfterViewInit {
+export class SearchUnitDialogComponent
+  implements OnInit, AfterViewInit, OnDestroy
+{
   @ViewChild('searchInput') searchInputEl?: ElementRef<HTMLInputElement>;
 
   searchTerm: string = '';
   selectedVehicle: VehicleSearchItem | null = null;
   filteredVehicles: VehicleSearchItem[] = [];
 
-  // Datos mock de catálogo de vehículos / conductores
-  mockVehicles: VehicleSearchItem[] = [
-    {
-      unidad: '0373',
-      placa: '8T-9876',
-      conductor: 'Rebeca Sanjur',
-      cedula: '4-752-1980',
-      empresa: 'Taxis Panamá Central',
-      estado: 'Activo',
-      nroCupo: '373',
-      propietario: 'Inversiones Sanjur S.A.',
-      codigoConductor: '10882',
-      telefono: '50767063190',
-      valorCuota: 36.0,
-      cuotasTotales: 250,
-      cuotasPagas: 200,
-      cuotasPendientes: 50,
-    },
-    {
-      unidad: '0334',
-      placa: '8T-5432',
-      conductor: 'Manuel Barría',
-      cedula: '8-412-8874',
-      empresa: 'Taxis Panamá Central',
-      estado: 'Activo',
-      nroCupo: '334',
-      propietario: 'Manuel Barría',
-      codigoConductor: '10432',
-      telefono: '50764984356',
-      valorCuota: 37.0,
-      cuotasTotales: 180,
-      cuotasPagas: 160,
-      cuotasPendientes: 20,
-    },
-    {
-      unidad: 'AS51',
-      placa: '8T-1234',
-      conductor: 'Stephany Saldaña',
-      cedula: '8-875-2451',
-      empresa: 'Taxis Panamá Metro',
-      estado: 'Activo',
-      nroCupo: '105',
-      propietario: 'Transportes Unidos S.A.',
-      codigoConductor: '10055',
-      telefono: '50767675459',
-      valorCuota: 36.0,
-      cuotasTotales: 300,
-      cuotasPagas: 245,
-      cuotasPendientes: 55,
-    },
-    {
-      unidad: 'FG67',
-      placa: '8T-8899',
-      conductor: 'Luis Moreno',
-      cedula: '8-764-853',
-      empresa: 'Taxis Panamá Metro',
-      estado: 'Activo',
-      nroCupo: '67',
-      propietario: 'Moreno Hnos',
-      codigoConductor: '10396',
-      telefono: '50765225610',
-      valorCuota: 33.5,
-      cuotasTotales: 220,
-      cuotasPagas: 215,
-      cuotasPendientes: 5,
-    },
-    {
-      unidad: 'FA35',
-      placa: '8T-3535',
-      conductor: 'Bernardo Abrego',
-      cedula: '8-917-1771',
-      empresa: 'Taxis Panamá Norte',
-      estado: 'Activo',
-      nroCupo: '35',
-      propietario: 'Inversiones Abrego',
-      codigoConductor: '10694',
-      telefono: '50767770575',
-      valorCuota: 36.0,
-      cuotasTotales: 260,
-      cuotasPagas: 250,
-      cuotasPendientes: 10,
-    },
-    {
-      unidad: 'FG73',
-      placa: '8T-7373',
-      conductor: 'Demetrio Sanjur',
-      cedula: '4-217-440',
-      empresa: 'Taxis Panamá Central',
-      estado: 'Activo',
-      nroCupo: '73',
-      propietario: 'Demetrio Sanjur',
-      codigoConductor: '10414',
-      telefono: '50763626271',
-      valorCuota: 34.5,
-      cuotasTotales: 200,
-      cuotasPagas: 195,
-      cuotasPendientes: 5,
-    },
-    {
-      unidad: 'ASM40',
-      placa: '8T-4040',
-      conductor: 'Juan Abrego',
-      cedula: '8-749-2294',
-      empresa: 'Taxis Panamá Central',
-      estado: 'Activo',
-      nroCupo: '40',
-      propietario: 'Juan Abrego',
-      codigoConductor: '11039',
-      telefono: '50765410308',
-      valorCuota: 35.0,
-      cuotasTotales: 150,
-      cuotasPagas: 140,
-      cuotasPendientes: 10,
-    },
-  ];
+  isLoading: boolean = false;
+  hasSearched: boolean = false;
+  errorMessage: string = '';
+
+  private searchSubject = new Subject<string>();
+  private searchSub?: Subscription;
 
   get isAlreadyIdentified(): boolean {
     return Boolean(this.data.record.unidad && !this.data.record.hasAlert);
   }
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { record: BulkUploadRecord },
+    @Inject(MAT_DIALOG_DATA) public data: SearchUnitDialogData,
     private dialogRef: MatDialogRef<SearchUnitDialogComponent>,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
+    private apiService: ApiService,
+    private jwtService: JwtService,
   ) {}
 
   ngOnInit(): void {
-    // Si el registro tiene algún indicio de unidad o comentario, pre-filtrar o sugerir
-    if (this.data.record.identifica) {
-      this.searchTerm = this.data.record.identifica;
-      this.onSearch();
+    // Configurar búsqueda reactiva con debounce de 350ms
+    this.searchSub = this.searchSubject
+      .pipe(
+        debounceTime(350),
+        distinctUntilChanged(),
+        switchMap((term) => {
+          const cleanTerm = (term || '').trim();
+          if (!cleanTerm) {
+            this.filteredVehicles = [];
+            this.hasSearched = false;
+            this.errorMessage = '';
+            this.isLoading = false;
+            return of([]);
+          }
+          if (cleanTerm.length < 3) {
+            this.filteredVehicles = [];
+            this.hasSearched = false;
+            this.errorMessage = 'La búsqueda debe tener al menos 3 caracteres';
+            this.isLoading = false;
+            return of([]);
+          }
+          return this.fetchSearchResults(cleanTerm);
+        }),
+      )
+      .subscribe();
+
+    // Si el registro tiene algún indicio de unidad o comentario, pre-filtrar
+    if (
+      this.data.record.identifica &&
+      this.data.record.identifica.trim().length >= 3
+    ) {
+      this.searchTerm = this.data.record.identifica.trim();
+      this.executeSearch(this.searchTerm);
+    } else if (
+      this.data.record.unidad &&
+      this.data.record.unidad.trim().length >= 3
+    ) {
+      this.searchTerm = this.data.record.unidad.trim();
+      this.executeSearch(this.searchTerm);
+    } else if (this.data.record.identifica) {
+      this.searchTerm = this.data.record.identifica.trim();
     } else if (this.data.record.unidad) {
-      this.searchTerm = this.data.record.unidad;
-      this.onSearch();
+      this.searchTerm = this.data.record.unidad.trim();
     }
   }
 
@@ -193,31 +142,149 @@ export class SearchUnitDialogComponent implements OnInit, AfterViewInit {
     }, 150);
   }
 
-  onSearch(): void {
-    const term = (this.searchTerm || '').trim().toLowerCase();
+  ngOnDestroy(): void {
+    if (this.searchSub) {
+      this.searchSub.unsubscribe();
+    }
+  }
+
+  /**
+   * Disparado mientras el usuario escribe en el input
+   */
+  onSearchInput(): void {
+    this.selectedVehicle = null;
+    this.errorMessage = '';
+    const term = (this.searchTerm || '').trim();
     if (!term) {
       this.filteredVehicles = [];
+      this.hasSearched = false;
+      this.isLoading = false;
+    }
+    this.searchSubject.next(term);
+  }
+
+  /**
+   * Búsqueda inmediata al hacer clic en el botón Buscar o presionar Enter
+   */
+  onSearchImmediate(): void {
+    this.selectedVehicle = null;
+    const term = (this.searchTerm || '').trim();
+    if (!term) {
+      this.filteredVehicles = [];
+      this.hasSearched = false;
+      this.errorMessage = '';
       return;
     }
+    if (term.length < 3) {
+      this.filteredVehicles = [];
+      this.hasSearched = false;
+      this.errorMessage = 'La búsqueda debe tener al menos 3 caracteres';
+      return;
+    }
+    this.executeSearch(term);
+  }
 
-    this.filteredVehicles = this.mockVehicles.filter(
-      (v) =>
-        v.unidad.toLowerCase().includes(term) ||
-        v.placa.toLowerCase().includes(term) ||
-        v.conductor.toLowerCase().includes(term) ||
-        v.cedula.toLowerCase().includes(term) ||
-        v.empresa.toLowerCase().includes(term),
+  /**
+   * Ejecuta la llamada al backend directamente
+   */
+  executeSearch(term: string): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+    this.fetchSearchResults(term).subscribe();
+  }
+
+  /**
+   * Consulta el endpoint de búsqueda básica /search/basic-info/{company_code}/?q=...
+   */
+  private fetchSearchResults(term: string) {
+    this.isLoading = true;
+    this.errorMessage = '';
+    const companyCode = this.getCompany();
+    if (!companyCode) {
+      this.isLoading = false;
+      this.hasSearched = true;
+      this.filteredVehicles = [];
+      this.errorMessage = 'No se encontró la empresa del usuario autenticado.';
+      return of([]);
+    }
+    const endpoint = `search/basic-info/${companyCode}/?q=${encodeURIComponent(term)}`;
+
+    return this.apiService.getData(endpoint, { silent: true }).pipe(
+      map((response: any[]) => this.mapBackendResults(response)),
+      tap((results) => {
+        this.filteredVehicles = results;
+        this.hasSearched = true;
+        this.isLoading = false;
+      }),
+      catchError((error) => {
+        this.isLoading = false;
+        this.hasSearched = true;
+        this.filteredVehicles = [];
+        this.errorMessage = ErrorHandlerService.getErrorMessage(
+          error,
+          'No fue posible obtener resultados de búsqueda.',
+        );
+        return of([]);
+      }),
     );
+  }
+
+  /**
+   * Mapea los resultados del backend al formato VehicleSearchItem
+   */
+  private mapBackendResults(items: any[]): VehicleSearchItem[] {
+    if (!Array.isArray(items)) {
+      return [];
+    }
+    return items.map((raw) => ({
+      unidad: (raw.vehicle_number || '').trim(),
+      placa: (raw.vehicle_plate || '').trim(),
+      conductor: (raw.driver_name || '').trim(),
+      cedula: (raw.driver_id_card || '').trim(),
+      empresa: (raw.owner_name || 'Sin Propietario').trim(),
+      estado: (raw.vehicle_state || 'Activo').trim(),
+      nroCupo: (raw.cupo_number || raw.vehicle_number || '').trim(),
+      propietario: (raw.owner_name || 'Sin Propietario').trim(),
+      codigoConductor: (raw.driver_code || '').trim(),
+      telefono: (raw.driver_phone || raw.driver_cellphone || '').trim(),
+      valorCuota: Number(raw.daily_fee || 0),
+      cuotasTotales: Number(raw.total_accounts || 0),
+      cuotasPagas: Number(raw.paid_accounts || 0),
+      cuotasPendientes: Number(raw.pending_accounts || 0),
+    }));
+  }
+
+  getCompany(): string {
+    const userData = this.jwtService.getUserData();
+    return userData ? (userData.empresa || '').trim() : '';
   }
 
   clearSearch(): void {
     this.searchTerm = '';
     this.filteredVehicles = [];
     this.selectedVehicle = null;
+    this.hasSearched = false;
+    this.errorMessage = '';
+    this.isLoading = false;
+    if (this.searchInputEl) {
+      this.searchInputEl.nativeElement.focus();
+    }
   }
 
   selectVehicle(vehicle: VehicleSearchItem): void {
     this.selectedVehicle = vehicle;
+  }
+
+  changeSelection(): void {
+    this.selectedVehicle = null;
+    setTimeout(() => {
+      if (this.searchInputEl) {
+        this.searchInputEl.nativeElement.focus();
+        if (this.searchTerm) {
+          this.searchInputEl.nativeElement.select();
+        }
+      }
+    }, 100);
   }
 
   onAccept(): void {
