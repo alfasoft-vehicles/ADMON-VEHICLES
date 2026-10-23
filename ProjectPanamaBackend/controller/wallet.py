@@ -1243,34 +1243,12 @@ async def yappy_has_records():
 async def yappy_records(company_code: str):
   db = session()
   try:
-    drivers = db.query(
-      Conductores.CODIGO, Conductores.NOMBRE, Conductores.TELEFONO,
-      Conductores.CELULAR, Conductores.UND_NRO
-    ).filter(Conductores.EMPRESA == company_code).all()
-
-    drivers_by_phone = {}
-    for driver in drivers:
-      for phone in (driver.TELEFONO, driver.CELULAR):
-        phone = normalize_phone(phone)
-        if phone:
-          drivers_by_phone.setdefault(phone, {})[driver.CODIGO] = driver
-
     records = db.query(Yappy).filter(Yappy.EMPRESA == company_code).all()
 
     results = []
     for record in records:
       item = {column.name: getattr(record, column.name) for column in Yappy.__table__.columns}
-
-      matches = drivers_by_phone.get(normalize_phone(record.CELULAR, remove_country_code=True), {})
-
-      if len(matches) == 1:
-        driver = next(iter(matches.values()))
-        item['IDENTIFICA'] = driver.UND_NRO or item['IDENTIFICA']
-        item['NOMBRE'] = driver.NOMBRE or item['NOMBRE']
-        item['review'] = 0
-      else:
-        item['review'] = 1
-
+      item['review'] = 0 if record.UNIDAD != None else 1
       results.append(item)
 
     return JSONResponse(content=jsonable_encoder(results), status_code=200)
