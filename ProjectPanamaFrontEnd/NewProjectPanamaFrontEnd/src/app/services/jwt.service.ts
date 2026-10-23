@@ -41,6 +41,7 @@ interface AppJwtPayload extends JwtPayload {
 })
 export class JwtService {
   private readonly TOKEN_KEY = 'info_token';
+  private readonly COMPANY_STORAGE_KEY = 'info_company';
   private decodedToken: AppJwtPayload | null = null;
 
   constructor() {
@@ -51,12 +52,14 @@ export class JwtService {
   // --- Métodos Públicos Principales ---
 
   setToken(token: string): void {
+    localStorage.removeItem(this.COMPANY_STORAGE_KEY);
     localStorage.setItem(this.TOKEN_KEY, token);
     this.decodeAndValidateToken(); // Actualizamos el token decodificado en memoria
   }
 
   logout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.COMPANY_STORAGE_KEY);
     this.decodedToken = null; // Limpiamos el token de la memoria
   }
 

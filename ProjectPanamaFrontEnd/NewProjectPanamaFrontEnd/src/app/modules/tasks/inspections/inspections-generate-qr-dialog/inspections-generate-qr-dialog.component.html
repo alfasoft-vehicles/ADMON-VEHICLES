@@ -1,10 +1,25 @@
 <h2 mat-dialog-title>Generar QR de Inspecciones</h2>
 <mat-dialog-content>
-  <div *ngIf="isLoadingVehicles">
-    <mat-progress-bar
-      mode="indeterminate"
-      *ngIf="isLoadingVehicles"
-    ></mat-progress-bar>
+  <div class="dialog-loader-container" *ngIf="isLoadingVehicles">
+    <div class="spinner-wrapper">
+      <mat-progress-spinner
+        mode="indeterminate"
+        [diameter]="52"
+        [strokeWidth]="4"
+        color="primary"
+        class="custom-spinner"
+      ></mat-progress-spinner>
+      <div class="spinner-center-icon">
+        <mat-icon>hourglass_top</mat-icon>
+      </div>
+    </div>
+    <div class="loader-text">
+      <h3 class="loader-title">Cargando vehículos</h3>
+      <p class="loader-message">Obteniendo lista de vehículos disponibles...</p>
+    </div>
+    <div class="progress-bar-wrapper">
+      <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+    </div>
   </div>
   <div class="scrollable-content" *ngIf="!isLoadingVehicles">
     <div class="vehicle-info">
@@ -32,11 +47,27 @@
         </mat-autocomplete>
       </mat-form-field>
 
-      <mat-progress-bar
-        class="loading-bar"
-        mode="indeterminate"
-        *ngIf="isLoadingvehicleQRInfo"
-      ></mat-progress-bar>
+      <div class="dialog-inline-loader" *ngIf="isLoadingvehicleQRInfo">
+        <div class="spinner-wrapper-small">
+          <mat-progress-spinner
+            mode="indeterminate"
+            [diameter]="28"
+            [strokeWidth]="3"
+            color="primary"
+          ></mat-progress-spinner>
+          <div class="spinner-center-icon-small">
+            <mat-icon>sync</mat-icon>
+          </div>
+        </div>
+        <div class="inline-loader-text">
+          <span class="inline-loader-title"
+            >Cargando información del vehículo...</span
+          >
+          <span class="inline-loader-subtitle"
+            >Obteniendo datos para el código QR</span
+          >
+        </div>
+      </div>
 
       <table
         class="info-table"

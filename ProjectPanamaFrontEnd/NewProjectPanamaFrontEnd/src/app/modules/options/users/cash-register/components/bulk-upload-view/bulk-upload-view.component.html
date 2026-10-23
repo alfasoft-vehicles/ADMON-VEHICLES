@@ -94,18 +94,68 @@
     <div class="bu-table-toolbar">
       <div class="bu-toolbar-left">
         <span class="bu-table-legend-title">Detalle de Transacciones</span>
-      </div>
-      <div class="bu-toolbar-right">
-        <span class="bu-legend-item bu-legend-warn">
+        <span class="bu-legend-item bu-legend-warn bu-chip-desktop-hidden">
           <span class="bu-dot bu-dot-warn"></span>
           {{ metrics.registrosPendientes }} Requieren Revisión
         </span>
+      </div>
+      <div class="bu-toolbar-right">
+        <span class="bu-legend-item bu-legend-warn bu-chip-mobile-hidden">
+          <span class="bu-dot bu-dot-warn"></span>
+          {{ metrics.registrosPendientes }} Requieren Revisión
+        </span>
+
+        <div
+          class="bu-search-box-wrapper"
+          [class.bu-search-expanded]="isSearchExpanded || !!searchTerm"
+        >
+          <button
+            type="button"
+            class="bu-search-box-btn"
+            (click)="toggleSearch()"
+            matTooltip="Buscar registros"
+            aria-label="Buscar registros"
+          >
+            <mat-icon class="bu-search-box-icon">search</mat-icon>
+          </button>
+          <input
+            id="bu-search-input"
+            type="text"
+            class="bu-search-box-input"
+            [(ngModel)]="searchTerm"
+            placeholder="Buscar por nombre, celular, código, unidad..."
+            aria-label="Buscar registros por nombre, celular, código o unidad"
+          />
+          <button
+            *ngIf="searchTerm"
+            type="button"
+            class="bu-search-box-clear"
+            (click)="clearSearch()"
+            matTooltip="Limpiar búsqueda"
+            aria-label="Limpiar búsqueda"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+          <button
+            *ngIf="isSearchExpanded && !searchTerm"
+            type="button"
+            class="bu-search-box-close"
+            (click)="collapseSearch()"
+            matTooltip="Cerrar buscador"
+            aria-label="Cerrar buscador"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Contenedor Scroll de la Tabla -->
     <div class="bu-table-scroll-container">
-      <table class="bu-data-table">
+      <table
+        class="bu-data-table"
+        [class.bu-table-empty]="filteredRecords.length === 0"
+      >
         <thead>
           <tr>
             <th class="th-w-date">Fecha</th>
@@ -130,7 +180,7 @@
         </thead>
         <tbody>
           <tr
-            *ngFor="let row of records"
+            *ngFor="let row of filteredRecords"
             (click)="selectRow(row.id)"
             [class.bu-row-selected]="row.id === selectedRowId"
             [class.bu-row-alert]="isRecordInReview(row)"
@@ -170,11 +220,122 @@
               <span class="bu-num-red">{{ row.comision }}</span>
             </td>
 
-            <!-- Rubros Adicionales -->
-            <td class="td-num td-muted">{{ row.inscripcion }}</td>
-            <td class="td-num td-muted">{{ row.multas }}</td>
-            <td class="td-num td-muted">{{ row.panapass }}</td>
-            <td class="td-num td-muted">{{ row.siniestros }}</td>
+            <!-- Rubros Adicionales (Editables con doble clic) -->
+            <!-- Inscripción -->
+            <td
+              class="td-num td-muted td-editable"
+              (dblclick)="startCellEdit(row, 'inscripcion', $event)"
+              [class.td-editing]="isEditing(row.id, 'inscripcion')"
+              matTooltip="Doble clic para editar"
+            >
+              <ng-container
+                *ngIf="!isEditing(row.id, 'inscripcion'); else editInscripTpl"
+              >
+                <span class="bu-cell-val">{{ row.inscripcion || "0.00" }}</span>
+              </ng-container>
+              <ng-template #editInscripTpl>
+                <input
+                  [id]="'edit-cell-' + row.id + '-inscripcion'"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="bu-cell-input"
+                  [(ngModel)]="editValue"
+                  (keydown.enter)="saveCellEdit(row, 'inscripcion')"
+                  (keydown.escape)="cancelCellEdit()"
+                  (blur)="saveCellEdit(row, 'inscripcion')"
+                  (click)="$event.stopPropagation()"
+                  (dblclick)="$event.stopPropagation()"
+                />
+              </ng-template>
+            </td>
+
+            <!-- Multas -->
+            <td
+              class="td-num td-muted td-editable"
+              (dblclick)="startCellEdit(row, 'multas', $event)"
+              [class.td-editing]="isEditing(row.id, 'multas')"
+              matTooltip="Doble clic para editar"
+            >
+              <ng-container
+                *ngIf="!isEditing(row.id, 'multas'); else editMultasTpl"
+              >
+                <span class="bu-cell-val">{{ row.multas || "0.00" }}</span>
+              </ng-container>
+              <ng-template #editMultasTpl>
+                <input
+                  [id]="'edit-cell-' + row.id + '-multas'"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="bu-cell-input"
+                  [(ngModel)]="editValue"
+                  (keydown.enter)="saveCellEdit(row, 'multas')"
+                  (keydown.escape)="cancelCellEdit()"
+                  (blur)="saveCellEdit(row, 'multas')"
+                  (click)="$event.stopPropagation()"
+                  (dblclick)="$event.stopPropagation()"
+                />
+              </ng-template>
+            </td>
+
+            <!-- Panapass -->
+            <td
+              class="td-num td-muted td-editable"
+              (dblclick)="startCellEdit(row, 'panapass', $event)"
+              [class.td-editing]="isEditing(row.id, 'panapass')"
+              matTooltip="Doble clic para editar"
+            >
+              <ng-container
+                *ngIf="!isEditing(row.id, 'panapass'); else editPanapassTpl"
+              >
+                <span class="bu-cell-val">{{ row.panapass || "0.00" }}</span>
+              </ng-container>
+              <ng-template #editPanapassTpl>
+                <input
+                  [id]="'edit-cell-' + row.id + '-panapass'"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="bu-cell-input"
+                  [(ngModel)]="editValue"
+                  (keydown.enter)="saveCellEdit(row, 'panapass')"
+                  (keydown.escape)="cancelCellEdit()"
+                  (blur)="saveCellEdit(row, 'panapass')"
+                  (click)="$event.stopPropagation()"
+                  (dblclick)="$event.stopPropagation()"
+                />
+              </ng-template>
+            </td>
+
+            <!-- Siniestros -->
+            <td
+              class="td-num td-muted td-editable"
+              (dblclick)="startCellEdit(row, 'siniestros', $event)"
+              [class.td-editing]="isEditing(row.id, 'siniestros')"
+              matTooltip="Doble clic para editar"
+            >
+              <ng-container
+                *ngIf="!isEditing(row.id, 'siniestros'); else editSiniestrosTpl"
+              >
+                <span class="bu-cell-val">{{ row.siniestros || "0.00" }}</span>
+              </ng-container>
+              <ng-template #editSiniestrosTpl>
+                <input
+                  [id]="'edit-cell-' + row.id + '-siniestros'"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="bu-cell-input"
+                  [(ngModel)]="editValue"
+                  (keydown.enter)="saveCellEdit(row, 'siniestros')"
+                  (keydown.escape)="cancelCellEdit()"
+                  (blur)="saveCellEdit(row, 'siniestros')"
+                  (click)="$event.stopPropagation()"
+                  (dblclick)="$event.stopPropagation()"
+                />
+              </ng-template>
+            </td>
 
             <!-- Cédula -->
             <td class="td-id">{{ row.cedula || "-" }}</td>
@@ -230,6 +391,38 @@
               <span *ngIf="row.pendiente === '0.00'" class="bu-pending-zero">
                 0.00
               </span>
+            </td>
+          </tr>
+
+          <!-- Estado cuando no hay registros que coincidan con la búsqueda -->
+          <tr *ngIf="filteredRecords.length === 0" class="bu-empty-row">
+            <td colspan="18" class="bu-empty-cell">
+              <div class="bu-empty-state">
+                <mat-icon class="bu-empty-icon">search_off</mat-icon>
+                <div class="bu-empty-text-wrap">
+                  <span class="bu-empty-title" *ngIf="searchTerm">
+                    No se encontraron registros que coincidan con "{{
+                      searchTerm
+                    }}"
+                  </span>
+                  <span class="bu-empty-title" *ngIf="!searchTerm">
+                    No hay registros disponibles en la tabla
+                  </span>
+                  <span class="bu-empty-subtitle" *ngIf="searchTerm">
+                    Intente buscar con otro nombre, celular, código o unidad
+                  </span>
+                </div>
+                <button
+                  *ngIf="searchTerm"
+                  type="button"
+                  mat-stroked-button
+                  class="bu-empty-clear-btn"
+                  (click)="clearSearch()"
+                >
+                  <mat-icon>clear</mat-icon>
+                  Limpiar búsqueda
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>

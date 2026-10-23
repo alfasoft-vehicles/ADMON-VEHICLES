@@ -51,6 +51,16 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
   // Criterio de ordenamiento
   sortOrder: 'default' | 'revision' | 'ready' = 'default';
 
+  // Estado del buscador expandible
+  isSearchExpanded: boolean = false;
+
+  // Edición inline de celdas (inscripcion, multas, panapass, siniestros)
+  editingCell: {
+    rowId: number;
+    field: 'inscripcion' | 'multas' | 'panapass' | 'siniestros';
+  } | null = null;
+  editValue: string = '';
+
   private routeSub!: Subscription;
 
   constructor(
@@ -151,8 +161,73 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
     this.selectedRowId = this.selectedRowId === id ? null : id;
   }
 
+  toggleSearch(): void {
+    this.isSearchExpanded = !this.isSearchExpanded;
+    if (this.isSearchExpanded) {
+      setTimeout(() => {
+        const input = document.getElementById(
+          'bu-search-input',
+        ) as HTMLInputElement;
+        if (input) {
+          input.focus();
+        }
+      }, 100);
+    }
+  }
+
+  collapseSearch(): void {
+    if (!this.searchTerm) {
+      this.isSearchExpanded = false;
+    }
+  }
+
   clearSearch(): void {
     this.searchTerm = '';
+    const input = document.getElementById(
+      'bu-search-input',
+    ) as HTMLInputElement;
+    if (input) {
+      input.focus();
+    }
+  }
+
+  /**
+   * Obtiene los registros filtrados según el término de búsqueda
+   * Evaluando: nombre, celular, código, unidad y otra unidad
+   */
+  get filteredRecords(): BulkUploadRecord[] {
+    if (!this.searchTerm || !this.searchTerm.trim()) {
+      return this.records;
+    }
+    const term = this.normalizeText(this.searchTerm);
+    return this.records.filter((r) => {
+      const nombre = this.normalizeText(r.nombre);
+      const celular = this.normalizeText(r.celular);
+      const codigo = this.normalizeText(r.codigo);
+      const unidad = this.normalizeText(r.unidad);
+      const otraUnd = this.normalizeText(r.otraUnd);
+
+      return (
+        nombre.includes(term) ||
+        celular.includes(term) ||
+        codigo.includes(term) ||
+        unidad.includes(term) ||
+        otraUnd.includes(term)
+      );
+    });
+  }
+
+  /**
+   * Normaliza texto para búsqueda insensible a mayúsculas y acentos/tildes
+   */
+  private normalizeText(value: any): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return String(value)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
   }
 
   clearAllRecords(): void {
@@ -262,8 +337,8 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
 
   openSearchUnitDialog(record: BulkUploadRecord): void {
     const dialogRef = this.dialog.open(SearchUnitDialogComponent, {
-      width: '740px',
-      maxWidth: '94vw',
+      width: '920px',
+      maxWidth: '96vw',
       panelClass: 'custom-dialog-container',
       disableClose: true,
       data: { record },
@@ -290,5 +365,62 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
 
   recalculateMetrics(): void {
     this.metrics = this.bulkUploadService.getSummaryMetrics(this.records);
+  }
+
+  // ==========================================================================
+  // Métodos de edición inline para inscripcion, multas, panapass, siniestros
+  // ==========================================================================
+
+  isEditing(
+    rowId: number,
+    field: 'inscripcion' | 'multas' | 'panapass' | 'siniestros',
+  ): boolean {
+    return (
+      this.editingCell !== null &&
+      this.editingCell.rowId === rowId &&
+      this.editingCell.field === field
+    );
+  }
+
+  startCellEdit(
+    row: BulkUploadRecord,
+    field: 'inscripcion' | 'multas' | 'panapass' | 'siniestros',
+    event: MouseEvent,
+  ): void {
+    event.stopPropagation();
+    this.editingCell = { rowId: row.id, field };
+    this.editValue = row[field] ?? '0.00';
+    setTimeout(() => {
+      const input = document.getElementById(
+        `edit-cell-${row.id}-${field}`,
+      ) as HTMLInputElement;
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }, 50);
+  }
+
+  saveCellEdit(
+    row: BulkUploadRecord,
+    field: 'inscripcion' | 'multas' | 'panapass' | 'siniestros',
+  ): void {
+    if (
+      !this.editingCell ||
+      this.editingCell.rowId !== row.id ||
+      this.editingCell.field !== field
+    ) {
+      return;
+    }
+    const val = String(this.editValue).trim();
+    const num = parseFloat(val);
+    const formatted = isNaN(num) || num < 0 ? '0.00' : num.toFixed(2);
+    row[field] = formatted;
+    this.editingCell = null;
+    this.recalculateMetrics();
+  }
+
+  cancelCellEdit(): void {
+    this.editingCell = null;
   }
 }

@@ -257,11 +257,6 @@
     </div>
   </form>
 
-  <mat-progress-bar
-    mode="indeterminate"
-    *ngIf="isLoadingData"
-  ></mat-progress-bar>
-
   <div class="mat-elevation-z8" *ngIf="!isLoadingData">
     <div class="table-scroll-container">
       <table mat-table [dataSource]="dataSource" matSort>

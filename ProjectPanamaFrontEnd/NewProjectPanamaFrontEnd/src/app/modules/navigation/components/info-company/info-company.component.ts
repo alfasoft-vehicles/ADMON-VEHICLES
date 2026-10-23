@@ -1,43 +1,43 @@
 import { Component, OnInit } from '@angular/core';
 import { InfoCompany } from '../../interfaces/info-company.interface';
-import { ApiService } from 'src/app/services/api.service';
-import { JwtService } from 'src/app/services/jwt.service';
-
-interface Transaction {
-  name: string;
-  ruc: number;
-  address: string;
-  city: string;
-  phone: string;
-  email: string;
-}
+import { InfoCompanyStateService } from 'src/app/modules/shared/services/info-company-state.service';
 
 @Component({
   selector: 'app-info-company',
   templateUrl: './info-company.component.html',
-  styleUrls: ['./info-company.component.css']
+  styleUrls: ['./info-company.component.css'],
 })
 export class InfoCompanyComponent implements OnInit {
-  displayedColumns: string[] = ['name', 'ruc', 'address', 'city', 'phone', 'email'];
+  displayedColumns: string[] = [
+    'name',
+    'ruc',
+    'address',
+    'city',
+    'phone',
+    'email',
+  ];
 
   infoCompany!: InfoCompany;
-  
-  constructor(
-    private apiService: ApiService,
-    private jwtService: JwtService // Assuming you have a JwtService for token handling
-  ){}
+
+  constructor(private infoCompanyStateService: InfoCompanyStateService) {}
 
   ngOnInit(): void {
     this.getInfoCompany();
   }
 
   getInfoCompany(): void {
-    const userData = this.jwtService.getUserData();
-    const idCompany = userData ? userData.empresa : null;
-    this.apiService.getData('info-company/'+idCompany).subscribe(
-      (response) => {
-        this.infoCompany = response;
+    this.infoCompanyStateService.loadInfoCompany().subscribe((response) => {
+      if (response) {
+        this.infoCompany = {
+          name: response.name,
+          ruc: response.ruc || response.nit || '',
+          address: response.address || response.direction || '',
+          city: response.city,
+          phone: response.phone,
+          email: response.email,
+          logo: response.logo,
+        };
       }
-    );
+    });
   }
 }
