@@ -55,6 +55,7 @@ class Conductores(Base):
   FEC_DEVOLU = Column(Date, default=None)
   TURNO = Column(CHAR(2), default="")
   IMPR_CUOTA = Column(CHAR(1), default="")
+  COMISI_BCO = Column(DECIMAL(5,2), default=0)
   CONTR_SINI = Column(CHAR(1), default="")
   VLR_CUOTA = Column(DECIMAL(10,0), default=0)
   FEC_SINIES = Column(Date, default=None)

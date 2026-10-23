@@ -25,7 +25,7 @@ from utils.panapass import get_txt_file, search_value_in_txt
 from utils.verify_values import verify_value
 from utils.cash_records import create_cash_record
 from utils.pdf import html2pdf_receipt
-from utils.phone import normalize_phone
+from utils.phone import normalize_phone, get_drivers_by_phone
 from datetime import datetime, timedelta
 import pytz
 import os
@@ -1088,7 +1088,16 @@ YAPPY_COLUMN_MAP = {
 
 YAPPY_DECIMAL_FIELDS = ['SUBTOTAL', 'PROPINA', 'DESCUENTO', 'IMPUESTO', 'TOTAL']
 
-async def upload_yappy_csv(company_code: str, file: UploadFile = File(...)):
+YAPPY_REASON_COLUMNS = {
+  'cuotas': 'CREDITO',
+  '-': 'CREDITO',
+  'inscripcion': 'INSCRIPCIO',
+  'siniestros': 'SINIESTROS',
+  'panapass': 'PANAPASS',
+  'multas': 'MULTA'
+}
+
+async def upload_csv_yappy(company_code: str, file: UploadFile = File(...)):
   db = session()
   try:
     company_code = company_code.strip()
@@ -1118,6 +1127,8 @@ async def upload_yappy_csv(company_code: str, file: UploadFile = File(...)):
 
     if 'REFERENCIA' not in header_to_column.values():
       return JSONResponse(content={"message": "El CSV no tiene el formato de Yappy esperado"}, status_code=400)
+
+    drivers_by_phone = get_drivers_by_phone(db, company_code)
 
     inserted = 0
     updated = 0
@@ -1150,6 +1161,25 @@ async def upload_yappy_csv(company_code: str, file: UploadFile = File(...)):
           raw_value = raw_value[:max_length]
 
         values[column] = raw_value or None
+
+      matches = drivers_by_phone.get(normalize_phone(values.get('CELULAR'), remove_country_code=True), {})
+
+      if len(matches) == 1:
+        driver = next(iter(matches.values()))
+        values['CEDULA'] = (driver.CEDULA or '').strip() or None
+        values['CODIGO'] = (driver.CODIGO or '').strip() or None
+        values['UNIDAD'] = (driver.UND_NRO or '').strip() or None
+        values['UNIDAD2'] = (driver.UND_PRE or '').strip() or None
+        values['COMISION'] = driver.COMISI_BCO
+      elif len(matches) > 1:
+        warnings.append(f"Fila {row_number}: el celular coincide con varios conductores, no se completaron sus datos")
+
+      reason = (values.get('MOTIVOPAGO') or '').lower()
+      if reason in YAPPY_REASON_COLUMNS:
+        if values.get('TOTAL') is not None:
+          values[YAPPY_REASON_COLUMNS[reason]] = values['TOTAL']
+      elif reason:
+        warnings.append(f"Fila {row_number}: el motivo de pago '{reason}' no tiene columna asignada")
 
       has_reference = bool(values.get('REFERENCIA'))
       values['REFERENCIA'] = values.get('REFERENCIA') or ''
