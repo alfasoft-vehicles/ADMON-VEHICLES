@@ -67,3 +67,7 @@ async def get_yappy_records(company_code: str):
 @wallet_router.get("/wallet/totals/yappy/{company_code}/", tags=["Wallet"])
 async def get_yappy_totals(company_code: str):
   return await yappy_totals(company_code)
+
+@wallet_router.put("/wallet/assign-vehicle/yappy/{company_code}/{reference}/{vehicle_number}/", tags=["Wallet"])
+async def put_assign_vehicle_yappy(company_code: str, reference: str, vehicle_number: str):
+  return await assign_vehicle_yappy(company_code, reference, vehicle_number)

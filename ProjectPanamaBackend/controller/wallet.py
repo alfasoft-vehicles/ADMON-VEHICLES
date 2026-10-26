@@ -1283,3 +1283,54 @@ async def yappy_totals(company_code: str):
     return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def assign_vehicle_yappy(company_code: str, reference: str, vehicle_number: str):
+  db = session()
+  try:
+    record = db.query(Yappy).filter(
+      Yappy.EMPRESA == company_code,
+      Yappy.REFERENCIA == reference
+    ).first()
+
+    if not record:
+      return JSONResponse(content={"message": "Referencia no encontrada"}, status_code=404)
+
+    vehicle = db.query(Vehiculos).filter(
+      Vehiculos.EMPRESA == company_code,
+      Vehiculos.NUMERO == vehicle_number
+    ).first()
+
+    if not vehicle:
+      return JSONResponse(content={"message": "Vehículo no encontrado"}, status_code=404)
+
+    driver = db.query(Conductores).filter(
+      Conductores.EMPRESA == company_code,
+      Conductores.CODIGO == vehicle.CONDUCTOR
+    ).first() if vehicle.CONDUCTOR else None
+
+    if not driver:
+      return JSONResponse(content={"message": "El vehículo no tiene un conductor asignado"}, status_code=404)
+
+    record.CEDULA = (driver.CEDULA or '').strip() or None
+    record.CODIGO = (driver.CODIGO or '').strip() or None
+    record.UNIDAD = vehicle.NUMERO
+    record.COMISION = driver.COMISI_BCO
+
+    db.commit()
+
+    response = {
+      "message": "Registro actualizado correctamente",
+      "driver_id_card": record.CEDULA,
+      "driver_code": record.CODIGO,
+      "vehicle_number": record.UNIDAD,
+      "commission": record.COMISION
+    }
+
+    return JSONResponse(content=jsonable_encoder(response), status_code=200)
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
