@@ -1256,3 +1256,30 @@ async def yappy_records(company_code: str):
     return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+YAPPY_TOTALS_COLUMNS = {
+  'commission': Yappy.COMISION,
+  'credit': Yappy.CREDITO,
+  'registration': Yappy.INSCRIPCIO,
+  'accidents': Yappy.SINIESTROS,
+  'panapass': Yappy.PANAPASS,
+  'fines': Yappy.MULTA,
+  'total': Yappy.TOTAL
+}
+
+async def yappy_totals(company_code: str):
+  db = session()
+  try:
+    sums = db.query(
+      *[func.coalesce(func.sum(column), 0).label(name) for name, column in YAPPY_TOTALS_COLUMNS.items()]
+    ).filter(Yappy.EMPRESA == company_code).one()
+
+    response = {name: f"{Decimal(str(getattr(sums, name))):.2f}" for name in YAPPY_TOTALS_COLUMNS}
+
+    return JSONResponse(content=response, status_code=200)
+  except Exception as e:
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
