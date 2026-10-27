@@ -37,6 +37,11 @@ export class YappyBulkUploadStrategy implements BulkUploadStrategy {
     private jwtService: JwtService,
   ) {}
 
+  private getCompany(): string {
+    const userData = this.jwtService.getUserData();
+    return (userData?.empresa || '').trim();
+  }
+
   uploadFile(
     file: File | null,
   ): Observable<{ success: boolean; message?: string; data?: any }> {
@@ -46,8 +51,12 @@ export class YappyBulkUploadStrategy implements BulkUploadStrategy {
       );
     }
 
-    const userData = this.jwtService.getUserData();
-    const companyCode = (userData?.empresa || '10').trim();
+    const companyCode = this.getCompany();
+    if (!companyCode) {
+      return throwError(
+        () => new Error('No se encontró la empresa del usuario autenticado.'),
+      );
+    }
 
     const formData = new FormData();
     formData.append('file', file, file.name);
@@ -94,8 +103,10 @@ export class YappyBulkUploadStrategy implements BulkUploadStrategy {
   }
 
   getRecords(): Observable<BulkUploadRecord[]> {
-    const userData = this.jwtService.getUserData();
-    const companyCode = (userData?.empresa || '10').trim();
+    const companyCode = this.getCompany();
+    if (!companyCode) {
+      return of([]);
+    }
 
     return this.apiService
       .getData(`wallet/get-records/yappy/${companyCode}`)
@@ -107,6 +118,27 @@ export class YappyBulkUploadStrategy implements BulkUploadStrategy {
           return items.map((item, index) => this.mapToRecord(item, index + 1));
         }),
       );
+  }
+
+  /**
+   * Obtiene los totales consolidados de Yappy desde el backend.
+   * Endpoint: GET /wallet/totals/yappy/{company_code}/
+   */
+  getTotals(): Observable<any> {
+    const companyCode = this.getCompany();
+    if (!companyCode) {
+      return of(null);
+    }
+
+    return this.apiService.getData(`wallet/totals/yappy/${companyCode}`).pipe(
+      catchError((error) => {
+        console.error(
+          '[YappyBulkUploadStrategy] Error al obtener totales de Yappy:',
+          error,
+        );
+        return of(null);
+      }),
+    );
   }
 
   private mapToRecord(item: any, id: number): BulkUploadRecord {
@@ -165,6 +197,7 @@ export class YappyBulkUploadStrategy implements BulkUploadStrategy {
 
   getSummaryMetrics(
     records: BulkUploadRecord[] = [],
+    backendTotals?: any,
   ): BulkUploadSummaryMetrics {
     const totalRegistros = records.length;
     const pendientes = records.filter((r) => this.isRecordInReview(r));
@@ -175,6 +208,48 @@ export class YappyBulkUploadStrategy implements BulkUploadStrategy {
       (sum, r) => sum + (parseFloat(r.pendiente || '0') || 0),
       0,
     );
+
+    const formatMoney = (val: number | string) => {
+      const num = typeof val === 'number' ? val : parseFloat(val || '0') || 0;
+      return num.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    };
+
+    if (backendTotals) {
+      const creditosNum = parseFloat(backendTotals.credit || '0') || 0;
+      const debitosNum = parseFloat(backendTotals.debit || '0') || 0;
+      const totalBancoNum =
+        parseFloat(backendTotals.total || backendTotals.credit || '0') || 0;
+      const comisionNum = parseFloat(backendTotals.commission || '0') || 0;
+      const inscripcionNum = parseFloat(backendTotals.registration || '0') || 0;
+      const multasNum = parseFloat(backendTotals.fines || '0') || 0;
+      const panapassNum = parseFloat(backendTotals.panapass || '0') || 0;
+      const siniestrosNum = parseFloat(backendTotals.accidents || '0') || 0;
+
+      return {
+        totalRegistros,
+        registrosValidados,
+        registrosPendientes,
+        montoPendiente: formatMoney(montoPendienteNum),
+        porcentajeConciliado:
+          totalRegistros > 0
+            ? parseFloat(
+                ((registrosValidados / totalRegistros) * 100).toFixed(1),
+              )
+            : 0,
+        debitos: formatMoney(debitosNum),
+        creditos: formatMoney(creditosNum),
+        totalBanco: formatMoney(totalBancoNum),
+        comision: formatMoney(comisionNum),
+        inscripcion: formatMoney(inscripcionNum),
+        multas: formatMoney(multasNum),
+        panapass: formatMoney(panapassNum),
+        siniestros: formatMoney(siniestrosNum),
+        netoRecaudable: formatMoney(totalBancoNum - comisionNum),
+      };
+    }
 
     const creditosNum = records.reduce(
       (sum, r) => sum + (parseFloat(r.credito || '0') || 0),
@@ -210,12 +285,6 @@ export class YappyBulkUploadStrategy implements BulkUploadStrategy {
       (sum, r) => sum + (parseFloat(r.siniestros || '0') || 0),
       0,
     );
-
-    const formatMoney = (val: number) =>
-      val.toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
 
     return {
       totalRegistros,

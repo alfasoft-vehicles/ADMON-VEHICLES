@@ -1262,6 +1262,7 @@ async def yappy_records(company_code: str):
 YAPPY_TOTALS_COLUMNS = {
   'commission': Yappy.COMISION,
   'credit': Yappy.CREDITO,
+  'debit': Yappy.DEBITO,
   'registration': Yappy.INSCRIPCIO,
   'accidents': Yappy.SINIESTROS,
   'panapass': Yappy.PANAPASS,
@@ -1272,6 +1273,7 @@ YAPPY_TOTALS_COLUMNS = {
 async def yappy_totals(company_code: str):
   db = session()
   try:
+    company_code = company_code.strip()
     sums = db.query(
       *[func.coalesce(func.sum(column), 0).label(name) for name, column in YAPPY_TOTALS_COLUMNS.items()]
     ).filter(Yappy.EMPRESA == company_code).one()

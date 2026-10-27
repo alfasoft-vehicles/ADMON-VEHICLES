@@ -2,7 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { BulkUploadService } from './services/bulk-upload.service';
 import { BulkUploadStrategy } from './strategies/bulk-upload.strategy';
 import { BulkUploadRecord } from './models/bulk-upload-record.interface';
@@ -10,6 +11,7 @@ import { BulkUploadSummaryMetrics } from './models/bulk-upload-config.interface'
 import { ConfirmActionDialogComponent } from 'src/app/modules/shared/components/confirm-action-dialog/confirm-action-dialog.component';
 import { SearchUnitDialogComponent } from './dialogs/search-unit-dialog/search-unit-dialog.component';
 import { LoadingService } from 'src/app/services/loading.service';
+import { InfoCompanyStateService } from 'src/app/modules/shared/services/info-company-state.service';
 
 @Component({
   selector: 'app-bulk-upload-view',
@@ -19,6 +21,10 @@ import { LoadingService } from 'src/app/services/loading.service';
 export class BulkUploadViewComponent implements OnInit, OnDestroy {
   // Estrategia activa según :type
   activeStrategy: BulkUploadStrategy | null = null;
+  isLoadingData: boolean = true;
+  infoCompanyName: string = '';
+  currentDateFormatted: string = '';
+  backendTotals: any = null;
 
   // Criterios de búsqueda
   filterCriteria: string = 'unidad';
@@ -70,9 +76,12 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private loadingService: LoadingService,
+    private infoCompanyState: InfoCompanyStateService,
   ) {}
 
   ngOnInit(): void {
+    this.initHeaderMeta();
+    this.getInfoCompany();
     this.routeSub = this.route.paramMap.subscribe((params) => {
       const type = params.get('type');
       if (!type || !this.bulkUploadService.hasStrategy(type)) {
@@ -92,10 +101,37 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
     });
   }
 
+  private initHeaderMeta(): void {
+    const now = new Date();
+    const formatted = now.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+    this.currentDateFormatted =
+      formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  }
+
+  private getInfoCompany(): void {
+    this.infoCompanyState.loadInfoCompany().subscribe({
+      next: (info) => {
+        if (info?.name) {
+          this.infoCompanyName = info.name;
+        }
+      },
+      error: (err) => {
+        console.error('Error fetching company info:', err);
+      },
+    });
+  }
+
   /**
    * Valida existencia de registros antes de inicializar la estrategia
    */
   private validateAndInitStrategy(type: string): void {
+    this.activeStrategy = this.bulkUploadService.setStrategyByType(type);
+    this.isLoadingData = true;
     this.loadingService.show({
       title: 'Cargando Conciliación',
       message: 'Obteniendo y verificando información de los registros...',
@@ -105,6 +141,7 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
     this.bulkUploadService.hasRecords(type).subscribe({
       next: (hasRecords) => {
         if (!hasRecords) {
+          this.isLoadingData = false;
           this.loadingService.hide();
           this.snackBar.open(
             'No se encontraron registros pendientes de procesar. Debe subir un archivo .CSV primero.',
@@ -139,15 +176,35 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
    * Inicializa la vista con la estrategia correspondiente al tipo y carga los registros del backend
    */
   private initStrategy(type?: string | null): void {
-    this.activeStrategy = this.bulkUploadService.setStrategyByType(type);
-    this.bulkUploadService.getRecords().subscribe({
-      next: (records) => {
+    if (!this.activeStrategy) {
+      this.activeStrategy = this.bulkUploadService.setStrategyByType(type);
+    }
+
+    forkJoin({
+      records: this.bulkUploadService.getRecords(),
+      totals: this.bulkUploadService.getTotals().pipe(
+        catchError((err) => {
+          console.warn(
+            '[BulkUploadViewComponent] Error al obtener totales de backend, se calcularán localmente:',
+            err,
+          );
+          return of(null);
+        }),
+      ),
+    }).subscribe({
+      next: ({ records, totals }) => {
+        this.isLoadingData = false;
         this.loadingService.hide();
         this.records = records;
-        this.metrics = this.bulkUploadService.getSummaryMetrics(this.records);
+        this.backendTotals = totals;
+        this.metrics = this.bulkUploadService.getSummaryMetrics(
+          this.records,
+          this.backendTotals,
+        );
         this.applySort();
       },
       error: (err) => {
+        this.isLoadingData = false;
         this.loadingService.hide();
         console.error(
           '[BulkUploadViewComponent] Error al obtener registros:',
@@ -359,12 +416,28 @@ export class BulkUploadViewComponent implements OnInit, OnDestroy {
     if (index !== -1) {
       this.records[index] = { ...this.records[index], ...updatedData };
       this.recalculateMetrics();
+      this.refreshTotals();
       this.applySort();
     }
   }
 
   recalculateMetrics(): void {
-    this.metrics = this.bulkUploadService.getSummaryMetrics(this.records);
+    this.metrics = this.bulkUploadService.getSummaryMetrics(
+      this.records,
+      this.backendTotals,
+    );
+  }
+
+  refreshTotals(): void {
+    this.bulkUploadService
+      .getTotals()
+      .pipe(catchError(() => of(null)))
+      .subscribe((totals) => {
+        if (totals) {
+          this.backendTotals = totals;
+          this.recalculateMetrics();
+        }
+      });
   }
 
   // ==========================================================================
