@@ -1291,6 +1291,10 @@ async def yappy_totals(company_code: str):
 async def assign_vehicle_yappy(company_code: str, reference: str, vehicle_number: str):
   db = session()
   try:
+    company_code = (company_code or "").strip()
+    reference = (reference or "").strip()
+    vehicle_number = (vehicle_number or "").strip()
+
     record = db.query(Yappy).filter(
       Yappy.EMPRESA == company_code,
       Yappy.REFERENCIA == reference
@@ -1315,10 +1319,20 @@ async def assign_vehicle_yappy(company_code: str, reference: str, vehicle_number
     if not driver:
       return JSONResponse(content={"message": "El vehículo no tiene un conductor asignado"}, status_code=404)
 
+    state = db.query(Estados).filter(
+      Estados.EMPRESA == company_code,
+      Estados.CODIGO == vehicle.ESTADO
+    ).first() if vehicle.ESTADO else None
+
+    state_name = (state.NOMBRE or '').strip() if state and state.NOMBRE else None
+
     record.CEDULA = (driver.CEDULA or '').strip() or None
     record.CODIGO = (driver.CODIGO or '').strip() or None
-    record.UNIDAD = vehicle.NUMERO
+    record.UNIDAD = (vehicle.NUMERO or '').strip()
+    record.UNIDAD2 = (driver.UND_PRE or '').strip() or None
     record.COMISION = driver.COMISI_BCO
+    if state_name:
+      record.NOMESTADO = state_name
 
     db.commit()
 
@@ -1327,7 +1341,9 @@ async def assign_vehicle_yappy(company_code: str, reference: str, vehicle_number
       "driver_id_card": record.CEDULA,
       "driver_code": record.CODIGO,
       "vehicle_number": record.UNIDAD,
-      "commission": record.COMISION
+      "other_vehicle": record.UNIDAD2,
+      "vehicle_state": (record.NOMESTADO or '').strip(),
+      "commission": float(record.COMISION) if record.COMISION is not None else 0.0
     }
 
     return JSONResponse(content=jsonable_encoder(response), status_code=200)

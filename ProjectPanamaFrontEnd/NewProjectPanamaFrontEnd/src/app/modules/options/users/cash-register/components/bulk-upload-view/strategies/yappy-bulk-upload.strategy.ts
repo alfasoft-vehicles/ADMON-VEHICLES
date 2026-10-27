@@ -141,6 +141,30 @@ export class YappyBulkUploadStrategy implements BulkUploadStrategy {
     );
   }
 
+  /**
+   * Asigna una unidad vehicular a una transacción Yappy por su referencia.
+   * Endpoint: PUT wallet/assign-vehicle/yappy/{company_code}/{reference}/{vehicle_number}/
+   */
+  assignVehicle(reference: string, vehicleNumber: string): Observable<any> {
+    const companyCode = this.getCompany();
+    if (!companyCode) {
+      return throwError(
+        () =>
+          new Error(
+            'No se encontró el código de empresa en la sesión del usuario.',
+          ),
+      );
+    }
+
+    const cleanRef = encodeURIComponent((reference || '').trim());
+    const cleanUnit = encodeURIComponent((vehicleNumber || '').trim());
+
+    return this.apiService.updateData(
+      `wallet/assign-vehicle/yappy/${companyCode}/${cleanRef}/${cleanUnit}`,
+      {},
+    );
+  }
+
   private mapToRecord(item: any, id: number): BulkUploadRecord {
     const isReview = Number(item.review) === 1;
 

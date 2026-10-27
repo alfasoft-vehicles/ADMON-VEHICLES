@@ -53,4 +53,7 @@ export interface BulkUploadStrategy {
     records: BulkUploadRecord[],
     order: 'default' | 'revision' | 'ready',
   ): BulkUploadRecord[];
+
+  /** Asigna una unidad vehicular a una transacción existente */
+  assignVehicle?(reference: string, vehicleNumber: string): Observable<any>;
 }
