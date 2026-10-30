@@ -41,87 +41,142 @@ Esta skill define el estándar visual, estructural y de experiencia de usuario p
 ```
 
 > [!IMPORTANT]
-> Para cualquier estado de carga (*loaders*, *spinners*, barras de progreso o subida de archivos), **combina siempre esta skill con la skill `loader-patterns`**.
+> Para cualquier estado de carga (_loaders_, _spinners_, barras de progreso o subida de archivos), **combina siempre esta skill con la skill `loader-patterns`**.
 
 ---
 
 ## 🎨 1. Paleta de Colores y Tokens Semánticos
 
 ### Superficies y Bordes
-| Uso | Color Hex | Descripción |
-| :--- | :--- | :--- |
-| **Fondo de página** | `#f8fafc` | Gris pizarra claro para el contenedor raíz de las vistas |
-| **Superficie de tarjeta** | `#ffffff` | Blanco puro para headers, cards, tablas y diálogos |
-| **Superficie secundaria** | `#f1f5f9` | Fondo de cabeceras de tabla (`thead`), *pills* neutros y grupos de *toggles* |
-| **Borde estándar** | `#e2e8f0` | Borde principal de tarjetas, divisores y celdas |
-| **Borde interactivo / input** | `#cbd5e1` | Borde en reposo para buscadores, inputs y *button-toggles* |
-| **Borde hover** | `#94a3b8` | Borde al pasar el cursor sobre tarjetas o controles |
-| **Acento primario (Foco)** | `#0284c7` | Azul cielo corporativo para bordes en foco, enlaces activos y textos hover |
+
+| Uso                           | Color Hex | Descripción                                                                  |
+| :---------------------------- | :-------- | :--------------------------------------------------------------------------- |
+| **Fondo de página**           | `#f8fafc` | Gris pizarra claro para el contenedor raíz de las vistas                     |
+| **Superficie de tarjeta**     | `#ffffff` | Blanco puro para headers, cards, tablas y diálogos                           |
+| **Superficie secundaria**     | `#f1f5f9` | Fondo de cabeceras de tabla (`thead`), _pills_ neutros y grupos de _toggles_ |
+| **Borde estándar**            | `#e2e8f0` | Borde principal de tarjetas, divisores y celdas                              |
+| **Borde interactivo / input** | `#cbd5e1` | Borde en reposo para buscadores, inputs y _button-toggles_                   |
+| **Borde hover**               | `#94a3b8` | Borde al pasar el cursor sobre tarjetas o controles                          |
+| **Acento primario (Foco)**    | `#0284c7` | Azul cielo corporativo para bordes en foco, enlaces activos y textos hover   |
 
 ### Escala Tipográfica
-| Rol | Color Hex | Peso recomendado |
-| :--- | :--- | :--- |
-| **Títulos principales (`h1`, `h2`)** | `#1e293b` o `#0f172a` | `700` - `800` |
-| **Texto de cuerpo / Valores** | `#334155` | `500` - `600` |
-| **Encabezados de tabla / Labels** | `#475569` | `600` - `700` |
-| **Subtítulos / Texto secundario** | `#64748b` | `400` - `500` |
-| **Placeholders / Iconos pasivos** | `#94a3b8` | `400` |
+
+| Rol                                  | Color Hex             | Peso recomendado |
+| :----------------------------------- | :-------------------- | :--------------- |
+| **Títulos principales (`h1`, `h2`)** | `#1e293b` o `#0f172a` | `700` - `800`    |
+| **Texto de cuerpo / Valores**        | `#334155`             | `500` - `600`    |
+| **Encabezados de tabla / Labels**    | `#475569`             | `600` - `700`    |
+| **Subtítulos / Texto secundario**    | `#64748b`             | `400` - `500`    |
+| **Placeholders / Iconos pasivos**    | `#94a3b8`             | `400`            |
 
 ### Paleta Pastel para Cajas de Iconos (`.icon-box`) y Badges
+
 Utiliza siempre pares armónicos de fondo suave + icono vibrante:
 
 ```css
 /* Verde (Caja, Éxito, Pagos) */
-.bg-green { background-color: #dcfce7; }
-.text-green { color: #16a34a; }
+.bg-green {
+  background-color: #dcfce7;
+}
+.text-green {
+  color: #16a34a;
+}
 
 /* Esmeralda (Cartera, Ahorros, Saldos a favor) */
-.bg-emerald { background-color: #d1fae5; }
-.text-emerald { color: #059669; }
+.bg-emerald {
+  background-color: #d1fae5;
+}
+.text-emerald {
+  color: #059669;
+}
 
 /* Azul (Operaciones, CNT, Información) */
-.bg-blue { background-color: #dbeafe; }
-.text-blue { color: #2563eb; }
+.bg-blue {
+  background-color: #dbeafe;
+}
+.text-blue {
+  color: #2563eb;
+}
 
 /* Azul Cielo (Sucursal, Taller, Vínculos) */
-.bg-sky { background-color: #e0f2fe; }
-.text-sky { color: #0284c7; }
+.bg-sky {
+  background-color: #e0f2fe;
+}
+.text-sky {
+  color: #0284c7;
+}
 
 /* Cian (Llavero, Transferencias) */
-.bg-cyan { background-color: #cffafe; }
-.text-cyan { color: #0891b2; }
+.bg-cyan {
+  background-color: #cffafe;
+}
+.text-cyan {
+  color: #0891b2;
+}
 
 /* Verde Azulado / Teal (Cobros, Operadores) */
-.bg-teal { background-color: #ccfbf1; }
-.text-teal { color: #0d9488; }
+.bg-teal {
+  background-color: #ccfbf1;
+}
+.text-teal {
+  color: #0d9488;
+}
 
 /* Índigo (Trámites, Gerencia, Detalle General) */
-.bg-indigo { background-color: #e0e7ff; }
-.text-indigo { color: #4f46e5; }
+.bg-indigo {
+  background-color: #e0e7ff;
+}
+.text-indigo {
+  color: #4f46e5;
+}
 
 /* Púrpura (Chapistería, Resumen Empresa) */
-.bg-purple { background-color: #f3e8ff; }
-.text-purple { color: #9333ea; }
+.bg-purple {
+  background-color: #f3e8ff;
+}
+.text-purple {
+  color: #9333ea;
+}
 
 /* Naranja (Almacén, Carga Masiva, Consecutivos) */
-.bg-orange { background-color: #ffedd5; }
-.text-orange { color: #ea580c; }
+.bg-orange {
+  background-color: #ffedd5;
+}
+.text-orange {
+  color: #ea580c;
+}
 
 /* Ámbar (Gastos, Advertencias) */
-.bg-amber { background-color: #fef3c7; }
-.text-amber { color: #d97706; }
+.bg-amber {
+  background-color: #fef3c7;
+}
+.text-amber {
+  color: #d97706;
+}
 
 /* Rojo (Reclamos, Siniestros, Cierres, Deudas, Eliminar) */
-.bg-red { background-color: #fee2e2; }
-.text-red { color: #dc2626; }
+.bg-red {
+  background-color: #fee2e2;
+}
+.text-red {
+  color: #dc2626;
+}
 
 /* Pizarra / Gris (Contado, Copias, Inactivos) */
-.bg-slate { background-color: #f1f5f9; }
-.text-slate { color: #64748b; }
+.bg-slate {
+  background-color: #f1f5f9;
+}
+.text-slate {
+  color: #64748b;
+}
 
 /* Gris Oscuro (Utilidades, Configuración, Resumen Diario) */
-.bg-darkgray { background-color: #e2e8f0; }
-.text-darkgray { color: #475569; }
+.bg-darkgray {
+  background-color: #e2e8f0;
+}
+.text-darkgray {
+  color: #475569;
+}
 ```
 
 ---
@@ -131,16 +186,20 @@ Utiliza siempre pares armónicos de fondo suave + icono vibrante:
 Todas las vistas principales o menús de departamento deben abrir con un bloque de encabezado blanco que contextualice la vista, muestre contadores o metadatos y, cuando aplique, el botón de regreso, la píldora de fecha y la insignia de la empresa.
 
 ### Reglas de Contenido en el Header (`.page-subtitle` y Chips de Conteo)
+
 - **Mostrar subtítulo (`.page-subtitle`)**: Únicamente en **componentes de selección de módulos u opciones** (ej. `home-users`, `opciones-operaciones`, `opciones-gerencia`, `opciones-taller`, etc.), donde guía al usuario a elegir una opción o muestra un saludo contextual.
 - **NO mostrar subtítulo**: En **componentes de funcionalidad operativa directa** (ej. `cash-register-view`, `bulk-upload-view`, vistas de tablas de procesamiento o formularios de trabajo). En estas pantallas el header debe mantenerse compacto mostrando solo el título principal.
 - **NO mostrar chips de conteo de módulos u opciones**: En los componentes de selección de módulos u opciones (como `home-users`, `opciones-operaciones`, etc.), **no se debe incluir** un chip/pill que indique cuántos módulos u opciones hay habilitados para escoger (ej. evitar `X habilitados` o `X opciones` al lado del título). Solo se permiten badges contextuales propios de una operación o pasarela (como el badge del banco en `bulk-upload` o la unidad activa en `cash-register`).
 
 ### Estándar Visual de Fecha (`.date-pill`) y Chip de Empresa (`.company-badge`)
+
 A la derecha del encabezado (`.header-right`) se deben presentar la fecha y el nombre de la empresa (obtenido desde la caché centralizada de `InfoCompanyStateService.loadInfoCompany()`) con el estilo pastel suave y limpio de `bulk-upload-view`:
+
 - **`.date-pill`**: Fondo `#f8fafc`, borde `1px solid #e2e8f0`, `border-radius: 8px`, texto `#475569` (`font-weight: 600`) e ícono `calendar_today` en azul cielo `#0284c7` (`16px`).
 - **`.company-badge`**: Fondo pastel degradado suave `linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)`, borde `1px solid #bae6fd`, `border-radius: 10px`, texto `#0369a1` (`font-weight: 700`, `text-transform: uppercase`) e ícono `apartment` en `#0284c7` (`20px`).
 
 ### Plantilla HTML
+
 ```html
 <header class="top-header">
   <div class="header-left">
@@ -187,6 +246,7 @@ A la derecha del encabezado (`.header-right`) se deben presentar la fecha y el n
 ```
 
 ### Estilos CSS Base del Contenedor Padre (`.main-container`) y Header (`.top-header`)
+
 > **Importante**: El contenedor padre de cada vista (`.main-container`) debe mantener un espaciado compacto y uniforme igual al de `bulk-upload-view`: `padding: 16px 22px 24px` y `gap: 14px` (y en móvil `<= 640px`: `padding: 8px 10px` y `gap: 8px`). El `.top-header` utiliza `padding: 14px 20px`.
 
 ```css
@@ -352,6 +412,7 @@ A la derecha del encabezado (`.header-right`) se deben presentar la fecha y el n
 Existen dos variantes según la jerarquía de la pantalla:
 
 ### Variante A: Tarjeta de Navegación de Módulo / Submódulo (`.module-card`)
+
 Ideal para `HomeUsersComponent` y las páginas de menú de cada departamento (`opciones-operaciones`, `opciones-gerencia`, `opciones-taller`, `opciones-cartera`, etc.). No incluye descripciones largas ni chips de categoría innecesarios: se enfoca en el icono pastel, el título claro y el pie de acción.
 
 ```html
@@ -380,7 +441,9 @@ Ideal para `HomeUsersComponent` y las páginas de menú de cada departamento (`o
       <span class="card-action-text">
         {{ option.disabled ? 'Acceso deshabilitado' : 'Ingresar al módulo' }}
       </span>
-      <mat-icon class="card-arrow" *ngIf="!option.disabled">arrow_forward</mat-icon>
+      <mat-icon class="card-arrow" *ngIf="!option.disabled"
+        >arrow_forward</mat-icon
+      >
       <mat-icon class="card-lock" *ngIf="option.disabled">lock</mat-icon>
     </div>
   </button>
@@ -497,7 +560,9 @@ Ideal para `HomeUsersComponent` y las páginas de menú de cada departamento (`o
   width: 18px;
   height: 18px;
   color: #94a3b8;
-  transition: transform 0.2s ease, color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
 }
 
 .module-card:hover:not(:disabled) .card-arrow {
@@ -507,6 +572,7 @@ Ideal para `HomeUsersComponent` y las páginas de menú de cada departamento (`o
 ```
 
 ### Variante B: Tile Compacto Centrado (`.query-tile-btn`)
+
 Ideal para grillas densas dentro de diálogos (como `QueriesDialogComponent`) o paneles laterales de accesos rápidos (como la sección `CONSULTAS` en `CashRegisterViewComponent`).
 
 ```html
@@ -530,7 +596,10 @@ Ideal para grillas densas dentro de diálogos (como `QueriesDialogComponent`) o 
   border-radius: 10px;
   padding: 16px 10px;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .query-tile-btn:hover {
@@ -568,6 +637,7 @@ Ideal para grillas densas dentro de diálogos (como `QueriesDialogComponent`) o 
 ## 🔘 4. Botones de Acción Pastel y Controles de Formulario
 
 ### Botones Pastel (`mat-flat-button` / `mat-stroked-button`)
+
 En lugar de botones con colores saturados pesados, los botones de acción principales utilizan fondos pastel con texto e icono de alto contraste semántico:
 
 ```css
@@ -616,6 +686,7 @@ En lugar de botones con colores saturados pesados, los botones de acción princi
 ```
 
 ### Buscador Custom (`.search-box-wrapper`)
+
 Para barras de búsqueda en diálogos o toolbars de tablas, se prefiere un contenedor HTML limpio con borde `#cbd5e1` y foco `#0284c7` en lugar de un `mat-form-field` pesado con espacio reservado de subscript:
 
 ```html
@@ -650,7 +721,9 @@ Para barras de búsqueda en diálogos o toolbars de tablas, se prefiere un conte
   padding: 0 14px;
   height: 46px;
   box-sizing: border-box;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .search-box-wrapper:focus-within {
@@ -684,13 +757,92 @@ Para barras de búsqueda en diálogos o toolbars de tablas, se prefiere un conte
 ## 📊 5. Tablas de Datos Enterprise y Tarjetas KPI
 
 ### Tablas de Datos (`.data-table`)
-- **Contenedor**: `.table-section` con `background: #ffffff`, `border: 1px solid #e2e8f0`, `border-radius: 10px`, `overflow: hidden`.
-- **Cabecera (`thead th`)**: Sticky (`position: sticky; top: 0; z-index: 10`), fondo `#f1f5f9`, texto `#475569`, `font-weight: 700`, `font-size: 0.75rem`, `text-transform: uppercase`, `border-bottom: 2px solid #cbd5e1`.
-- **Celdas (`tbody td`)**: Texto `#1e293b`, `border-bottom: 1px solid #f1f5f9`, `padding: 8px 12px`. Para columnas numéricas o monetarias, usar `text-align: right; font-variant-numeric: tabular-nums;`.
+
+- **Contenedor**: `.table-section` con `background: #ffffff`, `border: 1px solid #e2e8f0`, `border-radius: 10px` a `12px`, `overflow: hidden`.
+- **Cabecera (`thead th` / `th.mat-mdc-header-cell`)**: Compacta y sticky (`position: sticky; top: 0; z-index: 10`), altura de fila `height: 34px` (`padding: 6px 10px` o `8px 10px`), fondo `#f1f5f9`, texto `#475569`, `font-weight: 700`, `font-size: 0.72rem`, `text-transform: uppercase`, `border-bottom: 2px solid #cbd5e1`, `border-right: 1px solid #e2e8f0`.
+- **Celdas (`tbody td` / `td.mat-mdc-cell`)**: Altura compacta (`height: 36px`, `padding: 6px 10px`), texto `#1e293b`, `font-size: 0.78rem`, `border-bottom: 1px solid #f1f5f9`. Para columnas numéricas o monetarias, usar `text-align: right; font-variant-numeric: tabular-nums;`.
 - **Scrollbars personalizados**: Ancho/alto de `6px` a `8px`, track `#f1f5f9` y thumb `#cbd5e1` redondeado.
 
+### Cálculo Dinámico de Altura y `pageSize` en Vistas de Tabla Completa
+
+> **Regla obligatoria**: Cuando un componente de página tenga como contenido principal **únicamente una tabla con paginador** (por ejemplo: `vehicles-table`, `drivers-table`, `owners-table`, `inspections-table`, `table-vehicle-repair`), tanto el contenedor de la tabla como el `pageSize` del `<mat-paginator>` **deben adaptarse dinámicamente al alto disponible de la pantalla** para no dejar espacios en blanco debajo de las filas ni forzar un número fijo (como `10`).
+
+1. **CSS (`.table-section` y `.table-scroll-container`)**:
+   - Ambos contenedores deben crecer con `flex: 1 1 auto;` dentro de `.main-container` (`min-height: 92vh; display: flex; flex-direction: column;`).
+2. **HTML (`#tableScrollContainer` y `mat-paginator`)**:
+   - Añadir la referencia `#tableScrollContainer` al contenedor scrollable de la tabla y enlazar `[pageSizeOptions]="pageSizeOptions"` y `[pageSize]="pageSize"` en `<mat-paginator>`.
+3. **TypeScript (Cálculo automático al cargar datos y al redimensionar con `ResizeObserver` + `@HostListener('window:resize')`)**:
+
+```typescript
+pageSize: number = 10;
+pageSizeOptions: number[] = [10, 20, 30, 40, 50, 100];
+private basePageSizeOptions: number[] = [10, 20, 30, 40, 50, 100];
+private resizeObserver?: ResizeObserver;
+private resizeDebounceTimer?: ReturnType<typeof setTimeout>;
+
+@ViewChild('tableScrollContainer')
+tableScrollContainer!: ElementRef<HTMLElement>;
+
+@HostListener('window:resize')
+onWindowResize(): void {
+  this.scheduleDynamicPageSizeCalculation();
+}
+
+private setupResizeObserver(): void {
+  if (typeof ResizeObserver === 'undefined' || !this.tableScrollContainer?.nativeElement) {
+    return;
+  }
+  this.resizeObserver = new ResizeObserver(() => {
+    this.ngZone.run(() => this.scheduleDynamicPageSizeCalculation());
+  });
+  this.resizeObserver.observe(this.tableScrollContainer.nativeElement);
+}
+
+private scheduleDynamicPageSizeCalculation(): void {
+  if (this.isLoading) return;
+  if (this.resizeDebounceTimer) clearTimeout(this.resizeDebounceTimer);
+  this.resizeDebounceTimer = setTimeout(() => this.calculateDynamicPageSize(), 60);
+}
+
+private calculateDynamicPageSize(): void {
+  if (this.isLoading || !this.tableScrollContainer?.nativeElement) return;
+
+  const containerEl = this.tableScrollContainer.nativeElement;
+  const rect = containerEl.getBoundingClientRect();
+  if (rect.height === 0 && rect.top === 0) return;
+
+  // Espacio desde el inicio del scroll container hasta el borde inferior de la ventana
+  // Restando paginador (~56px) y padding/margen inferior (~26px)
+  const availableHeight = Math.max(180, window.innerHeight - rect.top - 82);
+
+  const headerEl = containerEl.querySelector('tr.mat-mdc-header-row') as HTMLElement | null;
+  const rowEl = containerEl.querySelector('tr.mat-mdc-row') as HTMLElement | null;
+
+  const headerHeight = headerEl?.offsetHeight || 34;
+  const rowHeight = rowEl?.offsetHeight || 36;
+
+  const fittingRows = Math.floor((availableHeight - headerHeight) / rowHeight);
+  const calculatedSize = Math.max(5, fittingRows);
+
+  const optionsSet = new Set<number>([...this.basePageSizeOptions, calculatedSize]);
+  this.pageSizeOptions = Array.from(optionsSet).sort((a, b) => a - b);
+
+  if (this.pageSize !== calculatedSize || this.paginatorRef?.pageSize !== calculatedSize) {
+    this.pageSize = calculatedSize;
+    if (this.paginatorRef) {
+      this.paginatorRef._changePageSize(calculatedSize);
+    }
+    this.cdr.detectChanges();
+  }
+}
+```
+
+> Llamar a `setTimeout(() => this.calculateDynamicPageSize(), 0)` justo después de asignar `this.dataSource.data` y poner `this.isLoading = false`, e inicializar `this.setupResizeObserver()` en `ngAfterViewInit()` (limpiando el observer y el timer en `ngOnDestroy()`).
+
 ### Tarjetas KPI de Resumen (`.kpi-card`)
+
 Usadas en la parte superior de diálogos financieros o paneles de control (ej. `pay-surcharges-dialog`):
+
 ```html
 <div class="kpi-summary-grid">
   <div class="kpi-card kpi-balance">
@@ -699,7 +851,9 @@ Usadas en la parte superior de diálogos financieros o paneles de control (ej. `
     </div>
     <div class="kpi-data">
       <span class="kpi-label">Saldo Total</span>
-      <span class="kpi-value text-red">$ {{ totalBalance | number: '1.2-2' }}</span>
+      <span class="kpi-value text-red"
+        >$ {{ totalBalance | number: '1.2-2' }}</span
+      >
     </div>
   </div>
 </div>
@@ -724,7 +878,12 @@ Todo diálogo modal nuevo o rediseñado debe respetar esta estructura en 3 bloqu
       <p class="dialog-subtitle">Descripción breve del propósito del modal</p>
     </div>
   </div>
-  <button mat-icon-button (click)="close()" class="close-button" matTooltip="Cerrar">
+  <button
+    mat-icon-button
+    (click)="close()"
+    class="close-button"
+    matTooltip="Cerrar"
+  >
     <mat-icon>close</mat-icon>
   </button>
 </div>
@@ -743,7 +902,13 @@ Todo diálogo modal nuevo o rediseñado debe respetar esta estructura en 3 bloqu
   <button mat-button type="button" (click)="close()" class="action-btn">
     <mat-icon>close</mat-icon> Cancelar
   </button>
-  <button mat-flat-button color="primary" type="button" (click)="confirm()" class="action-btn btn-confirm">
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="confirm()"
+    class="action-btn btn-confirm"
+  >
     <mat-icon>check</mat-icon> Confirmar
   </button>
 </mat-dialog-actions>
@@ -762,7 +927,8 @@ Nunca dejes una tabla o grilla en blanco cuando no existan datos. Utiliza el blo
   </div>
   <h2 class="empty-title">No se encontraron registros</h2>
   <p class="empty-subtitle">
-    Intente ajustar los criterios de búsqueda o seleccione otra opción para continuar.
+    Intente ajustar los criterios de búsqueda o seleccione otra opción para
+    continuar.
   </p>
 </div>
 ```
@@ -991,7 +1157,7 @@ Nunca dejes una tabla o grilla en blanco cuando no existan datos. Utiliza el blo
 - [ ] **¿Se muestra el subtítulo (`.page-subtitle`) SOLO en vistas de selección de opciones (como `home-users` u `operaciones`) y se omite en vistas de funcionalidad directa (como `cash-register` o `bulk-upload`)?**
 - [ ] **¿Se omitió el chip de conteo de módulos/opciones (`X habilitados` / `X opciones`) en el header de las vistas de selección?**
 - [ ] **¿Las tarjetas de módulos/opciones son limpias (sin descripciones extensas ni chips de categoría redundantes) e incluyen `matRipple` y pie de acción?**
-- [ ] **¿Las tablas usan cabeceras `#f1f5f9` en mayúsculas, `tabular-nums` en importes y buscadores redondeados de `42px-48px`?**
+- [ ] **¿Las tablas usan cabeceras compactas (`34px`, `#f1f5f9`, `0.72rem` en mayúsculas), filas de `36px` (`0.78rem`) y `tabular-nums` en importes?**
+- [ ] **¿Si la vista es principalmente una tabla con paginador, calcula dinámicamente el `pageSize` según la altura disponible de la pantalla (`calculateDynamicPageSize`) para evitar espacios en blanco?**
 - [ ] **¿Los estados de carga cumplen con la skill `loader-patterns`?**
 - [ ] **¿Se verificó el comportamiento responsivo en `960px`, `768px` y `640px`?**
-
