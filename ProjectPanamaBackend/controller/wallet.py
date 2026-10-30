@@ -1334,3 +1334,18 @@ async def assign_vehicle_yappy(company_code: str, reference: str, vehicle_number
     return JSONResponse(content={"message": str(e)}, status_code=500)
   finally:
     db.close()
+
+# -----------------------------------------------------------------------------------------------
+
+async def delete_all_yappy():
+  db = session()
+  try:
+    deleted = db.query(Yappy).delete(synchronize_session=False)
+    db.commit()
+
+    return JSONResponse(content={"message": "Registros eliminados correctamente", "deleted": deleted}, status_code=200)
+  except Exception as e:
+    db.rollback()
+    return JSONResponse(content={"message": str(e)}, status_code=500)
+  finally:
+    db.close()
