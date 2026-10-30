@@ -1,4 +1,14 @@
-import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  HostListener,
+  NgZone,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
@@ -7,6 +17,8 @@ import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { JwtService } from 'src/app/services/jwt.service';
+import { LoadingService } from 'src/app/services/loading.service';
+import { InfoCompanyStateService } from 'src/app/modules/shared/services/info-company-state.service';
 
 export interface OwnerData {
   codigo: string;
@@ -48,22 +60,78 @@ export class OwnersTableComponent implements OnInit, AfterViewInit, OnDestroy {
   isLoading: boolean = true;
   originalData: OwnerData[] = [];
   totalOwners: number = 0;
+  infoCompanyName: string = '';
+  currentDateFormatted: string = '';
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
+  pageSize: number = 10;
+  pageSizeOptions: number[] = [10, 20, 30, 40, 50, 100];
+  private basePageSizeOptions: number[] = [10, 20, 30, 40, 50, 100];
+  private resizeObserver?: ResizeObserver;
+  private resizeDebounceTimer?: ReturnType<typeof setTimeout>;
+
+  @ViewChild('tableScrollContainer')
+  tableScrollContainer!: ElementRef<HTMLElement>;
+
+  private paginatorRef!: MatPaginator;
+  private sortRef!: MatSort;
+
+  @ViewChild(MatPaginator) set paginator(mp: MatPaginator) {
+    if (mp) {
+      this.paginatorRef = mp;
+      this.dataSource.paginator = this.paginatorRef;
+    }
+  }
+
+  @ViewChild(MatSort) set sort(ms: MatSort) {
+    if (ms) {
+      this.sortRef = ms;
+      this.dataSource.sort = this.sortRef;
+    }
+  }
 
   constructor(
     private apiService: ApiService,
     private router: Router,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    private loadingService: LoadingService,
+    private infoCompanyState: InfoCompanyStateService,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone,
   ) {
     this.dataSource = new MatTableDataSource<OwnerData>([]);
   }
 
   ngOnInit(): void {
+    this.initHeaderMeta();
+    this.getInfoCompany();
     this.fetchData();
     this.getTotalOwners();
     this.setupSearchListener();
+  }
+
+  private initHeaderMeta(): void {
+    const now = new Date();
+    const formatted = now.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+    this.currentDateFormatted =
+      formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  }
+
+  private getInfoCompany(): void {
+    this.infoCompanyState.loadInfoCompany().subscribe({
+      next: (info) => {
+        if (info?.name) {
+          this.infoCompanyName = info.name;
+        }
+      },
+      error: (err) => {
+        console.error('Error fetching company info:', err);
+      },
+    });
   }
 
   setupSearchListener() {
@@ -78,8 +146,13 @@ export class OwnersTableComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
+    if (this.paginatorRef) {
+      this.dataSource.paginator = this.paginatorRef;
+    }
+    if (this.sortRef) {
+      this.dataSource.sort = this.sortRef;
+    }
+    this.setupResizeObserver();
   }
 
   private getUser() {
@@ -102,13 +175,18 @@ export class OwnersTableComponent implements OnInit, AfterViewInit, OnDestroy {
         },
         (error) => {
           console.error('Error fetching total owners:', error);
-        }
+        },
       ),
     ];
   }
 
   fetchData() {
     this.isLoading = true;
+    this.loadingService.show({
+      title: 'Cargando Propietarios',
+      message: 'Obteniendo el listado de propietarios desde el servidor...',
+      submessage: 'Por favor espere un momento',
+    });
     const company = this.getCompany();
     this.subscriptions$ = [
       ...this.subscriptions$,
@@ -116,15 +194,18 @@ export class OwnersTableComponent implements OnInit, AfterViewInit, OnDestroy {
         (response) => {
           let filteredResponse = response.filter((data: any) => data.codigo);
           filteredResponse.sort((a: OwnerData, b: OwnerData) =>
-            a.nombre_propietario.localeCompare(b.nombre_propietario)
+            a.nombre_propietario.localeCompare(b.nombre_propietario),
           );
           this.originalData = filteredResponse;
           this.dataSource.data = filteredResponse;
           this.isLoading = false;
+          this.loadingService.hide();
+          setTimeout(() => this.calculateDynamicPageSize(), 0);
         },
         (error) => {
           this.isLoading = false;
-        }
+          this.loadingService.hide();
+        },
       ),
     ];
   }
@@ -143,12 +224,93 @@ export class OwnersTableComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   openExternalLink(): void {
-    localStorage.setItem('pdfEndpoint', 'directorio-propietarios/' + this.getCompany() + '/' + this.getUser());
+    localStorage.setItem(
+      'pdfEndpoint',
+      'directorio-propietarios/' + this.getCompany() + '/' + this.getUser(),
+    );
     localStorage.setItem('pdfData', '0');
     window.open(`/pdf`, '_blank');
   }
 
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.scheduleDynamicPageSizeCalculation();
+  }
+
+  private setupResizeObserver(): void {
+    if (
+      typeof ResizeObserver === 'undefined' ||
+      !this.tableScrollContainer?.nativeElement
+    ) {
+      return;
+    }
+
+    this.resizeObserver = new ResizeObserver(() => {
+      this.ngZone.run(() => {
+        this.scheduleDynamicPageSizeCalculation();
+      });
+    });
+
+    this.resizeObserver.observe(this.tableScrollContainer.nativeElement);
+  }
+
+  private scheduleDynamicPageSizeCalculation(): void {
+    if (this.isLoading) return;
+    if (this.resizeDebounceTimer) {
+      clearTimeout(this.resizeDebounceTimer);
+    }
+    this.resizeDebounceTimer = setTimeout(() => {
+      this.calculateDynamicPageSize();
+    }, 60);
+  }
+
+  private calculateDynamicPageSize(): void {
+    if (this.isLoading || !this.tableScrollContainer?.nativeElement) return;
+
+    const containerEl = this.tableScrollContainer.nativeElement;
+    const rect = containerEl.getBoundingClientRect();
+    if (rect.height === 0 && rect.top === 0) return;
+
+    const availableHeight = Math.max(180, window.innerHeight - rect.top - 82);
+
+    const headerEl = containerEl.querySelector(
+      'tr.mat-mdc-header-row',
+    ) as HTMLElement | null;
+    const rowEl = containerEl.querySelector(
+      'tr.ow-data-row',
+    ) as HTMLElement | null;
+
+    const headerHeight = headerEl?.offsetHeight || 34;
+    const rowHeight = rowEl?.offsetHeight || 36;
+
+    const bodyAvailableHeight = availableHeight - headerHeight;
+    const fittingRows = Math.floor(bodyAvailableHeight / rowHeight);
+    const calculatedSize = Math.max(5, fittingRows);
+
+    const optionsSet = new Set<number>([
+      ...this.basePageSizeOptions,
+      calculatedSize,
+    ]);
+    this.pageSizeOptions = Array.from(optionsSet).sort((a, b) => a - b);
+
+    if (
+      this.pageSize !== calculatedSize ||
+      this.paginatorRef?.pageSize !== calculatedSize
+    ) {
+      this.pageSize = calculatedSize;
+      if (this.paginatorRef) {
+        this.paginatorRef._changePageSize(calculatedSize);
+      }
+      this.cdr.detectChanges();
+    }
+  }
+
   ngOnDestroy(): void {
+    if (this.resizeDebounceTimer) {
+      clearTimeout(this.resizeDebounceTimer);
+    }
+    this.resizeObserver?.disconnect();
+    this.loadingService.hide();
     this.subscriptions$.forEach((sub) => sub.unsubscribe());
   }
 }
