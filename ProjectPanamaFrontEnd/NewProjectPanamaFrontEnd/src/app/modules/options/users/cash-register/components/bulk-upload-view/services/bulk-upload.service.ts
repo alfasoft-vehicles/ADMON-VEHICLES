@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { BulkUploadStrategy } from '../strategies/bulk-upload.strategy';
 import { BulkUploadStrategyFactory } from '../strategies/bulk-upload-strategy.factory';
 import { BulkUploadRecord } from '../models/bulk-upload-record.interface';
@@ -73,10 +73,24 @@ export class BulkUploadService {
   }
 
   /**
-   * Obtiene las métricas para la estrategia actual a partir de los registros provistos.
+   * Obtiene los totales de conciliación para la estrategia actual desde el backend.
    */
-  getSummaryMetrics(records?: BulkUploadRecord[]): BulkUploadSummaryMetrics {
-    return this.getActiveStrategy().getSummaryMetrics(records);
+  getTotals(): Observable<any> {
+    const strategy = this.getActiveStrategy();
+    if (strategy && strategy.getTotals) {
+      return strategy.getTotals();
+    }
+    return of(null);
+  }
+
+  /**
+   * Obtiene las métricas para la estrategia actual a partir de los registros y/o totales provistos.
+   */
+  getSummaryMetrics(
+    records?: BulkUploadRecord[],
+    backendTotals?: any,
+  ): BulkUploadSummaryMetrics {
+    return this.getActiveStrategy().getSummaryMetrics(records, backendTotals);
   }
 
   /**
@@ -101,5 +115,21 @@ export class BulkUploadService {
    */
   isRecordReady(record: BulkUploadRecord): boolean {
     return this.getActiveStrategy().isRecordReady(record);
+  }
+
+  /**
+   * Asigna una unidad vehicular a un registro mediante la estrategia activa.
+   */
+  assignVehicle(reference: string, vehicleNumber: string): Observable<any> {
+    const strategy = this.getActiveStrategy();
+    if (strategy && strategy.assignVehicle) {
+      return strategy.assignVehicle(reference, vehicleNumber);
+    }
+    return throwError(
+      () =>
+        new Error(
+          'La estrategia activa no soporta la asignación de unidad vehicular.',
+        ),
+    );
   }
 }

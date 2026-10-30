@@ -23,10 +23,12 @@ import {
   tap,
 } from 'rxjs/operators';
 import { BulkUploadRecord } from '../../models/bulk-upload-record.interface';
+import { BulkUploadService } from '../../services/bulk-upload.service';
 import { ConfirmActionDialogComponent } from 'src/app/modules/shared/components/confirm-action-dialog/confirm-action-dialog.component';
 import { ApiService } from 'src/app/services/api.service';
 import { JwtService } from 'src/app/services/jwt.service';
 import { ErrorHandlerService } from 'src/app/services/error-handler.service';
+import { LoadingService } from 'src/app/services/loading.service';
 
 export interface VehicleSearchItem {
   unidad: string;
@@ -65,6 +67,7 @@ export class SearchUnitDialogComponent
   filteredVehicles: VehicleSearchItem[] = [];
 
   isLoading: boolean = false;
+  isAssigning: boolean = false;
   hasSearched: boolean = false;
   errorMessage: string = '';
 
@@ -82,6 +85,8 @@ export class SearchUnitDialogComponent
     private snackBar: MatSnackBar,
     private apiService: ApiService,
     private jwtService: JwtService,
+    private bulkUploadService: BulkUploadService,
+    private loadingService: LoadingService,
   ) {}
 
   ngOnInit(): void {
@@ -146,6 +151,7 @@ export class SearchUnitDialogComponent
     if (this.searchSub) {
       this.searchSub.unsubscribe();
     }
+    this.loadingService.hide();
   }
 
   /**
@@ -288,11 +294,30 @@ export class SearchUnitDialogComponent
   }
 
   onAccept(): void {
-    if (!this.selectedVehicle) {
+    if (!this.selectedVehicle || this.isAssigning) {
       return;
     }
 
     const vehicle = this.selectedVehicle;
+    const reference = (
+      this.data.record.referencia ||
+      this.data.record.rawData?.REFERENCIA ||
+      ''
+    ).trim();
+
+    if (!reference) {
+      this.snackBar.open(
+        'El registro no cuenta con un número de referencia válido para realizar la asignación.',
+        'Entendido',
+        {
+          duration: 4000,
+          horizontalPosition: 'center',
+          verticalPosition: 'top',
+        },
+      );
+      return;
+    }
+
     const confirmMessage = `¿Está seguro de asignar la unidad ${vehicle.unidad} (${vehicle.conductor}) al registro de ${this.data.record.nombre}? El registro pasará a estar validado.`;
 
     const confirmRef = this.dialog.open(ConfirmActionDialogComponent, {
@@ -305,31 +330,7 @@ export class SearchUnitDialogComponent
     });
 
     confirmRef.afterClosed().subscribe((confirmed: boolean) => {
-      if (confirmed) {
-        this.snackBar.open(
-          `Unidad ${vehicle.unidad} asignada correctamente al registro de ${vehicle.conductor}.`,
-          'Entendido',
-          {
-            duration: 4000,
-            horizontalPosition: 'center',
-            verticalPosition: 'top',
-          },
-        );
-
-        this.dialogRef.close({
-          confirmed: true,
-          updatedData: {
-            unidad: vehicle.unidad,
-            nombre: vehicle.conductor,
-            cedula: vehicle.cedula,
-            codigo: vehicle.codigoConductor,
-            estado: vehicle.estado,
-            hasAlert: false,
-            review: 0,
-            pendiente: '0.00',
-          },
-        });
-      } else {
+      if (!confirmed) {
         this.snackBar.open(
           'Acción cancelada. No se realizaron cambios en el registro.',
           'Entendido',
@@ -339,11 +340,77 @@ export class SearchUnitDialogComponent
             verticalPosition: 'top',
           },
         );
+        return;
       }
+
+      this.isAssigning = true;
+      this.loadingService.show({
+        title: 'Asignando Unidad',
+        message: `Asignando unidad ${vehicle.unidad} al registro de ${this.data.record.nombre}...`,
+        submessage:
+          'Por favor espere un momento mientras se procesa la asignación',
+      });
+
+      this.bulkUploadService
+        .assignVehicle(reference, vehicle.unidad)
+        .subscribe({
+          next: (res: any) => {
+            this.loadingService.hide();
+            this.isAssigning = false;
+
+            this.snackBar.open(
+              `Unidad ${vehicle.unidad} asignada correctamente al registro de ${this.data.record.nombre}.`,
+              'Entendido',
+              {
+                duration: 4000,
+                horizontalPosition: 'center',
+                verticalPosition: 'top',
+              },
+            );
+
+            this.dialogRef.close({
+              confirmed: true,
+              updatedData: {
+                unidad: (res?.vehicle_number || vehicle.unidad || '').trim(),
+                otraUnd: (res?.other_vehicle || '').trim(),
+                cedula: (res?.driver_id_card || vehicle.cedula || '').trim(),
+                codigo: (
+                  res?.driver_code ||
+                  vehicle.codigoConductor ||
+                  ''
+                ).trim(),
+                estado: (res?.vehicle_state || vehicle.estado || '').trim(),
+                comision:
+                  res?.commission != null
+                    ? Number(res.commission).toFixed(2)
+                    : this.data.record.comision,
+                hasAlert: false,
+                review: 0,
+                pendiente: '0.00',
+              },
+            });
+          },
+          error: (error: any) => {
+            this.loadingService.hide();
+            this.isAssigning = false;
+            const errorMsg = ErrorHandlerService.getErrorMessage(
+              error,
+              'No fue posible asignar la unidad al registro.',
+            );
+            this.snackBar.open(errorMsg, 'Entendido', {
+              duration: 5000,
+              horizontalPosition: 'center',
+              verticalPosition: 'top',
+            });
+          },
+        });
     });
   }
 
   close(): void {
+    if (this.isAssigning) {
+      return;
+    }
     this.dialogRef.close(null);
   }
 }

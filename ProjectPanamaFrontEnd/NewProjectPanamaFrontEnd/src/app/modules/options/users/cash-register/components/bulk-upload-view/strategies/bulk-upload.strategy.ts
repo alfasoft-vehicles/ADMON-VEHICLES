@@ -33,8 +33,14 @@ export interface BulkUploadStrategy {
   /** Obtiene la lista de registros cargados */
   getRecords(): Observable<BulkUploadRecord[]>;
 
+  /** Obtiene los totales acumulados desde el backend si la estrategia lo soporta */
+  getTotals?(): Observable<any>;
+
   /** Obtiene las métricas de resumen y conciliación */
-  getSummaryMetrics(records?: BulkUploadRecord[]): BulkUploadSummaryMetrics;
+  getSummaryMetrics(
+    records?: BulkUploadRecord[],
+    backendTotals?: any,
+  ): BulkUploadSummaryMetrics;
 
   /** Determina si un registro requiere revisión */
   isRecordInReview(record: BulkUploadRecord): boolean;
@@ -47,4 +53,7 @@ export interface BulkUploadStrategy {
     records: BulkUploadRecord[],
     order: 'default' | 'revision' | 'ready',
   ): BulkUploadRecord[];
+
+  /** Asigna una unidad vehicular a una transacción existente */
+  assignVehicle?(reference: string, vehicleNumber: string): Observable<any>;
 }

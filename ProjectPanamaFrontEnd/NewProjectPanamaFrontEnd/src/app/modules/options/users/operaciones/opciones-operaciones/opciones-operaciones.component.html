@@ -1,26 +1,76 @@
-<div class="main-container">
-  <div class="title-container">
-    <h1 class="title">Operaciones</h1>
-  </div>
-
-  <div class="operations-grid-container">
-    <div class="cards-grid">
-      <button 
-        class="operation-card" 
-        matRipple 
-        *ngFor="let item of options" 
-        (click)="selectOption(item.actionCode)">
-        
-        <div class="icon-container">
-          <mat-icon>{{ item.icon }}</mat-icon>
-        </div>
-        <div class="card-content">
-          <span class="card-label">{{ item.name }}</span>
-        </div>
-        <mat-icon class="chevron-icon">chevron_right</mat-icon>
+<div class="op-main-container">
+  <!-- Encabezado Superior (UI Design System) -->
+  <header class="op-top-header">
+    <div class="op-header-left">
+      <button
+        mat-stroked-button
+        type="button"
+        class="op-btn-back"
+        routerLink="/home/users"
+      >
+        <mat-icon>arrow_back</mat-icon>
+        <span>Regresar</span>
       </button>
+
+      <div class="op-header-divider"></div>
+
+      <div class="op-brand-badge">
+        <mat-icon class="op-brand-icon">local_taxi</mat-icon>
+      </div>
+
+      <div class="op-title-text">
+        <div class="op-title-row">
+          <h1 class="op-title">Operaciones</h1>
+        </div>
+        <p class="op-subtitle">
+          Seleccione una operación de flota o gestión de conductores para
+          continuar
+        </p>
+      </div>
     </div>
-  </div>
+
+    <div class="op-header-right">
+      <!-- Pill de fecha actual -->
+      <div class="op-date-pill">
+        <mat-icon>calendar_today</mat-icon>
+        <span>{{ currentDateFormatted }}</span>
+      </div>
+
+      <!-- Chip de la empresa -->
+      <div class="op-company-badge" *ngIf="infoCompanyName">
+        <mat-icon>apartment</mat-icon>
+        <span>{{ infoCompanyName }}</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Grid de Tarjetas de Opciones -->
+  <section class="op-modules-grid">
+    <button
+      type="button"
+      class="op-module-card"
+      matRipple
+      *ngFor="let item of options"
+      (click)="selectOption(item.actionCode)"
+    >
+      <div class="op-card-main">
+        <div class="op-icon-box" [ngClass]="item.bgClass">
+          <mat-icon [ngClass]="item.colorClass">{{ item.icon }}</mat-icon>
+        </div>
+        <div class="op-card-info">
+          <h2 class="op-card-title">{{ item.name }}</h2>
+        </div>
+      </div>
+
+      <div class="op-card-footer">
+        <span class="op-card-action-text">Abrir operación</span>
+        <mat-icon class="op-card-arrow">arrow_forward</mat-icon>
+      </div>
+    </button>
+  </section>
 </div>
 
-<app-operaciones-entrega-vehiculo-conductor *ngIf="entregaVehiculoConductor" (close)="hideModal()"></app-operaciones-entrega-vehiculo-conductor>
+<app-operaciones-entrega-vehiculo-conductor
+  *ngIf="entregaVehiculoConductor"
+  (close)="hideModal()"
+></app-operaciones-entrega-vehiculo-conductor>

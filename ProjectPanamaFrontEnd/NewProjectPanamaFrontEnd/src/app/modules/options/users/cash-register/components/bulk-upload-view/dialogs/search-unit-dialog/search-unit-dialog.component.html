@@ -463,6 +463,7 @@
     type="button"
     (click)="close()"
     class="action-btn btn-cancel"
+    [disabled]="isAssigning"
   >
     <mat-icon>close</mat-icon> Cancelar
   </button>
@@ -473,9 +474,10 @@
     type="button"
     (click)="onAccept()"
     class="action-btn btn-confirm"
-    [disabled]="!selectedVehicle"
+    [disabled]="!selectedVehicle || isAssigning"
   >
-    <mat-icon>check_circle</mat-icon>
-    <span>Aceptar y Asignar</span>
+    <mat-icon *ngIf="!isAssigning">check_circle</mat-icon>
+    <mat-icon *ngIf="isAssigning" class="btn-spin-icon">sync</mat-icon>
+    <span>{{ isAssigning ? "Asignando..." : "Aceptar y Asignar" }}</span>
   </button>
 </mat-dialog-actions>

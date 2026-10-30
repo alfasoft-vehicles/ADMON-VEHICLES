@@ -1,6 +1,6 @@
-<div class="bu-main-container" *ngIf="activeStrategy">
+<div class="bu-main-container">
   <!-- Encabezado Superior -->
-  <header class="bu-top-header mat-elevation-z2">
+  <header class="bu-top-header">
     <div class="bu-header-left">
       <button
         mat-stroked-button
@@ -11,99 +11,103 @@
         <span>Regresar</span>
       </button>
       <div class="bu-header-divider"></div>
-      <div class="bu-title-group">
-        <h1 class="bu-title">{{ activeStrategy.title }}</h1>
-        <div
-          class="bu-gateway-badge bu-yappy-badge"
-          [style.background]="
-            activeStrategy.badgeConfig.gradient ||
-            'linear-gradient(135deg, #0077c8 0%, #00a4e4 100%)'
-          "
-        >
-          <mat-icon class="bu-gateway-icon bu-yappy-icon">{{
-            activeStrategy.badgeConfig.icon
-          }}</mat-icon>
-          <span class="bu-gateway-text bu-yappy-text">{{
-            activeStrategy.badgeConfig.text
-          }}</span>
+      <div class="bu-brand-badge">
+        <mat-icon>cloud_upload</mat-icon>
+      </div>
+      <div class="bu-title-text" *ngIf="activeStrategy">
+        <div class="bu-title-group">
+          <h1 class="bu-title">{{ activeStrategy.title }}</h1>
+          <div
+            class="bu-gateway-badge bu-yappy-badge"
+            [style.background]="
+              activeStrategy.badgeConfig.gradient ||
+              'linear-gradient(135deg, #0077c8 0%, #00a4e4 100%)'
+            "
+          >
+            <mat-icon class="bu-gateway-icon bu-yappy-icon">{{
+              activeStrategy.badgeConfig.icon
+            }}</mat-icon>
+            <span class="bu-gateway-text bu-yappy-text">{{
+              activeStrategy.badgeConfig.text
+            }}</span>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="bu-header-right">
-      <div class="bu-sort-container">
-        <span class="bu-sort-label">
-          <mat-icon class="bu-sort-label-icon">sort</mat-icon>
-          <span>Ordenar:</span>
-        </span>
-        <mat-button-toggle-group
-          [value]="sortOrder"
-          (change)="onSortChange($event.value)"
-          hideSingleSelectionIndicator="true"
-          name="sortOrder"
-          aria-label="Criterio de ordenamiento"
-          class="bu-sort-toggle-group"
-        >
-          <mat-button-toggle
-            value="default"
-            class="bu-sort-toggle-btn bu-toggle-default"
-          >
-            <mat-icon class="bu-toggle-icon">swap_vert</mat-icon>
-            <span>Por Defecto</span>
-          </mat-button-toggle>
-
-          <mat-button-toggle
-            value="revision"
-            class="bu-sort-toggle-btn bu-toggle-warn"
-          >
-            <mat-icon class="bu-toggle-icon">warning_amber</mat-icon>
-            <span>Revisión</span>
-            <span class="bu-toggle-pill bu-pill-warn">{{
-              metrics.registrosPendientes
-            }}</span>
-          </mat-button-toggle>
-
-          <mat-button-toggle
-            value="ready"
-            class="bu-sort-toggle-btn bu-toggle-ok"
-          >
-            <mat-icon class="bu-toggle-icon">check_circle</mat-icon>
-            <span>Listos</span>
-            <span class="bu-toggle-pill bu-pill-ok">{{
-              metrics.registrosValidados
-            }}</span>
-          </mat-button-toggle>
-        </mat-button-toggle-group>
+      <div class="bu-date-pill">
+        <mat-icon>calendar_today</mat-icon>
+        <span>{{ currentDateFormatted }}</span>
       </div>
-
-      <!-- Botón para limpiar todos los registros de la tabla -->
-      <button
-        mat-icon-button
-        class="bu-btn-clear-table"
-        matTooltip="Limpiar todos los registros"
-        (click)="clearAllRecords()"
-        aria-label="Limpiar todos los registros"
-      >
-        <mat-icon>delete</mat-icon>
-      </button>
+      <div class="bu-company-badge" *ngIf="infoCompanyName">
+        <mat-icon>apartment</mat-icon>
+        <span>{{ infoCompanyName }}</span>
+      </div>
     </div>
   </header>
 
   <!-- Contenedor Principal: Tabla de Datos -->
-  <main class="bu-table-section mat-elevation-z4">
+  <main class="bu-table-section" *ngIf="!isLoadingData && activeStrategy">
     <div class="bu-table-toolbar">
       <div class="bu-toolbar-left">
-        <span class="bu-table-legend-title">Detalle de Transacciones</span>
-        <span class="bu-legend-item bu-legend-warn bu-chip-desktop-hidden">
+        <div class="bu-toolbar-title-wrap">
+          <mat-icon class="bu-toolbar-title-ico">receipt_long</mat-icon>
+          <span class="bu-table-legend-title">Detalle de Transacciones</span>
+        </div>
+        <span class="bu-legend-item bu-legend-warn">
           <span class="bu-dot bu-dot-warn"></span>
           {{ metrics.registrosPendientes }} Requieren Revisión
         </span>
       </div>
+
       <div class="bu-toolbar-right">
-        <span class="bu-legend-item bu-legend-warn bu-chip-mobile-hidden">
-          <span class="bu-dot bu-dot-warn"></span>
-          {{ metrics.registrosPendientes }} Requieren Revisión
-        </span>
+        <div class="bu-sort-container">
+          <span class="bu-sort-label">
+            <mat-icon class="bu-sort-label-icon">sort</mat-icon>
+            <span>Ordenar:</span>
+          </span>
+          <mat-button-toggle-group
+            [value]="sortOrder"
+            (change)="onSortChange($event.value)"
+            hideSingleSelectionIndicator="true"
+            name="sortOrder"
+            aria-label="Criterio de ordenamiento"
+            class="bu-sort-toggle-group"
+          >
+            <mat-button-toggle
+              value="default"
+              class="bu-sort-toggle-btn bu-toggle-default"
+            >
+              <mat-icon class="bu-toggle-icon">swap_vert</mat-icon>
+              <span>Por Defecto</span>
+            </mat-button-toggle>
+
+            <mat-button-toggle
+              value="revision"
+              class="bu-sort-toggle-btn bu-toggle-warn"
+            >
+              <mat-icon class="bu-toggle-icon">warning_amber</mat-icon>
+              <span>Revisión</span>
+              <span class="bu-toggle-pill bu-pill-warn">{{
+                metrics.registrosPendientes
+              }}</span>
+            </mat-button-toggle>
+
+            <mat-button-toggle
+              value="ready"
+              class="bu-sort-toggle-btn bu-toggle-ok"
+            >
+              <mat-icon class="bu-toggle-icon">check_circle</mat-icon>
+              <span>Listos</span>
+              <span class="bu-toggle-pill bu-pill-ok">{{
+                metrics.registrosValidados
+              }}</span>
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+
+        <div class="bu-toolbar-divider"></div>
 
         <div
           class="bu-search-box-wrapper"
@@ -147,6 +151,17 @@
             <mat-icon>close</mat-icon>
           </button>
         </div>
+
+        <!-- Botón para limpiar todos los registros de la tabla -->
+        <button
+          mat-icon-button
+          class="bu-btn-clear-table"
+          matTooltip="Limpiar todos los registros"
+          (click)="clearAllRecords()"
+          aria-label="Limpiar todos los registros"
+        >
+          <mat-icon>delete</mat-icon>
+        </button>
       </div>
     </div>
 
@@ -398,7 +413,9 @@
           <tr *ngIf="filteredRecords.length === 0" class="bu-empty-row">
             <td colspan="18" class="bu-empty-cell">
               <div class="bu-empty-state">
-                <mat-icon class="bu-empty-icon">search_off</mat-icon>
+                <div class="bu-empty-icon-wrap">
+                  <mat-icon class="bu-empty-icon">search_off</mat-icon>
+                </div>
                 <div class="bu-empty-text-wrap">
                   <span class="bu-empty-title" *ngIf="searchTerm">
                     No se encontraron registros que coincidan con "{{
@@ -410,6 +427,10 @@
                   </span>
                   <span class="bu-empty-subtitle" *ngIf="searchTerm">
                     Intente buscar con otro nombre, celular, código o unidad
+                  </span>
+                  <span class="bu-empty-subtitle" *ngIf="!searchTerm">
+                    Suba un archivo CSV de transacciones para iniciar la
+                    conciliación de caja
                   </span>
                 </div>
                 <button
@@ -431,9 +452,9 @@
   </main>
 
   <!-- Barra Inferior: Totales y Acciones -->
-  <footer class="bu-bottom-dock">
+  <footer class="bu-bottom-dock" *ngIf="!isLoadingData && activeStrategy">
     <!-- Panel 1: Resumen y Totales (Conciliación de Lote - Dashboard Modular 4 Bloques) -->
-    <div class="bu-dock-card bu-summary-card mat-elevation-z4">
+    <div class="bu-dock-card bu-summary-card">
       <div class="bu-summary-header-row">
         <div class="bu-card-header-left">
           <mat-icon class="bu-header-ico">fact_check</mat-icon>
@@ -587,7 +608,7 @@
     </div>
 
     <!-- Panel 2: Botones de Acción -->
-    <div class="bu-dock-card bu-actions-card mat-elevation-z4">
+    <div class="bu-dock-card bu-actions-card">
       <div class="bu-card-mini-header">
         <mat-icon class="bu-header-ico">bolt</mat-icon>
         <span class="bu-card-header-label">Acciones</span>
@@ -621,18 +642,4 @@
       </div>
     </div>
   </footer>
-</div>
-
-<!-- Loader de respaldo en caso de carga inicial -->
-<div class="bu-loading-backdrop" *ngIf="!activeStrategy">
-  <div class="bu-loading-content">
-    <mat-progress-spinner
-      mode="indeterminate"
-      [diameter]="54"
-      [strokeWidth]="4"
-      color="primary"
-    ></mat-progress-spinner>
-    <h3 class="bu-loading-title">Cargando conciliación</h3>
-    <p class="bu-loading-subtitle">Obteniendo información del servidor...</p>
-  </div>
 </div>

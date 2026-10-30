@@ -1,179 +1,119 @@
-<!-- <app-header></app-header> -->
-<!-- <app-layout></app-layout> -->
-<!-- <body> -->
-<div class="container">
-  <div class="carousel-container">
-    <div class="carousel">
-      <div class="left-container" *ngIf="!infoCompanyVisible">
-        <a class="alternate-media" (click)="changeVideoState()">
-          <img [src]="this.rightIcon" class="media-icon" />
-        </a>
+<div class="hu-main-container">
+  <!-- Encabezado Superior -->
+  <header class="hu-top-header">
+    <div class="hu-header-left">
+      <div class="hu-brand-badge">
+        <mat-icon class="hu-brand-icon">dashboard</mat-icon>
       </div>
-      <img
-        class="media-container"
-        *ngIf="changeVideo"
-        [src]="images[currentImageIndex]"
-        [style.opacity]="showImage ? '1' : '0'"
-      />
-      <video
-        #videoPlayer
-        *ngIf="!changeVideo"
-        [src]="currentVideo"
-        (ended)="onVideoEnded()"
-        autoplay
-      ></video>
-      <div class="right-container" *ngIf="!infoCompanyVisible">
-        <a class="alternate-media" (click)="changeVideoState()">
-          <img [src]="this.rightIcon" class="media-icon" />
-        </a>
+      <div class="hu-title-text">
+        <div class="hu-title-row">
+          <h1 class="hu-title">Panel de Módulos</h1>
+        </div>
+        <p class="hu-subtitle">
+          Bienvenido, <strong>{{ userName }}</strong> · Seleccione un módulo
+          para comenzar
+        </p>
       </div>
     </div>
-  </div>
-  <div class="options-container">
-    <ul>
-      <!-- ng-container para aplicar ngIf sin afectar el layout -->
-      <ng-container *ngFor="let option of options">
-        <!-- Para opciones con URL -->
-        <button
-          class="options-if"
-          *ngIf="option.enabled && option.url"
-          [routerLink]="option.url"
-          [disabled]="option.disabled"
-        >
-          <a>
-            <img [src]="option.icon" class="option-icon" />
-            <span class="option-text">{{ option.name }}</span>
-          </a>
-        </button>
 
-        <!-- Para opciones con función click -->
-        <button
-          class="options-if"
-          *ngIf="option.enabled && !option.url"
-          [disabled]="option.disabled"
-          (click)="option.click()"
-        >
-          <a>
-            <img [src]="option.icon" class="option-icon" />
-            <span class="option-text">{{ option.name }}</span>
-          </a>
-        </button>
-      </ng-container>
-    </ul>
+    <div class="hu-header-right">
+      <!-- Pill de fecha actual -->
+      <div class="hu-date-pill">
+        <mat-icon>calendar_today</mat-icon>
+        <span>{{ currentDateFormatted }}</span>
+      </div>
+
+      <!-- Chip de la empresa (en lugar del buscador) -->
+      <div class="hu-company-badge" *ngIf="infoCompanyName">
+        <mat-icon>apartment</mat-icon>
+        <span>{{ infoCompanyName }}</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Grid de Módulos -->
+  <section class="hu-modules-grid" *ngIf="enabledOptions.length > 0">
+    <ng-container *ngFor="let option of enabledOptions">
+      <!-- Para opciones con URL -->
+      <button
+        type="button"
+        class="hu-module-card"
+        *ngIf="option.enabled && option.url"
+        matRipple
+        [matRippleDisabled]="option.disabled"
+        [routerLink]="option.disabled ? null : option.url"
+        [disabled]="option.disabled"
+      >
+        <div class="hu-card-main">
+          <div class="hu-icon-box" [ngClass]="option.bgClass">
+            <mat-icon [ngClass]="option.colorClass">{{ option.icon }}</mat-icon>
+          </div>
+          <div class="hu-card-info">
+            <h2 class="hu-card-title">{{ option.name }}</h2>
+            <span *ngIf="option.disabled" class="hu-badge hu-badge-disabled">
+              No disponible
+            </span>
+          </div>
+        </div>
+
+        <div class="hu-card-footer">
+          <span class="hu-card-action-text">
+            {{ option.disabled ? "Acceso deshabilitado" : "Ingresar al módulo" }}
+          </span>
+          <mat-icon class="hu-card-arrow" *ngIf="!option.disabled"
+            >arrow_forward</mat-icon
+          >
+          <mat-icon class="hu-card-lock" *ngIf="option.disabled">lock</mat-icon>
+        </div>
+      </button>
+
+      <!-- Para opciones con función click (ej. Cobros) -->
+      <button
+        type="button"
+        class="hu-module-card"
+        *ngIf="option.enabled && !option.url"
+        matRipple
+        [matRippleDisabled]="option.disabled"
+        [disabled]="option.disabled"
+        (click)="option.click()"
+      >
+        <div class="hu-card-main">
+          <div class="hu-icon-box" [ngClass]="option.bgClass">
+            <mat-icon [ngClass]="option.colorClass">{{ option.icon }}</mat-icon>
+          </div>
+          <div class="hu-card-info">
+            <h2 class="hu-card-title">{{ option.name }}</h2>
+            <span *ngIf="option.disabled" class="hu-badge hu-badge-disabled">
+              No disponible
+            </span>
+          </div>
+        </div>
+
+        <div class="hu-card-footer">
+          <span class="hu-card-action-text">
+            {{ option.disabled ? "Acceso deshabilitado" : "Abrir opciones" }}
+          </span>
+          <mat-icon class="hu-card-arrow" *ngIf="!option.disabled"
+            >open_in_new</mat-icon
+          >
+          <mat-icon class="hu-card-lock" *ngIf="option.disabled">lock</mat-icon>
+        </div>
+      </button>
+    </ng-container>
+  </section>
+
+  <!-- Estado Vacío (Sin permisos asignados) -->
+  <div
+    *ngIf="enabledOptions.length === 0"
+    class="hu-empty-state mat-elevation-z1"
+  >
+    <div class="hu-empty-icon-wrap">
+      <mat-icon class="hu-empty-icon">lock_person</mat-icon>
+    </div>
+    <h2 class="hu-empty-title">Sin módulos habilitados</h2>
+    <p class="hu-empty-subtitle">
+      Su usuario no tiene módulos asignados actualmente. Contacte al
+      administrador del sistema.
+    </p>
   </div>
 </div>
-<!-- </body> -->
-<!-- <app-footer></app-footer> -->
-
-<!-- ------------------------------------------------------ -->
-
-<!-- <div class="cards-container">
-
-  <div class="main-container" href="/hoalalalal">
-    <div class="image-container">
-      <img src="../../../../assets/icons/10.svg" alt="Option Logo">
-    </div>
-    <div class="name-container">
-      <h1 class="option-name">Caja</h1>
-    </div>
-  </div>
-
-  <div class="main-container" href="/hoalalalal">
-    <div class="image-container">
-      <img src="../../../../assets/icons/8.svg" alt="Option Logo">
-    </div>
-    <div class="name-container">
-      <h1 class="option-name">Operaciones</h1>
-    </div>
-  </div>
-
-  <div class="main-container" href="/hoalalalal">
-    <div class="image-container">
-      <img src="../../../../assets/icons/9.svg" alt="Option logo">
-    </div>
-    <div class="name-container">
-      <h1 class="option-name">Cobros</h1>
-    </div>
-  </div>
-
-  <div class="main-container" href="/hoalalalal">
-    <div class="image-container">
-      <img src="../../../../assets/icons/11.svg" alt="Option logo">
-    </div>
-    <div class="name-container">
-      <h1 class="option-name">Trámites</h1>
-    </div>
-  </div>
-
-  <div class="main-container" href="/hoalalalal">
-    <div class="image-container">
-      <img src="../../../../assets/icons/12.svg" alt="Option logo">
-    </div>
-    <div class="name-container">
-      <h1 class="option-name">Almacén</h1>
-    </div>
-  </div>
-
-  <div class="main-container" href="/hoalalalal">
-    <div class="image-container">
-      <img src="../../../../assets/icons/14.svg" alt="Option logo">
-    </div>
-    <div class="name-container">
-      <h1 class="option-name">Taller</h1>
-    </div>
-  </div>
-
-  <div class="main-container" href="/hoalalalal">
-    <div class="image-container">
-      <img src="../../../../assets/icons/15.svg" alt="Option logo">
-    </div>
-    <div class="name-container">
-      <h1 class="option-name">Chapistería</h1>
-    </div>
-  </div>
-
-  <div class="main-container" href="/hoalalalal">
-    <div class="image-container">
-      <img src="../../../../assets/icons/17.svg" alt="Option logo">
-    </div>
-    <div class="name-container">
-      <h1 class="option-name">Llavero</h1>
-    </div>
-  </div>
-
-  <div class="main-container" href="/hoalalalal">
-    <div class="image-container">
-      <img src="../../../../assets/icons/18.svg" alt="Option logo">
-    </div>
-    <div class="name-container">
-      <h1 class="option-name">Cartera</h1>
-    </div>
-  </div>
-
-  <div class="main-container" href="/hoalalalal">
-    <div class="image-container">
-      <img src="../../../../assets/icons/19.svg" alt="Option logo">
-    </div>
-    <div class="name-container">
-      <h1 class="option-name">Tabla</h1>
-    </div>
-  </div>
-
-  <div class="main-container" href="/hoalalalal">
-    <div class="image-container">
-      <img src="../../../../assets/icons/21.svg" alt="Option logo">
-    </div>
-    <div class="name-container">
-      <h1 class="option-name">Gerencia</h1>
-    </div>
-  </div>
-
-  <div class="main-container" href="/hoalalalal">
-    <div class="image-container">
-      <img src="../../../../assets/icons/logout.svg" alt="Option logo">
-    </div>
-    <div class="name-container">
-      <h1 class="option-name">Cerrar sesión</h1>
-    </div>
-  </div>
-</div> -->
