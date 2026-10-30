@@ -27,13 +27,13 @@ interface States {
         style({ opacity: 0, transform: 'translateY(-10px)' }),
         animate(
           '300ms ease-in',
-          style({ opacity: 1, transform: 'translateY(0)' })
+          style({ opacity: 1, transform: 'translateY(0)' }),
         ),
       ]),
       transition(':leave', [
         animate(
           '200ms ease-out',
-          style({ opacity: 0, transform: 'translateY(-10px)' })
+          style({ opacity: 0, transform: 'translateY(-10px)' }),
         ),
       ]),
     ]),
@@ -47,11 +47,11 @@ interface States {
             stagger(50, [
               animate(
                 '300ms ease-out',
-                style({ opacity: 1, transform: 'translateY(0)' })
+                style({ opacity: 1, transform: 'translateY(0)' }),
               ),
             ]),
           ],
-          { optional: true }
+          { optional: true },
         ),
       ]),
     ]),
@@ -61,16 +61,37 @@ export class VehiclesDirectoryDialogComponent implements OnInit {
   states: States[] = [];
   isLoading: boolean = true;
 
-  @ViewChild(MatSelectionList) selectionList!: MatSelectionList;
+  @ViewChild('selectionList') selectionList?: MatSelectionList;
 
   constructor(
     private apiService: ApiService,
     private jwtService: JwtService,
-    private dialogRef: MatDialogRef<VehiclesDirectoryDialogComponent>
+    private dialogRef: MatDialogRef<VehiclesDirectoryDialogComponent>,
   ) {}
 
   ngOnInit(): void {
     this.listStates();
+  }
+
+  get selectedCount(): number {
+    return this.selectionList?.selectedOptions?.selected?.length ?? 0;
+  }
+
+  get isAllSelected(): boolean {
+    return this.states.length > 0 && this.selectedCount === this.states.length;
+  }
+
+  toggleAllStates(): void {
+    if (!this.selectionList) return;
+    if (this.isAllSelected) {
+      this.selectionList.deselectAll();
+    } else {
+      this.selectionList.selectAll();
+    }
+  }
+
+  closeDialog(): void {
+    this.dialogRef.close();
   }
 
   private getCompany() {
@@ -89,17 +110,19 @@ export class VehiclesDirectoryDialogComponent implements OnInit {
     this.apiService.getData('states/' + company).subscribe(
       (response: States[]) => {
         this.states = response.filter(
-          (state) => state.id && state.id.trim() !== ''
+          (state) => state.id && state.id.trim() !== '',
         );
         this.isLoading = false;
       },
       (error) => {
         console.error(error);
-      }
+        this.isLoading = false;
+      },
     );
   }
 
   onConfirm() {
+    if (!this.selectionList) return;
     const selectedOptions = this.selectionList.selectedOptions.selected;
     let selectedOptionsAll: any[] = [];
 

@@ -1,31 +1,148 @@
-<h2 mat-dialog-title>Directorio de Vehículos</h2>
-<div class="dialog-header">
-  <h3>Selecciona los estados</h3>
-</div>
-<mat-divider></mat-divider>
-<mat-dialog-content class="scrollable-content">
-  <mat-progress-bar *ngIf="isLoading" mode="indeterminate"></mat-progress-bar>
-  <mat-selection-list 
-    #selectionList
-    [@fadeInOut] 
-    [@listAnimation]="states.length"
-    *ngIf="!isLoading">
-    <mat-list-option 
-      *ngFor="let state of states" 
-      [value]="state"
-      [@fadeInOut]
-      checkboxPosition="before">
-      {{ state.name }} - {{ state.id }}
-    </mat-list-option>
-  </mat-selection-list>
-</mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button mat-dialog-close>Cancelar</button>
-  <button 
-    mat-button 
-    (click)="onConfirm()" 
-    cdkFocusInitial
-    [disabled]="isLoading">
-    Confirmar
+<!-- 1. Header del Diálogo (UI Design System) -->
+<div class="vdd-header-container">
+  <div class="vdd-title-wrapper">
+    <div class="vdd-badge-icon">
+      <mat-icon>print</mat-icon>
+    </div>
+    <div class="vdd-header-info">
+      <h2 class="vdd-title">Directorio de Vehículos</h2>
+      <p class="vdd-subtitle">
+        Seleccione los estados que desea incluir en el reporte PDF
+      </p>
+    </div>
+  </div>
+  <button
+    mat-icon-button
+    type="button"
+    (click)="closeDialog()"
+    class="vdd-close-btn"
+    matTooltip="Cerrar"
+    aria-label="Cerrar diálogo"
+  >
+    <mat-icon>close</mat-icon>
   </button>
-</mat-dialog-actions> 
+</div>
+
+<mat-divider></mat-divider>
+
+<!-- 2. Contenido del Diálogo -->
+<mat-dialog-content class="vdd-dialog-content">
+  <!-- Loader completo de diálogo (loader-patterns) -->
+  <div class="dialog-loader-container" *ngIf="isLoading">
+    <div class="spinner-wrapper">
+      <mat-progress-spinner
+        mode="indeterminate"
+        [diameter]="52"
+        [strokeWidth]="4"
+        color="primary"
+        class="custom-spinner"
+      ></mat-progress-spinner>
+      <div class="spinner-center-icon">
+        <mat-icon>directions_car</mat-icon>
+      </div>
+    </div>
+    <div class="loader-text">
+      <h3 class="loader-title">Cargando estados</h3>
+      <p class="loader-message">
+        Obteniendo el catálogo de estados de vehículos...
+      </p>
+    </div>
+    <div class="progress-bar-wrapper">
+      <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+    </div>
+  </div>
+
+  <!-- Contenido cuando finaliza la carga -->
+  <div class="vdd-content-body" *ngIf="!isLoading">
+    <!-- Barra de resumen y selección rápida -->
+    <div class="vdd-selection-toolbar" *ngIf="states.length > 0">
+      <div class="vdd-selection-info">
+        <span class="vdd-selection-badge">
+          <mat-icon>checklist</mat-icon>
+          <span *ngIf="selectedCount === 0">
+            Todos los estados ({{ states.length }})
+          </span>
+          <span *ngIf="selectedCount > 0">
+            {{ selectedCount }} de {{ states.length }} seleccionados
+          </span>
+        </span>
+        <span class="vdd-selection-hint">
+          Si no marca ninguno, se incluirán todos automáticamente
+        </span>
+      </div>
+
+      <button
+        type="button"
+        mat-stroked-button
+        class="vdd-btn-toggle-all"
+        (click)="toggleAllStates()"
+      >
+        <mat-icon>{{ isAllSelected ? "deselect" : "select_all" }}</mat-icon>
+        <span>{{
+          isAllSelected ? "Desmarcar todos" : "Seleccionar todos"
+        }}</span>
+      </button>
+    </div>
+
+    <!-- Lista de Estados -->
+    <div class="vdd-list-wrapper" *ngIf="states.length > 0">
+      <mat-selection-list
+        #selectionList
+        [@fadeInOut]
+        [@listAnimation]="states.length"
+        class="vdd-selection-list"
+      >
+        <mat-list-option
+          *ngFor="let state of states"
+          [value]="state"
+          [@fadeInOut]
+          checkboxPosition="before"
+          class="vdd-list-option"
+        >
+          <div class="vdd-option-row">
+            <span class="vdd-state-code">{{ state.id }}</span>
+            <span class="vdd-state-name">{{ state.name }}</span>
+          </div>
+        </mat-list-option>
+      </mat-selection-list>
+    </div>
+
+    <!-- Estado vacío si no hay estados -->
+    <div class="vdd-empty-state" *ngIf="states.length === 0">
+      <div class="vdd-empty-icon-wrap">
+        <mat-icon>info_outline</mat-icon>
+      </div>
+      <h3 class="vdd-empty-title">No se encontraron estados</h3>
+      <p class="vdd-empty-subtitle">
+        No hay estados de vehículos configurados actualmente para esta empresa.
+      </p>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-divider></mat-divider>
+
+<!-- 3. Acciones del Diálogo -->
+<mat-dialog-actions align="end" class="vdd-dialog-actions">
+  <button
+    mat-flat-button
+    type="button"
+    (click)="closeDialog()"
+    class="vdd-action-btn vdd-btn-cancel"
+  >
+    <mat-icon>close</mat-icon>
+    <span>Cancelar</span>
+  </button>
+
+  <button
+    mat-flat-button
+    type="button"
+    (click)="onConfirm()"
+    cdkFocusInitial
+    [disabled]="isLoading || states.length === 0"
+    class="vdd-action-btn vdd-btn-confirm"
+  >
+    <mat-icon>picture_as_pdf</mat-icon>
+    <span>Generar Directorio</span>
+  </button>
+</mat-dialog-actions>

@@ -1,7 +1,11 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import {
   AfterViewInit,
+  ChangeDetectorRef,
   Component,
+  ElementRef,
+  HostListener,
+  NgZone,
   OnDestroy,
   OnInit,
   ViewChild,
@@ -14,6 +18,8 @@ import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { ApiService } from 'src/app/services/api.service';
 import { JwtService } from 'src/app/services/jwt.service';
+import { LoadingService } from 'src/app/services/loading.service';
+import { InfoCompanyStateService } from 'src/app/modules/shared/services/info-company-state.service';
 import { VehiclesDirectoryDialogComponent } from '../dialogs/vehicles-directory-dialog/vehicles-directory-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 
@@ -73,25 +79,81 @@ export class VehiclesTableComponent
   isLoading: boolean = true;
   originalData: VehicleData[] = [];
   totalVehicles: number = 0;
+  infoCompanyName: string = '';
+  currentDateFormatted: string = '';
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
+  pageSize: number = 10;
+  pageSizeOptions: number[] = [10, 20, 30, 40, 50, 100];
+  private basePageSizeOptions: number[] = [10, 20, 30, 40, 50, 100];
+  private resizeObserver?: ResizeObserver;
+  private resizeDebounceTimer?: ReturnType<typeof setTimeout>;
+
+  @ViewChild('tableScrollContainer')
+  tableScrollContainer!: ElementRef<HTMLElement>;
+
+  private paginatorRef!: MatPaginator;
+  private sortRef!: MatSort;
+
+  @ViewChild(MatPaginator) set paginator(mp: MatPaginator) {
+    if (mp) {
+      this.paginatorRef = mp;
+      this.dataSource.paginator = this.paginatorRef;
+    }
+  }
+
+  @ViewChild(MatSort) set sort(ms: MatSort) {
+    if (ms) {
+      this.sortRef = ms;
+      this.dataSource.sort = this.sortRef;
+    }
+  }
 
   constructor(
     private apiService: ApiService,
     private router: Router,
     private jwtService: JwtService,
     private breakpointObserver: BreakpointObserver,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private loadingService: LoadingService,
+    private infoCompanyState: InfoCompanyStateService,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone,
   ) {
     this.dataSource = new MatTableDataSource<VehicleData>([]);
   }
 
   ngOnInit(): void {
+    this.initHeaderMeta();
+    this.getInfoCompany();
     this.fetchData();
     this.getUser();
     this.getTotalVehicles();
     this.setupSearchListener();
+  }
+
+  private initHeaderMeta(): void {
+    const now = new Date();
+    const formatted = now.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+    this.currentDateFormatted =
+      formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  }
+
+  private getInfoCompany(): void {
+    this.infoCompanyState.loadInfoCompany().subscribe({
+      next: (info) => {
+        if (info?.name) {
+          this.infoCompanyName = info.name;
+        }
+      },
+      error: (err) => {
+        console.error('Error fetching company info:', err);
+      },
+    });
   }
 
   setupSearchListener() {
@@ -106,8 +168,13 @@ export class VehiclesTableComponent
   }
 
   ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
+    if (this.paginatorRef) {
+      this.dataSource.paginator = this.paginatorRef;
+    }
+    if (this.sortRef) {
+      this.dataSource.sort = this.sortRef;
+    }
+    this.setupResizeObserver();
   }
 
   private getUser() {
@@ -130,13 +197,18 @@ export class VehiclesTableComponent
         },
         (error) => {
           console.error('Error fetching total vehicles:', error);
-        }
+        },
       ),
     ];
   }
 
   fetchData() {
     this.isLoading = true;
+    this.loadingService.show({
+      title: 'Cargando Vehículos',
+      message: 'Obteniendo el listado de vehículos desde el servidor...',
+      submessage: 'Por favor espere un momento',
+    });
     const company = this.getCompany();
     this.subscriptions$ = [
       ...this.subscriptions$,
@@ -144,15 +216,18 @@ export class VehiclesTableComponent
         (response) => {
           let filteredResponse = response.filter((data: any) => data.unidad);
           filteredResponse.sort((a: VehicleData, b: VehicleData) =>
-            a.unidad.localeCompare(b.unidad)
+            a.unidad.localeCompare(b.unidad),
           );
           this.originalData = filteredResponse;
           this.dataSource.data = filteredResponse;
           this.isLoading = false;
+          this.loadingService.hide();
+          setTimeout(() => this.calculateDynamicPageSize(), 0);
         },
         (error) => {
           this.isLoading = false;
-        }
+          this.loadingService.hide();
+        },
       ),
     ];
   }
@@ -166,8 +241,14 @@ export class VehiclesTableComponent
     }
   }
 
-  listData(event: any) {
-    const selectedValue = event.value;
+  listData(eventOrValue: any) {
+    const selectedValue =
+      eventOrValue &&
+      typeof eventOrValue === 'object' &&
+      'value' in eventOrValue
+        ? eventOrValue.value
+        : (eventOrValue ?? '');
+    this.filterControl.setValue(selectedValue, { emitEvent: false });
 
     if (!selectedValue) {
       this.dataSource.data = this.originalData;
@@ -175,7 +256,7 @@ export class VehiclesTableComponent
       this.dataSource.data = this.originalData.filter((item) =>
         item.estado
           ? item.estado.toString().toLowerCase().includes(selectedValue)
-          : false
+          : false,
       );
     }
 
@@ -206,7 +287,87 @@ export class VehiclesTableComponent
     });
   }
 
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.scheduleDynamicPageSizeCalculation();
+  }
+
+  private setupResizeObserver(): void {
+    if (
+      typeof ResizeObserver === 'undefined' ||
+      !this.tableScrollContainer?.nativeElement
+    ) {
+      return;
+    }
+
+    this.resizeObserver = new ResizeObserver(() => {
+      this.ngZone.run(() => {
+        this.scheduleDynamicPageSizeCalculation();
+      });
+    });
+
+    this.resizeObserver.observe(this.tableScrollContainer.nativeElement);
+  }
+
+  private scheduleDynamicPageSizeCalculation(): void {
+    if (this.isLoading) return;
+    if (this.resizeDebounceTimer) {
+      clearTimeout(this.resizeDebounceTimer);
+    }
+    this.resizeDebounceTimer = setTimeout(() => {
+      this.calculateDynamicPageSize();
+    }, 60);
+  }
+
+  private calculateDynamicPageSize(): void {
+    if (this.isLoading || !this.tableScrollContainer?.nativeElement) return;
+
+    const containerEl = this.tableScrollContainer.nativeElement;
+    const rect = containerEl.getBoundingClientRect();
+    if (rect.height === 0 && rect.top === 0) return;
+
+    // Alto disponible desde el inicio de la zona de la tabla hasta el borde inferior de la ventana
+    // Restando la altura del paginador (~56px) y el padding/borde inferior (~26px)
+    const availableHeight = Math.max(180, window.innerHeight - rect.top - 82);
+
+    const headerEl = containerEl.querySelector(
+      'tr.mat-mdc-header-row',
+    ) as HTMLElement | null;
+    const rowEl = containerEl.querySelector(
+      'tr.vh-data-row',
+    ) as HTMLElement | null;
+
+    const headerHeight = headerEl?.offsetHeight || 34;
+    const rowHeight = rowEl?.offsetHeight || 36;
+
+    const bodyAvailableHeight = availableHeight - headerHeight;
+    const fittingRows = Math.floor(bodyAvailableHeight / rowHeight);
+    const calculatedSize = Math.max(5, fittingRows);
+
+    const optionsSet = new Set<number>([
+      ...this.basePageSizeOptions,
+      calculatedSize,
+    ]);
+    this.pageSizeOptions = Array.from(optionsSet).sort((a, b) => a - b);
+
+    if (
+      this.pageSize !== calculatedSize ||
+      this.paginatorRef?.pageSize !== calculatedSize
+    ) {
+      this.pageSize = calculatedSize;
+      if (this.paginatorRef) {
+        this.paginatorRef._changePageSize(calculatedSize);
+      }
+      this.cdr.detectChanges();
+    }
+  }
+
   ngOnDestroy(): void {
+    if (this.resizeDebounceTimer) {
+      clearTimeout(this.resizeDebounceTimer);
+    }
+    this.resizeObserver?.disconnect();
+    this.loadingService.hide();
     this.subscriptions$.forEach((sub) => sub.unsubscribe());
   }
 }

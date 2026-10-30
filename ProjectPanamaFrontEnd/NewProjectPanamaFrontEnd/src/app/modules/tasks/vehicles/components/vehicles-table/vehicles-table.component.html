@@ -1,175 +1,280 @@
-<div class="main-container">
-  <div class="title-container">
-    <h1 class="title">Vehículos</h1>
-    <p class="subtitle" *ngIf="!isLoading">
-      Total de Vehículos: {{ totalVehicles }}
-    </p>
-  </div>
+<div class="vh-main-container">
+  <!-- Encabezado Superior (UI Design System) -->
+  <header class="vh-top-header">
+    <div class="vh-header-left">
+      <div class="vh-brand-badge">
+        <mat-icon>directions_car</mat-icon>
+      </div>
 
-  <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
+      <div class="vh-title-text">
+        <div class="vh-title-row">
+          <h1 class="vh-title">Vehículos</h1>
+          <span class="vh-meta-pill vh-pill-info" *ngIf="!isLoading">
+            <mat-icon class="vh-meta-icon">directions_car</mat-icon>
+            <span class="vh-meta-label">Total:</span>
+            <span class="vh-meta-value">{{ totalVehicles }}</span>
+          </span>
+        </div>
+      </div>
+    </div>
 
-  <div [hidden]="isLoading">
-    <div class="inputs-container">
-      <mat-form-field class="field-input search-field">
-        <mat-label>Buscar</mat-label>
-        <input
-          matInput
-          [formControl]="searchControl"
-          placeholder="Buscar..."
-          #input
-        />
+    <div class="vh-header-right">
+      <div class="vh-date-pill">
+        <mat-icon>calendar_today</mat-icon>
+        <span>{{ currentDateFormatted }}</span>
+      </div>
+
+      <div class="vh-company-badge" *ngIf="infoCompanyName">
+        <mat-icon>apartment</mat-icon>
+        <span>{{ infoCompanyName }}</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenedor Principal: Tabla de Vehículos -->
+  <main class="vh-table-section" [hidden]="isLoading">
+    <div class="vh-table-toolbar">
+      <div class="vh-toolbar-left">
+        <div class="vh-search-box-wrapper">
+          <mat-icon class="vh-search-box-icon">search</mat-icon>
+          <input
+            type="text"
+            class="vh-search-box-input"
+            [formControl]="searchControl"
+            placeholder="Buscar por unidad, placa, cupo, conductor, chasis..."
+            #input
+          />
+          <button
+            *ngIf="input.value"
+            type="button"
+            class="vh-search-box-clear"
+            (click)="searchControl.setValue('')"
+            matTooltip="Limpiar búsqueda"
+            aria-label="Limpiar búsqueda"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="vh-toolbar-right">
+        <div class="vh-filter-container">
+          <span class="vh-filter-label">
+            <mat-icon class="vh-filter-label-icon">filter_list</mat-icon>
+            <span>Estado:</span>
+          </span>
+          <mat-button-toggle-group
+            [value]="filterControl.value ?? ''"
+            (change)="listData($event)"
+            hideSingleSelectionIndicator="true"
+            name="vehicleStatusFilter"
+            aria-label="Filtrar vehículos por estado"
+            class="vh-filter-toggle-group"
+          >
+            <mat-button-toggle
+              value=""
+              class="vh-filter-toggle-btn vh-toggle-default"
+            >
+              <mat-icon class="vh-toggle-icon">apps</mat-icon>
+              <span>Todos</span>
+            </mat-button-toggle>
+
+            <mat-button-toggle
+              value="1"
+              class="vh-filter-toggle-btn vh-toggle-ok"
+            >
+              <mat-icon class="vh-toggle-icon">check_circle</mat-icon>
+              <span>Activos</span>
+            </mat-button-toggle>
+
+            <mat-button-toggle
+              value="2"
+              class="vh-filter-toggle-btn vh-toggle-warn"
+            >
+              <mat-icon class="vh-toggle-icon">remove_circle_outline</mat-icon>
+              <span>Retirados</span>
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+
+        <div class="vh-toolbar-divider"></div>
+
         <button
-          mat-icon-button
-          matSuffix
-          aria-label="Clear"
-          (click)="searchControl.setValue('')"
-          *ngIf="input.value"
-        >
-          <mat-icon>close</mat-icon>
-        </button>
-      </mat-form-field>
-
-      <mat-form-field class="field-input filter-field">
-        <mat-label>Filtro</mat-label>
-        <mat-select [formControl]="filterControl" (selectionChange)="listData($event)">
-          <mat-option value="">Todos</mat-option>
-          <mat-option value="1">Activos</mat-option>
-          <mat-option value="2">Retirados</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <div class="field-input filter-field">
-        <button
-          mat-raised-button
-          class="directory-button"
+          mat-flat-button
+          type="button"
+          class="vh-btn-directory"
           (click)="openVehiclesDirectoryDialog()"
         >
           <mat-icon>print</mat-icon>
-          Ver Directorio
+          <span>Ver Directorio</span>
         </button>
       </div>
     </div>
 
-    <div class="mat-elevation-z8">
-      <div class="table-scroll-container">
-        <table mat-table [dataSource]="dataSource" matSort>
-          <!-- Unidad Column -->
-          <ng-container matColumnDef="Unidad">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>UNIDAD</th>
-            <td mat-cell *matCellDef="let row">{{ row.unidad }}</td>
-          </ng-container>
+    <!-- Contenedor Scroll de la Tabla -->
+    <div class="vh-table-scroll-container" #tableScrollContainer>
+      <table mat-table [dataSource]="dataSource" matSort class="vh-data-table">
+        <!-- Unidad Column -->
+        <ng-container matColumnDef="Unidad">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>UNIDAD</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="vh-badge-unit">{{ row.unidad }}</span>
+          </td>
+        </ng-container>
 
-          <!-- Placa Column -->
-          <ng-container matColumnDef="Placa">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>PLACA</th>
-            <td mat-cell *matCellDef="let row">{{ row.placa }}</td>
-          </ng-container>
+        <!-- Placa Column -->
+        <ng-container matColumnDef="Placa">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>PLACA</th>
+          <td mat-cell *matCellDef="let row" class="vh-td-strong">
+            {{ row.placa || "-" }}
+          </td>
+        </ng-container>
 
-          <!-- Año Column -->
-          <ng-container matColumnDef="Año">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>AÑO</th>
-            <td mat-cell *matCellDef="let row">{{ row.modelo }}</td>
-          </ng-container>
+        <!-- Año Column -->
+        <ng-container matColumnDef="Año">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>AÑO</th>
+          <td mat-cell *matCellDef="let row">{{ row.modelo || "-" }}</td>
+        </ng-container>
 
-          <!-- Cupo Column -->
-          <ng-container matColumnDef="Cupo">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>N° CUPO</th>
-            <td mat-cell *matCellDef="let row">{{ row.nro_cupo }}</td>
-          </ng-container>
+        <!-- Cupo Column -->
+        <ng-container matColumnDef="Cupo">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>N° CUPO</th>
+          <td mat-cell *matCellDef="let row">{{ row.nro_cupo || "-" }}</td>
+        </ng-container>
 
-          <!-- Motor Column -->
-          <ng-container matColumnDef="Motor">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>N° MOTOR</th>
-            <td mat-cell *matCellDef="let row">{{ row.motor }}</td>
-          </ng-container>
+        <!-- Motor Column -->
+        <ng-container matColumnDef="Motor">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>N° MOTOR</th>
+          <td mat-cell *matCellDef="let row" class="vh-td-mono">
+            {{ row.motor || "-" }}
+          </td>
+        </ng-container>
 
-          <!-- Chasis Column -->
-          <ng-container matColumnDef="Chasis">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>N° CHASIS</th>
-            <td mat-cell *matCellDef="let row">{{ row.chasis }}</td>
-          </ng-container>
+        <!-- Chasis Column -->
+        <ng-container matColumnDef="Chasis">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>N° CHASIS</th>
+          <td mat-cell *matCellDef="let row" class="vh-td-mono">
+            {{ row.chasis || "-" }}
+          </td>
+        </ng-container>
 
-          <!-- Matricula Column -->
-          <ng-container matColumnDef="Matricula">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>MATRICULA</th>
-            <td mat-cell *matCellDef="let row">
-              {{ formatDate(row.matricula) }}
-            </td>
-          </ng-container>
+        <!-- Matricula Column -->
+        <ng-container matColumnDef="Matricula">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>MATRÍCULA</th>
+          <td mat-cell *matCellDef="let row" class="vh-td-muted">
+            {{ formatDate(row.matricula) }}
+          </td>
+        </ng-container>
 
-          <!-- Central Column -->
-          <ng-container matColumnDef="Central">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>CENTRAL</th>
-            <td mat-cell *matCellDef="let row">{{ row.central }}</td>
-          </ng-container>
+        <!-- Central Column -->
+        <ng-container matColumnDef="Central">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>CENTRAL</th>
+          <td mat-cell *matCellDef="let row">{{ row.central || "-" }}</td>
+        </ng-container>
 
-          <!-- Empresa Column -->
-          <ng-container matColumnDef="Empresa">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>EMPRESA</th>
-            <td mat-cell *matCellDef="let row">{{ row.empresa }}</td>
-          </ng-container>
+        <!-- Empresa Column -->
+        <ng-container matColumnDef="Empresa">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>EMPRESA</th>
+          <td mat-cell *matCellDef="let row">{{ row.empresa || "-" }}</td>
+        </ng-container>
 
-          <!-- Conductor Column -->
-          <ng-container matColumnDef="Conductor">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>CONDUCTOR</th>
-            <td mat-cell *matCellDef="let row">{{ row.conductor }}</td>
-          </ng-container>
+        <!-- Conductor Column -->
+        <ng-container matColumnDef="Conductor">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>CONDUCTOR</th>
+          <td mat-cell *matCellDef="let row" class="vh-td-driver">
+            {{ row.conductor || "-" }}
+          </td>
+        </ng-container>
 
-          <!-- Estado Column -->
-          <ng-container matColumnDef="Estado">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>ESTADO</th>
-            <td mat-cell *matCellDef="let row">{{ row.nombre_estado }}</td>
-          </ng-container>
+        <!-- Estado Column -->
+        <ng-container matColumnDef="Estado">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>ESTADO</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="vh-badge-status">{{ row.nombre_estado || "-" }}</span>
+          </td>
+        </ng-container>
 
-          <!-- Vlr.Cta Column -->
-          <ng-container matColumnDef="Vlr.Cta">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Vlr. Cta</th>
-            <td mat-cell *matCellDef="let row">{{ row.vlr_cta }}</td>
-          </ng-container>
+        <!-- Vlr.Cta Column -->
+        <ng-container matColumnDef="Vlr.Cta">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>VLR. CTA</th>
+          <td mat-cell *matCellDef="let row" class="vh-td-num">
+            {{ row.vlr_cta }}
+          </td>
+        </ng-container>
 
-          <!-- N° Ctas Column -->
-          <ng-container matColumnDef="N° Ctas">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>N° Ctas</th>
-            <td mat-cell *matCellDef="let row">{{ row.nro_ctas }}</td>
-          </ng-container>
+        <!-- N° Ctas Column -->
+        <ng-container matColumnDef="N° Ctas">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>N° CTAS</th>
+          <td mat-cell *matCellDef="let row" class="vh-td-num">
+            {{ row.nro_ctas }}
+          </td>
+        </ng-container>
 
-          <!-- Panapass Column -->
-          <ng-container matColumnDef="Panapass">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>PANAPASS</th>
-            <td mat-cell *matCellDef="let row">{{ row.panapass }}</td>
-          </ng-container>
+        <!-- Panapass Column -->
+        <ng-container matColumnDef="Panapass">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>PANAPASS</th>
+          <td mat-cell *matCellDef="let row">{{ row.panapass || "-" }}</td>
+        </ng-container>
 
-          <!-- Llavero Column -->
-          <ng-container matColumnDef="Llavero">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>LLAVERO</th>
-            <td mat-cell *matCellDef="let row">{{ row.nro_llaves }}</td>
-          </ng-container>
+        <!-- Llavero Column -->
+        <ng-container matColumnDef="Llavero">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>LLAVERO</th>
+          <td mat-cell *matCellDef="let row">{{ row.nro_llaves || "-" }}</td>
+        </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr
-            mat-row
-            *matRowDef="let row; columns: displayedColumns"
-            (dblclick)="goToVehicleResume(row.consecutivo)"
-          ></tr>
+        <tr
+          mat-header-row
+          *matHeaderRowDef="displayedColumns; sticky: true"
+        ></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          class="vh-data-row"
+          (dblclick)="goToVehicleResume(row.consecutivo)"
+          matTooltip="Doble clic para ver el resumen del vehículo"
+          matTooltipShowDelay="500"
+        ></tr>
 
-          <!-- Row shown when there is no matching data. -->
-          <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell" colspan="15">
-              <span *ngIf="input.value"
-                >No se encontraron resultados para "{{ input.value }}"</span
+        <!-- Estado Vacío cuando no hay coincidencias -->
+        <tr class="mat-row vh-empty-row" *matNoDataRow>
+          <td class="mat-cell vh-empty-cell" colspan="15">
+            <div class="vh-empty-state">
+              <div class="vh-empty-icon-wrap">
+                <mat-icon class="vh-empty-icon">search_off</mat-icon>
+              </div>
+              <div class="vh-empty-text-wrap">
+                <span class="vh-empty-title" *ngIf="input.value">
+                  No se encontraron resultados para "{{ input.value }}"
+                </span>
+                <span class="vh-empty-title" *ngIf="!input.value">
+                  No hay vehículos disponibles para este filtro
+                </span>
+                <span class="vh-empty-subtitle" *ngIf="input.value">
+                  Intente buscar con otra unidad, placa, cupo o conductor
+                </span>
+              </div>
+              <button
+                *ngIf="input.value"
+                type="button"
+                mat-stroked-button
+                class="vh-empty-clear-btn"
+                (click)="searchControl.setValue('')"
               >
-              <span *ngIf="!input.value">No hay datos disponibles</span>
-            </td>
-          </tr>
-        </table>
-      </div>
-
-      <mat-paginator
-        [pageSizeOptions]="[10, 20, 30, 40, 50, 100]"
-        [pageSize]="10"
-        [showFirstLastButtons]="true"
-        aria-label="Selecciona la cantidad de registros por página"
-      ></mat-paginator>
+                <mat-icon>clear</mat-icon>
+                Limpiar búsqueda
+              </button>
+            </div>
+          </td>
+        </tr>
+      </table>
     </div>
-  </div>
+
+    <mat-paginator
+      class="vh-paginator"
+      [pageSizeOptions]="pageSizeOptions"
+      [pageSize]="pageSize"
+      [showFirstLastButtons]="true"
+      aria-label="Selecciona la cantidad de registros por página"
+    ></mat-paginator>
+  </main>
 </div>
