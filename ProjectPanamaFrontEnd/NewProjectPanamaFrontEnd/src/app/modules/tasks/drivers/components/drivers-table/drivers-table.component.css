@@ -1,135 +1,846 @@
-.main-container {
+/* ==========================================================================
+   Contenedor Principal y Layout Base (UI Design System)
+   ========================================================================== */
+.dr-main-container {
   min-height: 92vh;
-  padding: 2vh 20px 20px;
+  padding: 16px 22px 24px;
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
-.title-container {
+/* ==========================================================================
+   1. Encabezado Superior (.dr-top-header)
+   ========================================================================== */
+.dr-top-header {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.dr-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.dr-brand-badge {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px -2px rgba(2, 132, 199, 0.35);
+  flex-shrink: 0;
+}
+
+.dr-brand-badge mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.dr-title-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dr-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dr-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.2;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+
+.dr-meta-pill {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 0.76rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #334155;
+  height: 28px;
+  box-sizing: border-box;
+}
+
+.dr-pill-info {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+.dr-meta-icon {
+  font-size: 15px;
+  height: 15px;
+  width: 15px;
+  color: currentColor;
+  opacity: 0.85;
+}
+
+.dr-meta-label {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.dr-meta-value {
+  font-weight: 700;
+}
+
+.dr-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dr-date-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 5px 11px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.dr-date-pill mat-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+  color: #0284c7;
+}
+
+.dr-company-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 6px 13px;
+  color: #0369a1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08);
+}
+
+.dr-company-badge mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #0284c7;
+  flex-shrink: 0;
+}
+
+.dr-company-badge span {
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+/* ==========================================================================
+   2. Sección de la Tabla y Toolbar (.dr-table-section)
+   ========================================================================== */
+.dr-table-section {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.dr-table-section[hidden] {
+  display: none !important;
+}
+
+.dr-table-toolbar {
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dr-toolbar-left {
+  display: flex;
+  align-items: center;
+  flex: 1 1 320px;
+  max-width: 520px;
+}
+
+.dr-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dr-toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background-color: #cbd5e1;
+}
+
+/* Buscador Custom */
+.dr-search-box-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0 12px;
+  height: 38px;
+  width: 100%;
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.dr-search-box-wrapper:hover {
+  border-color: #94a3b8;
+}
+
+.dr-search-box-wrapper:focus-within {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+.dr-search-box-icon {
+  color: #64748b;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.dr-search-box-wrapper:focus-within .dr-search-box-icon {
+  color: #0284c7;
+}
+
+.dr-search-box-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-size: 0.85rem;
+  color: #1e293b;
+  font-family: inherit;
+}
+
+.dr-search-box-input::placeholder {
+  color: #94a3b8;
+}
+
+.dr-search-box-clear {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.dr-search-box-clear:hover {
+  background-color: #f1f5f9;
+  color: #334155;
+}
+
+.dr-search-box-clear mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+/* Filtro de Unidad (mat-button-toggle-group) */
+.dr-filter-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dr-filter-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.2px;
+}
+
+.dr-filter-label-icon {
+  font-size: 18px;
+  height: 18px;
+  width: 18px;
+  color: #64748b;
+}
+
+.dr-filter-toggle-group {
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  background: #f1f5f9 !important;
+  padding: 3px !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 38px !important;
+  box-sizing: border-box !important;
+}
+
+::ng-deep .dr-filter-toggle-group .mat-button-toggle {
+  border: none !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: #475569 !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  overflow: hidden !important;
+}
+
+::ng-deep .dr-filter-toggle-group .mat-button-toggle-button {
+  height: 30px !important;
+  padding: 0 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+::ng-deep .dr-filter-toggle-group .mat-button-toggle-label-content {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  line-height: normal !important;
+  padding: 0 !important;
+}
+
+.dr-toggle-icon {
+  font-size: 16px !important;
+  height: 16px !important;
+  width: 16px !important;
+  line-height: 16px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+::ng-deep .dr-filter-toggle-group .mat-button-toggle-checked {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+::ng-deep .dr-filter-toggle-group .dr-toggle-default.mat-button-toggle-checked,
+::ng-deep
+  .dr-filter-toggle-group
+  .dr-toggle-default.mat-button-toggle-checked
+  .dr-toggle-icon {
+  color: #0284c7 !important;
+}
+
+::ng-deep .dr-filter-toggle-group .dr-toggle-ok.mat-button-toggle-checked,
+::ng-deep
+  .dr-filter-toggle-group
+  .dr-toggle-ok.mat-button-toggle-checked
+  .dr-toggle-icon {
+  color: #15803d !important;
+}
+
+::ng-deep .dr-filter-toggle-group .mat-button-toggle-focus-overlay {
+  display: none !important;
+}
+
+/* Botón Ver Directorio (Pastel Azul) */
+.dr-btn-directory {
+  height: 38px !important;
+  padding: 0 14px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.84rem !important;
+  background-color: #e3f2fd !important;
+  color: #1e88e5 !important;
+  border: 1px solid #bbdefb !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  box-shadow: none !important;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease !important;
+}
+
+.dr-btn-directory:hover {
+  background-color: #bbdefb !important;
+  transform: translateY(-1px);
+}
+
+.dr-btn-directory mat-icon {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  margin: 0 !important;
+}
+
+/* ==========================================================================
+   3. Contenedor Scroll y Tabla Enterprise (.dr-data-table)
+   ========================================================================== */
+.dr-table-scroll-container {
+  overflow-x: auto;
+  overflow-y: auto;
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  background-color: #ffffff;
+}
+
+.dr-table-scroll-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dr-table-scroll-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.dr-table-scroll-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.dr-table-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dr-data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+::ng-deep .dr-data-table tr.mat-mdc-header-row {
+  height: 34px !important;
+  min-height: 34px !important;
+}
+
+::ng-deep .dr-data-table th.mat-mdc-header-cell {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  font-weight: 700 !important;
+  font-size: 0.72rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.3px !important;
+  border-bottom: 2px solid #cbd5e1 !important;
+  border-right: 1px solid #e2e8f0;
+  padding: 6px 10px !important;
+  height: 34px !important;
+  white-space: nowrap !important;
+  user-select: none;
+}
+
+::ng-deep .dr-data-table th.mat-mdc-header-cell:last-child {
+  border-right: none;
+}
+
+::ng-deep .dr-data-table th.mat-sort-header .mat-sort-header-container {
+  justify-content: center;
+}
+
+::ng-deep .dr-data-table tr.mat-mdc-row {
+  height: 36px !important;
+  min-height: 36px !important;
+}
+
+::ng-deep .dr-data-table td.mat-mdc-cell {
+  padding: 6px 10px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  border-right: 1px solid #f8fafc;
+  color: #1e293b !important;
+  font-size: 0.78rem !important;
+  white-space: nowrap !important;
+  text-align: center;
+}
+
+::ng-deep .dr-data-table td.mat-mdc-cell:last-child {
+  border-right: none;
+}
+
+::ng-deep .dr-data-table th.mat-mdc-header-cell:first-child,
+::ng-deep .dr-data-table td.mat-mdc-cell:first-child {
+  padding-left: 16px !important;
+}
+
+::ng-deep .dr-data-table th.mat-mdc-header-cell:last-child,
+::ng-deep .dr-data-table td.mat-mdc-cell:last-child {
+  padding-right: 16px !important;
+}
+
+/* Filas Interactivas */
+.dr-data-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.dr-data-row:hover td.mat-mdc-cell {
+  background-color: #f0f9ff !important;
+}
+
+/* Badges y Celdas Especializadas */
+.dr-badge-code {
+  background: #dbeafe;
+  color: #1e40af;
+  font-weight: 700;
+  font-size: 0.76rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #bfdbfe;
+  display: inline-block;
+}
+
+.dr-badge-unit {
+  background: #dcfce7;
+  color: #15803d;
+  font-weight: 700;
+  font-size: 0.76rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #bbf7d0;
+  display: inline-block;
+}
+
+.dr-td-name {
+  text-align: left !important;
+  font-weight: 600;
+  color: #0f172a !important;
+}
+
+.dr-td-mono {
+  font-variant-numeric: tabular-nums;
+  color: #334155 !important;
+  font-size: 0.76rem !important;
+}
+
+.dr-td-muted {
+  color: #64748b !important;
+  font-size: 0.76rem !important;
+}
+
+.dr-td-num {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.dr-td-contacts {
+  text-align: left !important;
+  color: #475569 !important;
+  font-size: 0.76rem !important;
+}
+
+/* Paginador */
+.dr-paginator {
+  border-top: 1px solid #e2e8f0;
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+}
+
+/* ==========================================================================
+   4. Estado Vacío (.dr-empty-state)
+   ========================================================================== */
+.dr-empty-row {
+  background-color: #ffffff;
+}
+
+.dr-empty-cell {
+  padding: 56px 16px !important;
+  text-align: center !important;
+  border-bottom: none !important;
+}
+
+.dr-empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  gap: 10px;
+  max-width: 440px;
+  margin: 0 auto;
 }
 
-.title-container h1 {
-  font-weight: bold;
-  font-size: 2rem;
-  margin: 0;
-}
-
-.subtitle {
-  margin: 5px 0 0 0;
-  font-size: 1rem;
-  color: #666;
-}
-
-.inputs-container {
+.dr-empty-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
   display: flex;
-  justify-content: space-around;
   align-items: center;
-  padding-bottom: 5px;
-}
-
-.search-field {
-  width: 60%;
-}
-
-.filter-field {
-  width: 15%;
-}
-
-.field-input {
-  height: 70px;
-}
-
-::ng-deep .field-input .mat-mdc-form-field-flex {
-  height: 100%;
-  align-items: center;
-}
-
-::ng-deep .field-input .mat-mdc-icon-button {
-  transform: scale(1);
-}
-
-::ng-deep .inputs-container .mat-mdc-text-field-wrapper {
-  height: 46px !important;
-}
-
-.directory-button {
-  background-color: white !important;
-  color: #333;
-  font-weight: 500;
-  height: 46px;
-  width: 100%;
-  border: 1px solid #e0e0e0;
-}
-
-/* Table Styles */
-.mat-elevation-z8 {
-  margin: 0px 22px 22px 22px;
-}
-
-.table-scroll-container {
-  overflow-x: auto;
-  position: relative;
-}
-
-table {
-  width: 100%;
-}
-
-th {
-  padding: 0;
-  white-space: nowrap;
-}
-
-th.mat-sort-header .mat-sort-header-container {
   justify-content: center;
 }
 
-td {
-  padding: 0 8px;
-  white-space: nowrap;
+.dr-empty-icon {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+  color: #94a3b8;
 }
 
-th:first-child,
-td:first-child {
-  padding-left: 20px;
+.dr-empty-text-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-th:last-child,
-td:last-child {
-  padding-right: 20px;
+.dr-empty-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #334155;
 }
 
-@media (max-width: 1200px) {
-  .search-field {
-    width: 50%;
-  }
+.dr-empty-subtitle {
+  font-size: 0.82rem;
+  color: #64748b;
 }
 
-@media (max-width: 1100px) {
-  .inputs-container {
+.dr-empty-clear-btn {
+  margin-top: 4px !important;
+  color: #0284c7 !important;
+  border-color: #bae6fd !important;
+  font-size: 0.8rem !important;
+  border-radius: 6px !important;
+}
+
+.dr-empty-clear-btn:hover {
+  background-color: #f0f9ff !important;
+  border-color: #7dd3fc !important;
+}
+
+/* ==========================================================================
+   5. Responsividad (UI Design System)
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .dr-table-toolbar {
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
+    gap: 10px;
   }
 
-  .search-field {
+  .dr-toolbar-left {
+    flex: 1 1 auto;
+    max-width: 100%;
     width: 100%;
   }
 
-  .filter-field {
+  .dr-toolbar-right {
     width: 100%;
+    justify-content: space-between;
   }
 
-  .mat-elevation-z8 {
-    margin: 0px 0px;
+  .dr-toolbar-divider {
+    display: none;
   }
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .main-container {
-    padding: 2vh 20px;
+@media (max-width: 960px) {
+  .dr-top-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .dr-header-left {
+    gap: 10px;
+  }
+
+  .dr-brand-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  .dr-brand-badge mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .dr-title {
+    font-size: 1.18rem;
+  }
+
+  .dr-header-right {
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .dr-date-pill {
+    padding: 5px 10px;
+    font-size: 0.74rem;
+    gap: 6px;
+  }
+
+  .dr-date-pill mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+
+  .dr-company-badge {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    gap: 8px;
+    border-radius: 8px;
+  }
+
+  .dr-company-badge mat-icon {
+    font-size: 17px;
+    width: 17px;
+    height: 17px;
+  }
+}
+
+@media (max-width: 640px) {
+  .dr-main-container {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .dr-top-header {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .dr-brand-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+  }
+
+  .dr-brand-badge mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .dr-title {
+    font-size: 1.05rem;
+  }
+
+  .dr-meta-pill {
+    height: 24px;
+    padding: 3px 9px;
+    font-size: 0.7rem;
+  }
+
+  .dr-date-pill {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    gap: 5px;
+    border-radius: 6px;
+  }
+
+  .dr-date-pill mat-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+  }
+
+  .dr-company-badge {
+    padding: 5px 10px;
+    font-size: 0.74rem;
+    gap: 6px;
+    border-radius: 8px;
+  }
+
+  .dr-company-badge mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+  }
+
+  .dr-toolbar-right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dr-filter-container {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .dr-filter-label {
+    display: none;
+  }
+
+  .dr-filter-toggle-group {
+    width: 100%;
+    display: flex !important;
+  }
+
+  ::ng-deep .dr-filter-toggle-group .mat-button-toggle {
+    flex: 1 1 0;
+  }
+
+  .dr-btn-directory {
+    width: 100%;
   }
 }
