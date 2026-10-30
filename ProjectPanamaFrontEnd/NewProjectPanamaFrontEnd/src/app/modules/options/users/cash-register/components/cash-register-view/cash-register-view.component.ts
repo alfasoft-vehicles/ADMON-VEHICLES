@@ -18,6 +18,7 @@ import { ConfirmActionDialogComponent } from 'src/app/modules/shared/components/
 import { SelectBankDialogComponent } from '../bulk-upload-view/dialogs/select-bank-dialog/select-bank-dialog.component';
 import { BulkUploadService } from '../bulk-upload-view/services/bulk-upload.service';
 import { LoadingService } from 'src/app/services/loading.service';
+import { InfoCompanyStateService } from 'src/app/modules/shared/services/info-company-state.service';
 
 export interface drivers {
   codigo_conductor: string;
@@ -134,6 +135,9 @@ export class CashRegisterViewComponent implements OnInit, OnDestroy {
   isVerified: boolean = false;
   isCheckingRecords: boolean = false;
 
+  infoCompanyName: string = '';
+  currentDateFormatted: string = '';
+
   constructor(
     private fb: FormBuilder,
     private apiService: ApiService,
@@ -144,9 +148,12 @@ export class CashRegisterViewComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
     private bulkUploadService: BulkUploadService,
     private loadingService: LoadingService,
+    private infoCompanyStateService: InfoCompanyStateService,
   ) {}
 
   ngOnInit() {
+    this.formatCurrentDate();
+    this.getInfoCompany();
     this.searchForm = this.fb.group({
       driver: [''],
       vehicle: [''],
@@ -219,6 +226,24 @@ export class CashRegisterViewComponent implements OnInit, OnDestroy {
   getCompany() {
     const userData = this.jwtService.getUserData();
     return userData ? userData.empresa : '';
+  }
+
+  private formatCurrentDate(): void {
+    const now = new Date();
+    const formatted = now.toLocaleDateString('es-PA', {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+    this.currentDateFormatted =
+      formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  }
+
+  private getInfoCompany(): void {
+    this.infoCompanyStateService.loadInfoCompany().subscribe((infoCompany) => {
+      this.infoCompanyName = infoCompany?.name || '';
+    });
   }
 
   private _filterDrivers(value: string | drivers): drivers[] {

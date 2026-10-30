@@ -1,11 +1,59 @@
 <div class="cr-main-container">
-  <div class="cr-title-container">
-    <h1 class="cr-title">Caja</h1>
-  </div>
+  <!-- Encabezado Superior (UI Design System) -->
+  <header class="cr-top-header">
+    <div class="cr-header-left">
+      <button
+        mat-stroked-button
+        type="button"
+        class="cr-btn-back"
+        routerLink="/home/users"
+      >
+        <mat-icon>arrow_back</mat-icon>
+        <span>Regresar</span>
+      </button>
 
-  <div class="cr-search-section-wrapper" [formGroup]="searchForm">
+      <div class="cr-header-divider"></div>
+
+      <div class="cr-brand-badge">
+        <mat-icon class="cr-brand-icon">point_of_sale</mat-icon>
+      </div>
+
+      <div class="cr-title-text">
+        <div class="cr-title-row">
+          <h1 class="cr-title">Caja</h1>
+          <span
+            class="cr-meta-pill cr-pill-info"
+            *ngIf="hasData && detailInfo"
+          >
+            <mat-icon class="cr-meta-icon">directions_car</mat-icon>
+            <span class="cr-meta-label">Unidad</span>
+            <span class="cr-meta-value">{{ detailInfo.vehicle }}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cr-header-right">
+      <!-- Pill de fecha actual -->
+      <!-- <div class="cr-date-pill">
+        <mat-icon>calendar_today</mat-icon>
+        <span>{{ closingDateInfo?.date || currentDateFormatted }}</span>
+      </div> -->
+
+      <!-- Chip de la empresa -->
+      <div class="cr-company-badge" *ngIf="infoCompanyName">
+        <mat-icon>apartment</mat-icon>
+        <span>{{ infoCompanyName }}</span>
+      </div>
+    </div>
+  </header>
+
+  <div
+    class="cr-search-section-wrapper"
+    [formGroup]="searchForm"
+    *ngIf="!isLoadingAutocompletes"
+  >
     <div
-      *ngIf="!isLoadingAutocompletes"
       class="cr-search-controls"
       [class.cr-search-controls-full]="!hasData"
     >
@@ -144,10 +192,13 @@
     *ngIf="!hasData && !isLoading && !isLoadingAutocompletes"
     class="cr-empty-state mat-elevation-z1"
   >
-    <mat-icon class="cr-empty-icon">manage_search</mat-icon>
+    <div class="cr-empty-icon-wrap">
+      <mat-icon class="cr-empty-icon">manage_search</mat-icon>
+    </div>
     <h2 class="cr-empty-title">No hay unidad seleccionada</h2>
     <p class="cr-empty-subtitle">
-      Seleccione un código o número de unidad para cargar los datos del recaudo.
+      Seleccione un código de conductor o número de unidad para cargar los datos
+      del recaudo.
     </p>
   </div>
 
