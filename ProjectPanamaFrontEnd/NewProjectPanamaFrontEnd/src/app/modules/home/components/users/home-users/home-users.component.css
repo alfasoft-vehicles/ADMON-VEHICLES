@@ -1,267 +1,633 @@
-.container {
-  height: 80vh;
+/* ==========================================================================
+   Contenedor Principal y Layout Base (Consistente con Cash Register)
+   ========================================================================== */
+.hu-main-container {
+  min-height: 92vh;
+  padding: 16px 22px 24px;
+  background-color: #f8fafc;
   display: flex;
-  justify-content: center;
-  /* align-items: center; */
-  /* padding: 10vh ; */
-  padding: 10vh 5vh 0vh 5vh;
-  gap: 20px;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   user-select: none;
 }
 
-/* Contenedor principal del carrusel */
-.carousel-container {
-  padding-top: 10px;
-  width: 100%;
-  height: 425px;  
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  position: relative; /* Añadir posición relativa al contenedor principal */
-}
-
-.carousel {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative; /* Añadir posición relativa para que el botón pueda posicionarse dentro del carousel */
-}
-
-.right-container {
-  position: absolute;
-  background: #ffffff5e;
-  border-radius: 10px;
-  cursor: pointer;
-  bottom: 45%; /* Ajusta la distancia desde la parte inferior */
-  right: 10px; /* Ajusta la distancia desde la parte derecha */
-  z-index: 10; /* Asegura que el botón esté por encima del video */
-}
-
-.left-container {
-  position: absolute;
-  background: #ffffff5e;
-  border-radius: 10px;
-  cursor: pointer;
-  bottom: 45%; /* Ajusta la distancia desde la parte inferior */
-  left: 10px; /* Ajusta la distancia desde la parte derecha */
-  z-index: 10; /* Asegura que el botón esté por encima del video */
-}
-
-.alternate-media:hover {
-  background: #ffffff71; /* Cambia el color de fondo al pasar el ratón */
-  border-radius: 10px; /* Ajusta los bordes redondeados al pasar el ratón */
-}
-
-.alternate-media {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.left-container .media-icon {
-  transform: scaleX(-1);
-}
-
-.media-icon {
-  padding: 5px;
-  width: 25px; /* Ajusta el tamaño del ícono según sea necesario */
-  height: 25px; /* Ajusta el tamaño del ícono según sea necesario */
-}
-
-
-/* Estilos específicos para cada imagen en el carrusel */
-.carousel .media-container {
-  width: 100%;                          /* Hace que la imagen ocupe el 100% del ancho del contenedor. */
-  height: 100%;                     /* Asegura que la altura no exceda la del contenedor. */
-  opacity: 0;                           /* Inicialmente las imágenes son invisibles (para transiciones). */
-  transition: opacity 1s ease-in-out;   /* Transiciones suaves de opacidad al cambiar imágenes. */
-  object-fit: inherit;                  /* Mantiene la relación de aspecto de la imagen sin cortarla. */
-  border-radius: 5px;                  /* Aplica bordes redondeados a las imágenes. */
-}
-
-.options-container {
-  width: 100%;
-  height: 300px; /* Altura ajustable según tu diseño */
-}
-
-.options-container a {
-  text-decoration: none; /* Elimina el subrayado de todos los enlaces dentro del options-container */
-  color: inherit; /* Hace que el color del enlace herede el color de su contenedor padre, útil si más tarde decides cambiar los colores globalmente */
-}
-
-ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex; /* Flexbox para un mejor control del layout */
-  flex-wrap: wrap; /* Permite elementos de lista envolvente */
-  justify-content: center; /* Centra los elementos horizontalmente */
-}
-
-.options-if{
-  width: calc(33.33% - 20px); /* 33.33% para 3 elementos por fila, ajustando el margen */
-  margin: 10px;
-  box-sizing: border-box;
-  background: #ffffff; /* Fondo claro por defecto, ajustable */
-  /* border: 1px solid #ccc; */
-  border: 1px solid #888;
-  border-radius: 10px; /* Bordes redondeados */
-  padding: 10px;
-  display: flex;
-  align-items: center; /* Centrado vertical */
-  justify-content: center; /* Centrado horizontal */
-  text-align: center; /* Texto centrado */
-  flex-direction: column; /* Ícono sobre el texto */
-  cursor: pointer;
-}
-
-.options-if:hover {
-  /* background: #fff8b4;  */
-  background: #bcd1ec;
-  /* background: #c9c9c9; */
-}
-
-.options-if:disabled {
-  background: #e0e0e0;
-  color: #888;
-  cursor: not-allowed;
-  border-color: #aaa;
-}
-
-.option-icon {
-  width: 35px;
-  height: 35px;
-  margin-bottom: 5px;
-}
-
-.option {
-  height: 6vh;
-  margin: 6px;
-  box-sizing: border-box;
+/* ==========================================================================
+   1. Encabezado Superior (Header Card)
+   ========================================================================== */
+.hu-top-header {
   background: #ffffff;
-  border: 1px solid #888;
-  border-radius: 10px;
-  padding: 10px;
+  border-radius: 12px;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.hu-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.hu-brand-badge {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1e40af 0%, #0284c7 100%);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  text-decoration: none;
-  color: black;
-  font-size: 15px;
-  position: relative;  /* Permite posicionamiento absoluto de elementos hijos */
+  box-shadow: 0 4px 10px rgba(2, 132, 199, 0.22);
+  flex-shrink: 0;
 }
 
-.option span.material-symbols-outlined {
-  margin-right: 10px;  /* Empuja el icono a la izquierda */
-  font-size: 3.5vh;
+.hu-brand-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
 }
 
-.option:hover {
-  background: #bcd1ec;
-}
-
-
-.option-text {
-  font-size: 16px; /* Ajuste según necesidad */
-  color: #333; /* Color del texto */
-}
-
-.logout-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.logout{
-  width: 30%; /* 33.33% para 3 elementos por fila, ajustando el margen */
-  margin: 10px;
-  box-sizing: border-box;
-  background: #ffffff; /* Fondo claro por defecto, ajustable */
-  border-radius: 10px; /* Bordes redondeados */
-  padding: 10px;
-  display: flex;
-  align-items: center; /* Centrado vertical */
-  justify-content: center; /* Centrado horizontal */
-  text-align: center; /* Texto centrado */
-  flex-direction: column; /* Ícono sobre el texto */
-  cursor: pointer;
-}
-
-.logout:hover {
-  background: #ffcdcd; 
-}
-
-.logout-icon {
-  width: 25px;
-  height: 25px;
-  margin-bottom: 5px;
-}
-
-.logout-text {
-  font-size: 16px; /* Ajuste según necesidad */
-  color: #333; /* Color del texto */
-}
-
-@media (max-width: 580px) {
-  .carousel-container {
-    display: none;
-  }
-
-  .container {
-    padding: 2vh 5vh;
-    height: 100%
-  }
-}
-
-
-/*------------------------------------------------------*/
-
-/*
-.cards-container{
-  padding: 2%;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  grid-gap: 30px;
-  /* background-color: #FDF7DF; *//*
-  background-color: #C0CBE1;
-}
-
-.main-container {
+.hu-title-text {
   display: flex;
   flex-direction: column;
-  border-radius: 30px;
-  padding: 25px;
-  background-color: #ffffff;
-  cursor: pointer; /* Cambia el cursor al pasar el ratón *//*
+  gap: 3px;
 }
 
-.main-container:hover {
-  background-color: #e6e6e6;
-  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1); /* Agrega una sombra al pasar el ratón *//*
+.hu-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.image-container {
+.hu-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.hu-subtitle {
+  font-size: 0.84rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.hu-subtitle strong {
+  color: #334155;
+  font-weight: 600;
+}
+
+.hu-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Meta Pills */
+.hu-meta-pill {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 0.76rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #334155;
+  height: 28px;
+  box-sizing: border-box;
+}
+
+.hu-pill-info {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+.hu-date-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 5px 11px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.hu-date-pill mat-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+  color: #0284c7;
+}
+
+.hu-meta-icon {
+  font-size: 15px;
+  height: 15px;
+  width: 15px;
+  color: currentColor;
+  opacity: 0.85;
+}
+
+.hu-meta-label {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.hu-meta-value {
+  font-weight: 700;
+}
+
+/* Chip de la Empresa en la derecha del Header */
+.hu-company-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 6px 13px;
+  color: #0369a1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08);
+}
+
+.hu-company-badge mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #0284c7;
+  flex-shrink: 0;
+}
+
+.hu-company-badge span {
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+/* ==========================================================================
+   2. Grid de Tarjetas de Módulos (Estilo Queries Dialog + Cash Register)
+   ========================================================================== */
+.hu-modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
   width: 100%;
-  height: 200px; /* Altura fija *//*
-  border-radius: 30px;
-  overflow: hidden; /* Oculta cualquier contenido que se desborde del contenedor *//*
-  display: flex; /* Utiliza flexbox *//*
-  justify-content: center; /* Centra horizontalmente *//*
-  align-items: center; /* Centra verticalmente *//*
 }
 
-.image-container img {
-  width: 60%;
-  height: 60%;
-  object-fit: contain; /* Mantiene la relación de aspecto *//*
+.hu-module-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: left;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px 20px;
+  cursor: pointer;
+  outline: none;
+  transition:
+    transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.18s ease;
+  gap: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-.option-name {
-  font-size: 24px;
-  margin: 0 0;
+.hu-module-card:hover:not(:disabled) {
+  background: #ffffff;
+  border-color: #94a3b8;
+  transform: translateY(-3px);
+  box-shadow:
+    0 10px 15px -3px rgba(15, 23, 42, 0.07),
+    0 4px 6px -4px rgba(15, 23, 42, 0.05);
+}
+
+.hu-module-card:active:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.hu-module-card:disabled {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  border-style: dashed;
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+/* Contenido principal de la tarjeta: Icono + Nombre */
+.hu-card-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.hu-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.hu-module-card:hover:not(:disabled) .hu-icon-box {
+  transform: scale(1.08);
+}
+
+.hu-icon-box mat-icon {
+  font-size: 26px;
+  width: 26px;
+  height: 26px;
+}
+
+.hu-card-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.hu-card-title {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.25;
+  transition: color 0.15s ease;
+}
+
+.hu-module-card:hover:not(:disabled) .hu-card-title {
+  color: #0284c7;
+}
+
+.hu-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.hu-badge-disabled {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+/* Pie de la tarjeta */
+.hu-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.hu-card-action-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  transition: color 0.15s ease;
+}
+
+.hu-module-card:hover:not(:disabled) .hu-card-action-text {
+  color: #0284c7;
+}
+
+.hu-card-arrow {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #94a3b8;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
+}
+
+.hu-module-card:hover:not(:disabled) .hu-card-arrow {
+  color: #0284c7;
+  transform: translateX(4px);
+}
+
+.hu-card-lock {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+}
+
+/* ==========================================================================
+   3. Paleta Pastel para Iconos (Consistente con Cash Register)
+   ========================================================================== */
+.hu-bg-green {
+  background-color: #dcfce7;
+}
+.hu-text-green {
+  color: #16a34a;
+}
+
+.hu-bg-emerald {
+  background-color: #d1fae5;
+}
+.hu-text-emerald {
+  color: #059669;
+}
+
+.hu-bg-blue {
+  background-color: #dbeafe;
+}
+.hu-text-blue {
+  color: #2563eb;
+}
+
+.hu-bg-sky {
+  background-color: #e0f2fe;
+}
+.hu-text-sky {
+  color: #0284c7;
+}
+
+.hu-bg-cyan {
+  background-color: #cffafe;
+}
+.hu-text-cyan {
+  color: #0891b2;
+}
+
+.hu-bg-teal {
+  background-color: #ccfbf1;
+}
+.hu-text-teal {
+  color: #0d9488;
+}
+
+.hu-bg-indigo {
+  background-color: #e0e7ff;
+}
+.hu-text-indigo {
+  color: #4f46e5;
+}
+
+.hu-bg-purple {
+  background-color: #f3e8ff;
+}
+.hu-text-purple {
+  color: #9333ea;
+}
+
+.hu-bg-orange {
+  background-color: #ffedd5;
+}
+.hu-text-orange {
+  color: #ea580c;
+}
+
+.hu-bg-amber {
+  background-color: #fef3c7;
+}
+.hu-text-amber {
+  color: #d97706;
+}
+
+.hu-bg-red {
+  background-color: #fee2e2;
+}
+.hu-text-red {
+  color: #dc2626;
+}
+
+.hu-bg-slate {
+  background-color: #f1f5f9;
+}
+.hu-text-slate {
+  color: #64748b;
+}
+
+.hu-bg-darkgray {
+  background-color: #e2e8f0;
+}
+.hu-text-darkgray {
+  color: #475569;
+}
+
+/* ==========================================================================
+   4. Estado Vacío
+   ========================================================================== */
+.hu-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  border: 1px dashed #cbd5e1;
   text-align: center;
-}*/
+  gap: 8px;
+}
+
+.hu-empty-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.hu-empty-icon {
+  font-size: 30px;
+  width: 30px;
+  height: 30px;
+  color: #94a3b8;
+}
+
+.hu-empty-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #334155;
+  margin: 0;
+}
+
+.hu-empty-subtitle {
+  font-size: 0.85rem;
+  color: #64748b;
+  max-width: 440px;
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* ==========================================================================
+   5. Responsividad
+   ========================================================================== */
+@media (max-width: 960px) {
+  .hu-top-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .hu-header-left {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    column-gap: 10px;
+  }
+
+  .hu-title-text {
+    display: contents;
+  }
+
+  .hu-subtitle {
+    flex-basis: 100%;
+    width: 100%;
+  }
+
+  .hu-brand-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  .hu-brand-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .hu-title {
+    font-size: 1.18rem;
+  }
+
+  .hu-header-right {
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .hu-date-pill {
+    padding: 5px 10px;
+    font-size: 0.74rem;
+    gap: 6px;
+  }
+
+  .hu-date-pill mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+
+  .hu-company-badge {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    gap: 8px;
+    border-radius: 8px;
+  }
+
+  .hu-company-badge mat-icon {
+    font-size: 17px;
+    width: 17px;
+    height: 17px;
+  }
+}
+
+@media (max-width: 640px) {
+  .hu-main-container {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .hu-top-header {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .hu-brand-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+  }
+
+  .hu-brand-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .hu-title {
+    font-size: 1.05rem;
+  }
+
+  .hu-subtitle {
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+
+  .hu-date-pill {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    gap: 5px;
+    border-radius: 6px;
+  }
+
+  .hu-date-pill mat-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+  }
+
+  .hu-company-badge {
+    padding: 5px 10px;
+    font-size: 0.74rem;
+    gap: 6px;
+    border-radius: 8px;
+  }
+
+  .hu-company-badge mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+  }
+
+  .hu-modules-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .hu-module-card {
+    padding: 16px;
+  }
+}
