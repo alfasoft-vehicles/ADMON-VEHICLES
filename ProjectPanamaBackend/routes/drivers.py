@@ -10,7 +10,7 @@ async def get_drivers(company_code: str):
   return await drivers(company_code)
 
 @drivers_router.get("/drivers/all/{company_code}/", tags=["Drivers"])
-async def get_drivers(company_code: str):
+async def get_drivers_all(company_code: str):
   return await drivers_all(company_code)
 
 @drivers_router.get("/drivers_data/{company_code}/", tags=["Drivers"])

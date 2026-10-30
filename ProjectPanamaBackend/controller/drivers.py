@@ -48,6 +48,10 @@ async def drivers(company_code: str):
 
 #-----------------------------------------------------------------------------------------------
 
+def format_contact(contacto, tel, par):
+  parts = [str(p).strip() for p in (contacto, tel, par) if p and str(p).strip()]
+  return " - ".join(parts).title() if parts else ""
+
 async def drivers_all(company_code: str):
   db = session()
   try:
@@ -78,7 +82,7 @@ async def drivers_all(company_code: str):
     drivers_list = [
       {
         'codigo': driver.CODIGO,
-        'unidad': driver.UND_NRO + ' - ' + driver.UND_PRE,
+        'unidad': f"{(driver.UND_NRO or '').strip()} - {(driver.UND_PRE or '').strip()}",
         'nombre': (driver.NOMBRE or '' ).title(),
         'cedula': driver.CEDULA,
         'telefono': driver.TELEFONO,
@@ -88,8 +92,8 @@ async def drivers_all(company_code: str):
         'nro_pago': driver.NROENTPAGO,
         'nro_saldo': driver.NROENTSDO,
         'vce_licen': driver.LICEN_VCE,
-        'contacto': (driver.CONTACTO + ' - ' + driver.TEL_CONTAC + ' - ' + driver.PAR_CONTAC).title(),
-        'contacto1': (driver.CONTACTO1 + ' - ' + driver.TEL_CONTA1 + ' - ' + driver.PAR_CONTA1).title()
+        'contacto': format_contact(driver.CONTACTO, driver.TEL_CONTAC, driver.PAR_CONTAC),
+        'contacto1': format_contact(driver.CONTACTO1, driver.TEL_CONTA1, driver.PAR_CONTA1)
       }
       for driver in drivers
     ]
